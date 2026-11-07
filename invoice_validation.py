@@ -16,6 +16,7 @@ ENGINE_HASH = "799e64befca97d4080e03608c80b85dd5a5ecc5f4ae4f35d1116ec2855b9a7c9"
 RULES_URL = ("https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/download/v2026-08-31/"
              "xrechnung-3.0.2-validator-configuration-2026-08-31.zip")
 RULES_HASH = "2530cd107c414511c5d0462ec10f886910395abfca820db82e83d70bf01221a8"
+KOSIT_FOLDER = "KoSIT-1.6.3-XRechnung-2026-08-31"
 RULES_VERSION = "XRechnung 3.0.2 · KoSIT-Regelpaket 2026-08-31"
 REPORT = "{http://www.xoev.de/de/validator/varl/1}"
 SCENARIO = "{http://www.xoev.de/de/validator/framework/1/scenarios}"
