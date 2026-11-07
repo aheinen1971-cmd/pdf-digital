@@ -1,11 +1,11 @@
-# PDF Werkbank 1.16.0 für Windows
+# PDF Werkbank 1.17.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.16.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.17.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.16.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.17.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -71,6 +71,25 @@ vorhandene passende Modelldatei wird verwendet.
   Mit **Pausieren** kann der Lauf unterbrochen werden. **Archivlauf
   fortsetzen** nutzt den lokal gespeicherten Stand und überspringt
   fertige Kopien. Geänderte Entwürfe müssen erneut freigegeben werden.
+
+## Archiv, Rechnungen und Explorer
+
+- **Archiv & Zugang → Archiv-Check für Ordner** prüft gespeicherte PDFs
+  mit optionalen Unterordnern. Bei deklarierter PDF/A-Version prüft
+  veraPDF das zugehörige Profil. Die Tabelle zeigt auch Seiten ohne
+  extrahierbaren Text, einschließlich Leerseiten.
+- **Bilder & Scan → Rechnungsdaten aus Scans** schlägt Nummer, Datum und
+  Betrag vor. Die erste bis dritte Seite und die letzte Seite werden
+  lokal ausgewertet. Die Vorschau zeigt die Fundstellen, die Werte sind
+  vor dem Excel-Export bearbeitbar. Die Liste verlinkt die lokalen PDFs.
+- **Datei → Explorer-Befehle einrichten** legt für den aktuellen Windows-
+  Benutzer zwei Befehle unter **Rechtsklick → Senden an** an. Unter Windows
+  11 ist das Menü über **Weitere Optionen anzeigen** erreichbar. Mehrere
+  ausgewählte PDFs lassen sich zusammenführen oder mit einem unter
+  **Export & Schutz → Gespeicherte Abläufe** gespeicherten Ablauf bearbeiten.
+- **Formular → Pflichtfelder prüfen** zeigt leere, als Pflichtfeld
+  gekennzeichnete Felder an und springt zum ausgewählten Feld. Die
+  feste Formularkopie setzt voraus, dass diese Felder ausgefüllt sind.
 
 ## Favoriten
 

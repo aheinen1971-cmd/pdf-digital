@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import re
+from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, tostring
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -26,7 +27,7 @@ def package(path, main, mime, contents):
             SubElement(ct, "Default", Extension=extension, ContentType="image/" + image_type)
     SubElement(ct, "Override", PartName="/" + main, ContentType=mime)
     for name in contents:
-        if name.startswith("xl/worksheets/"):
+        if name.startswith("xl/worksheets/") and name.endswith(".xml"):
             SubElement(ct, "Override", PartName="/" + name,
                        ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")
     links = Element("Relationships", xmlns="http://schemas.openxmlformats.org/package/2006/relationships")
@@ -225,3 +226,34 @@ def export_excel(doc, path):
                    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet")
         contents["xl/" + filename] = sheet
     package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", contents)
+
+
+def export_invoices(rows, path):
+    namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    workbook = Element("workbook", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
+    SubElement(SubElement(workbook, "sheets"), "sheet", {"name": "Rechnungen", "sheetId": "1", "r:id": "rId1"})
+    links = Element("Relationships", xmlns=REL_NS)
+    SubElement(links, "Relationship", Id="rId1", Target="worksheets/sheet1.xml", Type=OFFICE_NS + "/worksheet")
+    sheet = Element("worksheet", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
+    columns = SubElement(sheet, "cols")
+    for index, width in enumerate((24, 18, 22, 65, 42), 1):
+        SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
+    data = SubElement(sheet, "sheetData")
+    hyperlinks = SubElement(sheet, "hyperlinks")
+    sources = Element("Relationships", xmlns=REL_NS)
+    header = ("Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quell-PDF", "Fundseiten (Nr. / Datum / Betrag)")
+    all_rows = [header, *rows]
+    for index, values in enumerate(all_rows, 1):
+        row = SubElement(data, "row", r=str(index))
+        for column, value in enumerate(values, 1):
+            cell = SubElement(row, "c", r=f"{column_name(column)}{index}", t="inlineStr")
+            SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
+        if index > 1:
+            key = f"rId{index}"
+            SubElement(hyperlinks, "hyperlink", {"ref": f"D{index}", "r:id": key})
+            SubElement(sources, "Relationship", Id=key, Target=Path(values[3]).resolve().as_uri(),
+                       TargetMode="External", Type=OFFICE_NS + "/hyperlink")
+    name = "xl/workbook.xml"
+    package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+            {name: workbook, "xl/_rels/workbook.xml.rels": links, "xl/worksheets/sheet1.xml": sheet,
+             "xl/worksheets/_rels/sheet1.xml.rels": sources})

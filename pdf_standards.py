@@ -132,8 +132,11 @@ def export_archive(source, path, color_profile, font_path=None):
         doc.save(path, garbage=4, deflate=True)
 
 
+ARCHIVE_PROFILES = ("1a", "1b", "2a", "2b", "2u", "3a", "3b", "3u", "4", "4e", "4f")
+
+
 def validate_standard(java, jar, path, flavour):
-    if flavour not in ("2b", "ua1"):
+    if flavour not in (*ARCHIVE_PROFILES, "ua1"):
         raise ValueError("Unbekanntes Prüfprofil.")
     result = subprocess.run([str(java), "-jar", str(jar), "--flavour", flavour, "--format", "mrr", str(path)],
                             capture_output=True, timeout=180,

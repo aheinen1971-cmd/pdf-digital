@@ -353,3 +353,26 @@ def scanned_document(path, dpi):
     except Exception:
         document.close()
         raise
+
+
+def missing_required_fields(doc):
+    empty = {}
+    completed = set()
+    for page in doc:
+        for field in page.widgets():
+            if not field.field_flags & pdf.PDF_FIELD_IS_REQUIRED:
+                continue
+            if field.field_type == pdf.PDF_WIDGET_TYPE_BUTTON:
+                continue
+            name = field.field_name or ""
+            key = name or field.xref
+            value = field.field_value
+            values = value if isinstance(value, (list, tuple)) else [value]
+            choice = field.field_type in (pdf.PDF_WIDGET_TYPE_CHECKBOX, pdf.PDF_WIDGET_TYPE_RADIOBUTTON)
+            filled = any(item is not None and str(item).strip() and (not choice or item not in ("Off", False))
+                         for item in values)
+            if filled:
+                completed.add(key)
+            else:
+                empty.setdefault(key, (page.number, pdf.Rect(field.rect), name or "(Ohne Namen)"))
+    return [entry for key, entry in empty.items() if key not in completed]
