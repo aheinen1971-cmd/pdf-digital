@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -31,7 +32,7 @@ from update_worker import prepared_update
 
 from page_tools import crop_page, edit_image, image_at, scan_command, scanned_document
 
-VERSION = (1, 5, 0)
+VERSION = (1, 5, 1)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -865,37 +866,62 @@ class Window(QMainWindow):
             return
         self.changed()
 
+    def acquire_scan(self, scan, device_id=""):
+        command, env = scan_command(scan, device_id)
+        try:
+            process = subprocess.Popen(command, env=env, creationflags=subprocess.CREATE_NO_WINDOW,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError as exc:
+            self.error(exc)
+            return None
+        progress = QProgressDialog("Scanner liest die Seite ein …", "Abbrechen", 0, 0, self)
+        progress.setWindowTitle("Vom Scanner einlesen")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        timer = QTimer(progress, interval=250)
+        timer.timeout.connect(lambda: progress.accept() if process.poll() is not None else None)
+        timer.start()
+        outcome = progress.exec()
+        timer.stop()
+        if outcome != QDialog.DialogCode.Accepted:
+            if process.poll() is None:
+                try:
+                    process.terminate()
+                except OSError:
+                    pass
+            process.communicate()
+            return None
+        stdout, _ = process.communicate()
+        return process.returncode, stdout
+
     def scan_from_device(self):
         with tempfile.TemporaryDirectory() as folder:
             scan = Path(folder) / "Scan.png"
-            command, env = scan_command(scan)
-            try:
-                process = subprocess.Popen(command, env=env, creationflags=subprocess.CREATE_NO_WINDOW,
-                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except OSError as exc:
-                self.error(exc)
+            acquired = self.acquire_scan(scan)
+            if acquired is None:
                 return
-            progress = QProgressDialog("Windows-Scandialog wird geöffnet …", "Abbrechen", 0, 0, self)
-            progress.setWindowTitle("Vom Scanner einlesen")
-            progress.setWindowModality(Qt.WindowModality.WindowModal)
-            progress.setMinimumDuration(0)
-            timer = QTimer(progress, interval=250)
-            timer.timeout.connect(lambda: progress.accept() if process.poll() is not None else None)
-            timer.start()
-            progress.exec()
-            timer.stop()
-            if process.poll() is None:
-                process.terminate()
-                process.communicate()
+            status, stdout = acquired
+            if status == 4:
+                try:
+                    devices = json.loads(stdout.decode("utf-8"))
+                    names = [f"{index + 1}. {device['name']}" for index, device in enumerate(devices)]
+                except (ValueError, KeyError, TypeError):
+                    self.error("Die verfügbaren Scanner konnten nicht ermittelt werden.")
+                    return
+                choice, ok = QInputDialog.getItem(self, "Scanner auswählen", "Gerät", names, editable=False)
+                if not ok:
+                    return
+                acquired = self.acquire_scan(scan, devices[names.index(choice)]["id"])
+                if acquired is None:
+                    return
+                status, stdout = acquired
+            if status == 2:
                 return
-            stdout, _ = process.communicate()
-            if process.returncode == 2:
-                return
-            if process.returncode == 3:
+            if status == 3:
                 self.error("Windows meldet keinen WIA-Scanner. Prüfe den Anschluss und den Scannertreiber.")
                 return
-            if process.returncode != 0 or not scan.is_file():
-                self.error("Der Windows-Scandialog konnte kein Bild einlesen. Prüfe den Scanner und versuche es erneut.")
+            if status != 0 or not scan.is_file():
+                self.error("Windows konnte kein Bild vom Scanner einlesen. Prüfe das Gerät und versuche es erneut.")
                 return
             match = re.search(rb"(\d+),(\d+)", stdout)
             dpi = tuple(map(int, match.groups())) if match else None

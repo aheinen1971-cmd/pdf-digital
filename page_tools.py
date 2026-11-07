@@ -96,17 +96,26 @@ def edit_image(page, selected, offset=None, replacement=None):
         raise ValueError("Die Bildänderung konnte nicht eindeutig geprüft werden.")
 
 
-def scan_command(path):
+def scan_command(path, device_id=""):
     script = r"""
 $ErrorActionPreference = 'Stop'
 try {
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     $manager = New-Object -ComObject WIA.DeviceManager
-    $scanner = $false
-    foreach ($device in $manager.DeviceInfos) { if ($device.Type -eq 1) { $scanner = $true } }
-    if (-not $scanner) { exit 3 }
-    $dialog = New-Object -ComObject WIA.CommonDialog
-    $image = $dialog.ShowAcquireImage(1, 1, 65536, '{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}', $false, $true, $false)
+    $scanners = @($manager.DeviceInfos | Where-Object { $_.Type -eq 1 })
+    if ($env:PDF_WERKBANK_SCAN_ID) {
+        $scanners = @($scanners | Where-Object { $_.DeviceID -eq $env:PDF_WERKBANK_SCAN_ID })
+    }
+    if ($scanners.Count -eq 0) { exit 3 }
+    if ($scanners.Count -gt 1) {
+        $choices = @($scanners | ForEach-Object { @{id=$_.DeviceID; name=$_.Properties.Item('Name').Value} })
+        [Console]::WriteLine((ConvertTo-Json -InputObject $choices -Compress))
+        exit 4
+    }
+    $device = $scanners[0].Connect()
+    $image = $device.Items.Item(1).Transfer('{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}')
     if ($null -eq $image) { exit 2 }
+
     $image.SaveFile($env:PDF_WERKBANK_SCAN_FILE)
     [Console]::WriteLine(('{0},{1}' -f [int]$image.HorizontalResolution,[int]$image.VerticalResolution))
     exit 0
@@ -119,7 +128,7 @@ try {
     shell = Path(os.environ["SystemRoot"]) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
     command = [str(shell), "-NoLogo", "-NoProfile", "-Sta", "-EncodedCommand",
                base64.b64encode(script.encode("utf-16-le")).decode("ascii")]
-    return command, dict(os.environ, PDF_WERKBANK_SCAN_FILE=str(path))
+    return command, dict(os.environ, PDF_WERKBANK_SCAN_FILE=str(path), PDF_WERKBANK_SCAN_ID=device_id)
 
 
 def scanned_document(path, dpi):

@@ -1,11 +1,11 @@
-# PDF Werkbank 1.5.0 für Windows
+# PDF Werkbank 1.5.1 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.5.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.5.1.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.5.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.5.1`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -44,8 +44,9 @@ vorhandene passende Modelldatei wird verwendet.
   im vorhandenen Rahmen. Das Bild kann dabei gestreckt werden. Komplex
   verschachtelte Bilder werden abgelehnt. Andere Verwendungen desselben
   Bildes auf der Seite oder im Dokument bleiben erhalten.
-- **Vom Scanner einlesen**. Öffnet den Windows-Scandialog für WIA-Geräte.
-  Pro Aufruf wird ein Scan als neue PDF gespeichert. Windows muss den
+- **Vom Scanner einlesen**. Liest eine Seite direkt über Windows WIA ein.
+  Sind mehrere Scanner verfügbar, fragt die App nach dem Gerät.
+  Pro Aufruf kann ein Scan als PDF gespeichert werden. Windows muss den
   Scanner mit einem passenden WIA-Treiber erkennen.
 
 ## Versand, Schwärzungsprüfung und Druckprofile
