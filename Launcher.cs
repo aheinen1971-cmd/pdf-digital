@@ -17,12 +17,14 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.4.1";
+    private const string Version = "1.4.2";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
     private static int Main(string[] args)
     {
+        AppContext.SetSwitch("Switch.System.IO.UseLegacyPathHandling", false);
+        AppContext.SetSwitch("Switch.System.IO.BlockLongPaths", false);
         bool prepare = args.Length == 1 && args[0] == "--prepare-update";
         if (!prepare)
         {
@@ -63,6 +65,8 @@ internal static class Launcher
                 WorkingDirectory = Environment.CurrentDirectory
             };
             run.EnvironmentVariables["PDF_WERKBANK_LAUNCHER"] = Assembly.GetExecutingAssembly().Location;
+            if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PDF_WERKBANK_ENTRYPOINT")))
+                run.EnvironmentVariables["PDF_WERKBANK_ENTRYPOINT"] = Assembly.GetExecutingAssembly().Location;
             using (Process process = Process.Start(run))
             {
                 if (process.WaitForExit(1800) && process.ExitCode != 0)
@@ -72,7 +76,9 @@ internal static class Launcher
         }
         catch (Exception error)
         {
-            if (!prepare)
+            if (prepare)
+                Console.Error.WriteLine(error);
+            else
                 MessageBox.Show(error.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
@@ -104,8 +110,18 @@ internal static class Launcher
             source.CopyTo(target);
     }
 
+    private static string ExtendedPath(string path)
+    {
+        if (path.StartsWith(@"\\?\", StringComparison.Ordinal))
+            return path;
+        if (path.StartsWith(@"\\", StringComparison.Ordinal))
+            return @"\\?\UNC\" + path.Substring(2);
+        return @"\\?\" + path;
+    }
+
     internal static async Task Install(string root, IProgress<string> progress, CancellationToken cancellation)
     {
+        root = ExtendedPath(root);
         string parent = Path.GetDirectoryName(root);
         Directory.CreateDirectory(parent);
         using (var mutex = new Mutex(false, "Local\\PDF-Werkbank-Setup-" + Version))
@@ -114,7 +130,7 @@ internal static class Launcher
             await Task.Run(() =>
             {
                 bool acquired = false;
-                string staging = root + ".stage-" + Guid.NewGuid().ToString("N");
+                string staging = Path.Combine(parent, ".stage-" + Path.GetRandomFileName());
                 try
                 {
                     try
@@ -132,13 +148,15 @@ internal static class Launcher
                         throw new IOException("Im Zielordner liegt bereits eine unvollständige Einrichtung. " +
                                               "Bitte benenne diesen Ordner um und starte erneut:\n" + root);
                     Directory.CreateDirectory(staging);
-                    DownloadAll(staging, progress, cancellation).GetAwaiter().GetResult();
+                    if (!ReuseRuntime(parent, staging, progress, cancellation))
+                        DownloadAll(staging, progress, cancellation).GetAwaiter().GetResult();
                     cancellation.ThrowIfCancellationRequested();
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
                     CopyResource("local_ai.py", Path.Combine(app, "local_ai.py"));
                     CopyResource("online_updates.py", Path.Combine(app, "online_updates.py"));
                     CopyResource("update_worker.py", Path.Combine(app, "update_worker.py"));
+                    CopyResource("pdf-werkbank.ico", Path.Combine(app, "pdf-werkbank.ico"));
                     CopyResource("LICENSE", Path.Combine(app, "LICENSE"));
                     CopyResource("THIRD_PARTY.md", Path.Combine(app, "THIRD_PARTY.md"));
                     CopyResource("DEPENDENCIES.tsv", Path.Combine(app, "DEPENDENCIES.tsv"));
@@ -157,6 +175,55 @@ internal static class Launcher
             }, cancellation);
         }
     }
+
+    private static bool ReuseRuntime(string parent, string staging, IProgress<string> progress, CancellationToken cancellation)
+    {
+        string expected;
+        using (var reader = new StreamReader(Resource("DEPENDENCIES.tsv"), Encoding.UTF8))
+            expected = reader.ReadToEnd();
+        var installed = Directory.GetDirectories(parent)
+            .Select(path =>
+            {
+                System.Version parsed;
+                return System.Version.TryParse(Path.GetFileName(path), out parsed)
+                    ? new { Path = path, Version = parsed }
+                    : null;
+            })
+            .Where(entry => entry != null)
+            .OrderByDescending(entry => entry.Version);
+        foreach (var entry in installed)
+        {
+            string source = entry.Path;
+            string manifest = Path.Combine(source, "app", "DEPENDENCIES.tsv");
+            string[] parts = { "python", @"app\tessdata", @"app\ki" };
+            if (!File.Exists(Path.Combine(source, "ready-" + Path.GetFileName(source)))
+                || !File.Exists(manifest) || File.ReadAllText(manifest, Encoding.UTF8) != expected
+                || !parts.All(part => Directory.Exists(Path.Combine(source, part))))
+                continue;
+            progress.Report("Übernehme vorhandene Laufzeitpakete …");
+            foreach (string part in parts)
+                CopyTree(Path.Combine(source, part), Path.Combine(staging, part), cancellation);
+            return true;
+        }
+        return false;
+    }
+
+    private static void CopyTree(string source, string target, CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        if ((File.GetAttributes(source) & FileAttributes.ReparsePoint) != 0)
+            throw new IOException("Die vorhandene Laufzeit enthält eine Ordnerverknüpfung.");
+        Directory.CreateDirectory(target);
+        foreach (string file in Directory.GetFiles(source))
+        {
+            cancellation.ThrowIfCancellationRequested();
+            if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) == 0)
+                File.Copy(file, Path.Combine(target, Path.GetFileName(file)));
+        }
+        foreach (string folder in Directory.GetDirectories(source))
+            CopyTree(folder, Path.Combine(target, Path.GetFileName(folder)), cancellation);
+    }
+
 
     private static async Task DownloadAll(string staging, IProgress<string> progress, CancellationToken cancellation)
     {

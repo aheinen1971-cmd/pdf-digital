@@ -29,7 +29,7 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import prepared_update
 
-VERSION = (1, 4, 1)
+VERSION = (1, 4, 2)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -548,7 +548,7 @@ class Window(QMainWindow):
         self.tools.setExpanding(False)
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
-                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder)]),
+                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
             ("Start", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Suchen", self.search), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
@@ -1623,6 +1623,34 @@ class Window(QMainWindow):
         self.statusBar().showMessage(message, 10000)
 
 
+    def register_pdf_app(self):
+        import winreg
+
+        launcher = os.environ.get("PDF_WERKBANK_ENTRYPOINT") or os.environ.get("PDF_WERKBANK_LAUNCHER")
+        icon = Path(__file__).with_name("pdf-werkbank.ico")
+        if not launcher or not Path(launcher).is_file() or not icon.is_file():
+            self.error("Bitte PDF Werkbank über die Windows-EXE starten.")
+            return
+
+        def write(key, name, value):
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key) as handle:
+                winreg.SetValueEx(handle, name, 0, winreg.REG_SZ, value)
+
+        try:
+            prog = r"Software\Classes\PDFWerkbank.PDF"
+            capabilities = r"Software\PDF Werkbank\Capabilities"
+            write(prog, "", "PDF-Dokument")
+            write(prog + r"\DefaultIcon", "", f'"{icon}",0')
+            write(prog + r"\shell\open\command", "", f'"{launcher}" "%1"')
+            write(capabilities, "ApplicationName", "PDF Werkbank")
+            write(capabilities, "ApplicationDescription", "PDF-Dateien öffnen und bearbeiten")
+            write(capabilities + r"\FileAssociations", ".pdf", "PDFWerkbank.PDF")
+            write(r"Software\RegisteredApplications", "PDF Werkbank", capabilities)
+            os.startfile("ms-settings:defaultapps?registeredAppUser=PDF%20Werkbank")
+        except OSError as exc:
+            self.error(exc)
+
+
     def choose_update_folder(self):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         folder = QFileDialog.getExistingDirectory(self, "Vertrauenswürdigen Update-Ordner auswählen",
@@ -1654,6 +1682,7 @@ def find_update(folder, version=VERSION):
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("PDF Werkbank")
+    app.setWindowIcon(QIcon(str(Path(__file__).with_name("pdf-werkbank.ico"))))
     settings = QSettings("PDF Werkbank", "PDF Werkbank")
     folder = settings.value("updates", "", str)
     forwarded = os.environ.pop("PDF_WERKBANK_UPDATE_FORWARDED", "")

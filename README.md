@@ -1,11 +1,11 @@
-# PDF Werkbank 1.4.1 für Windows
+# PDF Werkbank 1.4.2 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.4.1.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.4.2.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.4.1`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.4.2`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -48,6 +48,12 @@ vorhandene passende Modelldatei wird verwendet.
   mit A4 und Duplex an der langen Kante. Die Duplex-Vorschau zeigt
   Vorder- und Rückseite pro Blatt. Bei ungerader Seitenanzahl wird die
   letzte Rückseite als leer angezeigt.
+
+## Rotes PDF-Symbol
+
+Unter **Datei → PDF-Standard** öffnet PDF Werkbank die Windows-Einstellungen.
+Wähle dort PDF Werkbank für **.pdf**. Windows verwendet dann das rote
+Dateisymbol, auch für PDFs auf dem Desktop.
 
 ## Updates
 
