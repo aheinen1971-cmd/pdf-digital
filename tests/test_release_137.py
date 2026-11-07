@@ -18,16 +18,13 @@ from form_run import FormRun
 from office_export import export_linked_sheet
 
 
-def settings_for(root):
-    os.environ["LOCALAPPDATA"] = str(root / "Local")
-    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
-    QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(root / "settings"))
-    return QSettings("PDF Werkbank", "PDF Werkbank")
+def settings_for():
+    return app_module.QSettings("PDF Werkbank", "PDF Werkbank")
 
 
 def seed(root):
     app = QApplication([])
-    settings = settings_for(root)
+    settings = settings_for()
     window = app_module.Window()
     template = root / "Vorlage.pdf"
     workbook = root / "Liste.xlsx"
@@ -68,7 +65,7 @@ def seed(root):
 
 
 def verify_restart(root):
-    settings = settings_for(root)
+    settings = settings_for()
     checked, errors = [], []
     windows = []
 
@@ -131,7 +128,15 @@ def verify_restart(root):
 
 
 if len(sys.argv) > 3 and sys.argv[-2] == "--phase":
-    (seed if sys.argv[-1] == "seed" else verify_restart)(Path(sys.argv[-3]))
+    root = Path(sys.argv[-3])
+    os.environ["LOCALAPPDATA"] = str(root / "Local")
+
+    class LocalSettings(QSettings):
+        def __init__(self, *_):
+            super().__init__(str(root / "settings.ini"), QSettings.Format.IniFormat)
+
+    with patch.object(app_module, "QSettings", LocalSettings):
+        (seed if sys.argv[-1] == "seed" else verify_restart)(root)
 else:
     with TemporaryDirectory() as folder:
         script = str(Path(__file__).resolve())
