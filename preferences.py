@@ -7,10 +7,37 @@ GROUPS = {"favorites": "Favoriten", "workflows": "Gespeicherte Abläufe",
 DEFAULT_FAVORITES = ["scan", "quick-scan", "folder", "duplex"]
 COMMANDS = {"scan", "quick-scan", "inbox", "folder", "duplex", "booklet", "open", "save", "archive", "compare"}
 STEPS = {"ocr", "rotate", "compress"}
+FORM_TEMPLATES = "form-export/templates"
 
 
 def short_text(value, maximum):
     return isinstance(value, str) and len(value) <= maximum and not any(ord(char) < 32 for char in value)
+
+
+def validate_form_templates(templates):
+    if not isinstance(templates, dict) or len(templates) > 50:
+        raise ValueError("Es können bis zu 50 Excel-Vorlagen gespeichert werden.")
+    for name, columns in templates.items():
+        if not short_text(name, 100) or not name.strip() or not isinstance(columns, list) or not 1 <= len(columns) <= 100:
+            raise ValueError("Eine Excel-Vorlage braucht einen Namen und 1 bis 100 Spalten.")
+        used = {"pdf-datei", "hinweis"}
+        for column in columns:
+            if not isinstance(column, list) or len(column) != 3:
+                raise ValueError("Ungültige Feldzuordnung in der Excel-Vorlage.")
+            heading, aliases, required = column
+            if (not short_text(heading, 120) or not heading.strip() or heading.casefold() in used
+                    or type(required) is not bool or not isinstance(aliases, list) or not 1 <= len(aliases) <= 30
+                    or any(not short_text(alias, 250) or not alias.strip() for alias in aliases)):
+                raise ValueError("Jede Spalte braucht einen eindeutigen Namen und 1 bis 30 PDF-Feldnamen. "
+                                 "„PDF-Datei“ und „Hinweis“ sind reserviert.")
+            used.add(heading.casefold())
+    if len(json.dumps(templates, ensure_ascii=False).encode("utf-8")) > 1024 * 1024:
+        raise ValueError("Die gespeicherten Excel-Vorlagen sind zusammen zu groß.")
+    return templates
+
+
+def form_templates(settings):
+    return validate_form_templates(json.loads(settings.value(FORM_TEMPLATES, "{}", str)))
 
 
 def validate_groups(groups):

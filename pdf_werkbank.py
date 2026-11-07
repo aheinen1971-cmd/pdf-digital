@@ -37,7 +37,8 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
 
-from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet, read_form_values
+from office_export import (export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet,
+                           map_form_values, read_form_values)
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
 from invoice_validation import KOSIT_FOLDER, RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
@@ -53,7 +54,8 @@ from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
 from filing import (archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches,
                     pdf_files, scan_breaks, scan_ranges, search_rectangles)
-from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
+from preferences import (DEFAULT_FAVORITES, FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
+                         read_package, validate_form_templates)
 from archive_run import ArchiveRun
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
                          app_backup_root, archive_remap, automatic_backup, backup_check_rows, backup_preview,
@@ -64,7 +66,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 31, 0)
+VERSION = (1, 32, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -891,6 +893,7 @@ class Window(QMainWindow):
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Formulare nach Excel", self.export_form_batch),
+                          ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
             ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
         ]
@@ -5154,7 +5157,174 @@ class Window(QMainWindow):
             self.error(exc)
 
 
-    def export_form_batch(self):
+    def form_template_dialog(self, available):
+        settings = self.favorite_settings
+        templates = form_templates(settings)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Excel-Formularvorlagen")
+        dialog.resize(850, 485)
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Lege die Excel-Spalten von oben nach unten fest. Trage pro Zeile im mittleren Feld "
+                      "einen PDF-Feldnamen ein. Doppelklick auf einen gefundenen Feldnamen fügt ihn der gewählten Spalte hinzu.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        form = QFormLayout()
+        choice = QComboBox()
+        name = QLineEdit()
+        name.setMaxLength(100)
+        form.addRow("Vorlage", choice)
+        form.addRow("Name beim Speichern", name)
+        layout.addLayout(form)
+        content = QHBoxLayout()
+        table = QTableWidget(0, 3)
+        table.setHorizontalHeaderLabels(["Excel-Spalte", "PDF-Feldnamen", "Pflicht"])
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        table.setColumnWidth(0, 190)
+        table.setColumnWidth(2, 65)
+        content.addWidget(table, 3)
+        fields = QListWidget()
+        fields.addItems(available)
+        found = QVBoxLayout()
+        found.addWidget(QLabel("Gefundene PDF-Feldnamen"))
+        found.addWidget(fields)
+        content.addLayout(found, 1)
+        layout.addLayout(content)
+        actions = QHBoxLayout()
+        add = QPushButton("Spalte hinzufügen")
+        remove = QPushButton("Spalte entfernen")
+        delete = QPushButton("Vorlage löschen")
+        for button in (add, remove, delete):
+            actions.addWidget(button)
+        layout.addLayout(actions)
+        notice = QLabel()
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        use = buttons.addButton("Gespeicherte Vorlage verwenden", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton("Vorlage speichern und Vorschau", QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        layout.addWidget(buttons)
+        result = None
+
+        def append_column(heading="", aliases=(), required=False):
+            row = table.rowCount()
+            if row >= 100:
+                return
+            table.insertRow(row)
+            table.setItem(row, 0, QTableWidgetItem(heading))
+            editor = QPlainTextEdit("\n".join(aliases))
+            table.setCellWidget(row, 1, editor)
+            table.setRowHeight(row, 75)
+            flag = QTableWidgetItem()
+            flag.setFlags(flag.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            flag.setCheckState(Qt.CheckState.Checked if required else Qt.CheckState.Unchecked)
+            table.setItem(row, 2, flag)
+            table.setCurrentCell(row, 0)
+
+        def load():
+            selected = choice.currentData()
+            name.setText(selected or "")
+            table.setRowCount(0)
+            for heading, aliases, required in templates.get(selected, []):
+                append_column(heading, aliases, required)
+            if not selected:
+                append_column()
+            else:
+                table.setCurrentCell(0, 0)
+            delete.setEnabled(selected is not None)
+            use.setEnabled(selected is not None)
+            notice.clear()
+
+        def refresh_choices():
+            choice.blockSignals(True)
+            choice.clear()
+            choice.addItem("Neue Vorlage")
+            for label in sorted(templates, key=str.casefold):
+                choice.addItem(label, label)
+            if templates:
+                choice.setCurrentIndex(1)
+            choice.blockSignals(False)
+            load()
+
+        def add_field(item):
+            if table.currentRow() < 0:
+                append_column()
+            row = table.currentRow()
+            editor = table.cellWidget(row, 1)
+            if item.text() not in editor.toPlainText().splitlines():
+                editor.appendPlainText(item.text())
+            if not table.item(row, 0).text().strip():
+                table.item(row, 0).setText(item.text())
+
+        def store(changed):
+            validate_form_templates(changed)
+            settings.setValue(FORM_TEMPLATES, json.dumps(changed, ensure_ascii=False))
+            settings.sync()
+            if settings.status() != QSettings.Status.NoError:
+                raise OSError("Die Excel-Vorlagen konnten nicht dauerhaft gespeichert werden.")
+
+        def accept():
+            nonlocal result
+            label = name.text().strip()
+            columns = []
+            for row in range(table.rowCount()):
+                heading = table.item(row, 0).text().strip()
+                aliases = list(dict.fromkeys(line for line in table.cellWidget(row, 1).toPlainText().splitlines()
+                                              if line.strip()))
+                required = table.item(row, 2).checkState() == Qt.CheckState.Checked
+                columns.append([heading, aliases, required])
+            try:
+                current = form_templates(settings)
+                if label in current and (label != choice.currentData() or current[label] != templates.get(label)):
+                    raise ValueError("Die Vorlage ist bereits vorhanden oder wurde geändert. "
+                                     "Wähle einen neuen Namen oder öffne den Dialog erneut.")
+                store({**current, label: columns})
+            except (OSError, ValueError) as exc:
+                notice.setText(str(exc))
+                return
+            result = label, columns
+            dialog.accept()
+
+        def use_saved():
+            nonlocal result
+            selected = choice.currentData()
+            if selected in templates:
+                result = selected, templates[selected]
+                dialog.accept()
+
+        def delete_template():
+            selected = choice.currentData()
+            if selected is None or QMessageBox.question(
+                    dialog, "Vorlage löschen", f"„{selected}“ löschen?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+            try:
+                changed = form_templates(settings)
+                if changed.get(selected) != templates[selected]:
+                    raise ValueError("Die Vorlage wurde geändert. Öffne den Dialog erneut.")
+                del changed[selected]
+                store(changed)
+            except (OSError, ValueError) as exc:
+                notice.setText(str(exc))
+                return
+            templates.clear()
+            templates.update(changed)
+            refresh_choices()
+
+        choice.currentIndexChanged.connect(load)
+        fields.itemDoubleClicked.connect(add_field)
+        add.clicked.connect(lambda: append_column())
+        remove.clicked.connect(lambda: table.removeRow(table.currentRow()))
+        delete.clicked.connect(delete_template)
+        use.clicked.connect(use_saved)
+        save.clicked.connect(accept)
+        buttons.rejected.connect(dialog.reject)
+        refresh_choices()
+        dialog.exec()
+        return result
+
+    def export_form_batch(self, use_template=False):
         names, _ = QFileDialog.getOpenFileNames(self, "Ausgefüllte PDF-Formulare auswählen", "", "PDF (*.pdf)")
         if not names:
             return
@@ -5165,7 +5335,7 @@ class Window(QMainWindow):
 
         def inspect(path):
             try:
-                fields = read_form_values(path)
+                fields = read_form_values(path, separate=use_template)
                 return fields, "" if fields else "Keine exportierbaren Formularfelder"
             except (OSError, RuntimeError, ValueError) as exc:
                 return {}, str(exc)
@@ -5174,19 +5344,42 @@ class Window(QMainWindow):
         if len(outcomes) != len(paths):
             return
         columns = sorted({name for _, (fields, _) in outcomes for name in fields}, key=lambda name: (name.casefold(), name))
+        template = None
+        cell_issues = {}
+        if use_template:
+            try:
+                template = self.form_template_dialog(columns)
+            except (OSError, ValueError) as exc:
+                self.error(exc)
+                return
+            if template is None:
+                return
+            title, mappings = template
+            columns = [heading for heading, _, _ in mappings]
         if len(columns) > 1000 or len(outcomes) * (len(columns) + 2) > 100000:
             self.error("Zu viele Formularfelder für die Vorschau. Bitte weniger PDFs auswählen.")
             return
         header = ["PDF-Datei", "Hinweis", *columns]
-        rows = [(str(path), issue or (f"{len(columns) - len(fields)} Feld(er) fehlen" if len(fields) != len(columns) else ""),
-                 *(fields.get(name) for name in columns)) for path, (fields, issue) in outcomes]
+        rows = []
+        for row, (path, (fields, issue)) in enumerate(outcomes):
+            if template:
+                values, issues = map_form_values(fields, mappings)
+                cell_issues.update({(row, column + 2): item for column, item in issues.items()})
+                status = " · ".join(filter(None, [issue, *(label for label, _ in issues.values())]))
+            else:
+                status = issue or (f"{len(columns) - len(fields)} Feld(er) fehlen" if len(fields) != len(columns) else "")
+                values = [fields.get(name) for name in columns]
+            rows.append((str(path), status, *values))
         dialog = QDialog(self)
-        dialog.setWindowTitle("Formular-Export prüfen")
+        dialog.setWindowTitle(f"Formular-Export prüfen – {title}" if template else "Formular-Export prüfen")
         dialog.resize(920, 500)
         layout = QVBoxLayout(dialog)
-        notice = QLabel(f"{len(rows)} von {len(paths)} PDF-Dateien eingelesen. „Fehlt“ bedeutet, dass das Feld in "
-                        "dieser Datei anders heißt oder nicht existiert. Die Werkbank liest den gespeicherten "
-                        "Stand. Passwort- und Signaturfelder werden ausgelassen.")
+        guidance = ("Pflichtwerte und Widersprüche sind markiert. Fahre mit der Maus über eine markierte Zelle, "
+                    "um die Feldnamen und gegebenenfalls die unterschiedlichen Werte zu sehen. "
+                    "Betroffene Zellen bleiben beim Export leer. Die Spalte „Hinweis“ hält den Grund fest."
+                    if template else "„Fehlt“ bedeutet, dass das Feld in dieser Datei anders heißt oder nicht existiert.")
+        notice = QLabel(f"{len(rows)} von {len(paths)} PDF-Dateien eingelesen. {guidance} "
+                        "Die Werkbank liest den gespeicherten Stand. Passwort- und Signaturfelder werden ausgelassen.")
         notice.setWordWrap(True)
         layout.addWidget(notice)
         table = QTableWidget(len(rows), len(header))
@@ -5196,15 +5389,25 @@ class Window(QMainWindow):
         table.setColumnWidth(1, 200)
         for row, values in enumerate(rows):
             for column, value in enumerate(values):
-                display = "Fehlt" if value is None else Path(value).name if column == 0 else value
+                problem = cell_issues.get((row, column))
+                if problem:
+                    display, details = problem
+                    tooltip = f"{display}\n{details}"
+                elif value is None:
+                    display = "" if template else "Fehlt"
+                    tooltip = "Kein Wert zugeordnet." if template else "Dieses Feld ist in der PDF nicht vorhanden."
+                else:
+                    display = Path(value).name if column == 0 else value
+                    tooltip = value
                 item = QTableWidgetItem(display)
-                item.setToolTip(value if value is not None else "Dieses Feld ist in der PDF nicht vorhanden.")
-                if value is None:
+                item.setToolTip(tooltip)
+                if problem or (value is None and not template):
                     item.setForeground(QColor("#854720"))
                 table.setItem(row, column, item)
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        save = buttons.addButton("Als Excel speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        save = buttons.addButton("Mit Hinweisen speichern" if template and any(row[1] for row in rows)
+                                 else "Als Excel speichern", QDialogButtonBox.ButtonRole.AcceptRole)
         save.setEnabled(bool(columns))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
@@ -7273,8 +7476,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Rücksicherungstest, markierte Fundstellen, "
-                         "Wiedervorlagen für Rechnungen und Formularfelder nach Excel.")
+                         "Neu in dieser Version: Excel-Formularvorlagen mit Feldzuordnung "
+                         "und Vorschau für Pflichtwerte und Widersprüche.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

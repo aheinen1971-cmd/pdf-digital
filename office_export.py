@@ -10,7 +10,7 @@ REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 OFFICE_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
-def read_form_values(path):
+def read_form_values(path, separate=False):
     values = {}
     with pdf.open(path) as document:
         if not document.is_pdf or document.needs_pass:
@@ -32,7 +32,25 @@ def read_form_values(path):
                 options = values.setdefault(name, {})
                 if value not in (None, ""):
                     options[str(value)] = None
+    if separate:
+        return {name: tuple(options) for name, options in values.items()}
     return {name: " | ".join(options) for name, options in values.items()}
+
+
+def map_form_values(fields, columns):
+    values, issues = [], {}
+    for index, (heading, aliases, required) in enumerate(columns):
+        sources = [(alias, value) for alias in aliases for value in fields.get(alias, ()) if value.strip()]
+        distinct = {value.strip() for _, value in sources}
+        value = sources[0][1] if len(distinct) == 1 else None
+        if len(distinct) > 1:
+            details = "\n".join(f"{alias}: {text}" for alias, text in sources)
+            issues[index] = (f"Widerspruch: {heading}", details)
+        elif required and not sources:
+            state = "leer" if any(alias in fields for alias in aliases) else "fehlt"
+            issues[index] = (f"Pflichtwert {state}: {heading}", "\n".join(aliases))
+        values.append(value)
+    return values, issues
 
 
 def safe_text(value):

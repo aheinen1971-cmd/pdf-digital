@@ -13,7 +13,8 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 from plan_measure import MAX_PLAN_BYTES
-from preferences import GROUPS, export_package, import_groups, validate_groups
+from preferences import (FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
+                         validate_form_templates, validate_groups)
 from recovery import atomic_write
 from update_worker import digest_file, version_tuple
 
@@ -65,6 +66,7 @@ def write_backup(target, settings, root, password=None):
         entries["plans/" + relative] = data
         plan_times[relative] = path.stat().st_mtime_ns
     entries["meta.json"] = json.dumps({"plan_times": plan_times, "reminders": reminders,
+                                      "form_templates": form_templates(settings),
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
     buffer = io.BytesIO() if password is not None else None
@@ -153,11 +155,17 @@ def read_backup_zip(source):
         archive_root = metadata.get("archive_root", "")
         if not isinstance(archive_root, str) or len(archive_root) > 4096:
             raise ValueError("Ungültiger Archivpfad im Backup.")
-    return {"settings": groups, "plans": plans, "archive": history, "plan_times": times, "archive_root": archive_root}
+        templates = validate_form_templates(metadata.get("form_templates", {}))
+    return {"settings": groups, "plans": plans, "archive": history, "plan_times": times,
+            "archive_root": archive_root, "form_templates": templates}
 
 
 def restore_backup(data, selection, settings, root, mapped=None):
     if "settings" in selection:
+        templates = data.get("form_templates")
+        if templates:
+            merged = validate_form_templates({**form_templates(settings), **templates})
+            settings.setValue(FORM_TEMPLATES, json.dumps(merged, ensure_ascii=False))
         import_groups(settings, data["settings"])
     if "archive" in selection:
         for key, value in data["archive"].items():
@@ -227,6 +235,12 @@ def backup_preview(data, settings, root):
     rows = [("Einstellungen", GROUPS[key], "Bereits gleich" if value == local_groups.get(key)
              else "Übernehmen – ersetzt die lokalen Einstellungen dieser Gruppe")
             for key, value in data["settings"].items()]
+    if data.get("form_templates"):
+        local_templates = form_templates(settings)
+        for name, columns in data["form_templates"].items():
+            state = ("Bereits gleich" if local_templates.get(name) == columns else
+                     "Übernehmen – ersetzt die gleichnamige Vorlage" if name in local_templates else "Übernehmen")
+            rows.append(("Einstellungen", f"Excel-Formularvorlage · {name}", state))
     for name, raw in data["plans"].items():
         target = root / name
         status = "Übernehmen"
@@ -260,6 +274,7 @@ def reminder_date(value):
 
 def backup_check_rows(data):
     rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
+    rows.extend(("Excel-Formularvorlage", name, "Lesbar") for name in data.get("form_templates", {}))
     rows.extend(("Messliste", name, "Lesbar") for name in data["plans"])
     labels = {"note": "Belegnotiz", "reviewed": "Prüfstatus", "reminder": "Wiedervorlage"}
     links = set()
