@@ -1,11 +1,11 @@
-# PDF Werkbank 1.7.0 für Windows
+# PDF Werkbank 1.8.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.7.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.8.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.7.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.8.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -87,6 +87,10 @@ vorhandene passende Modelldatei wird verwendet.
   Seitenzahlen und wiederverwendbare Textstempel ein.
 - **Export & Schutz** exportiert auslesbaren Text nach Word und erkannte
   Tabellen nach Excel. Der Export rekonstruiert das Seitenlayout nicht.
+  **Word mit Layout** ist eine separate Option. Sie übernimmt Schriftgrößen,
+  Formatierungen, Bilder, erkannte Tabellen und Seitenwechsel in ein
+  bearbeitbares DOCX. Mehrspaltige oder überlappende Inhalte können sich
+  beim Umbruch verschieben.
   Mehrere PDFs lassen sich in einem Durchgang drehen, per OCR erkennen
   oder komprimieren. Verschlüsselte PDFs werden aus Export- und
   Stapelfunktionen ausgeschlossen. Normale Kopien behalten ihren Schutz.
@@ -95,6 +99,35 @@ vorhandene passende Modelldatei wird verwendet.
   PKCS#12-Zertifikat und prüft bestehende digitale Dokumentensignaturen.
   Die Prüfung unterscheidet intakte Signatur und bestätigte Vertrauenskette.
   Sie fragt keine Online-Sperrlisten ab.
+
+## Wiederherstellung und gespeicherte Abläufe
+
+- Nach einem unerwarteten Ende bietet PDF Werkbank an, offene Tabs und
+  ungespeicherte Änderungen wiederherzustellen. Änderungen werden lokal
+  gespeichert. Verschlüsselte Kopien behalten ihren Passwortschutz. Beim
+  Wiederöffnen wird das Passwort erneut abgefragt. Die Originaldateien
+  werden dafür nicht überschrieben.
+- **Export & Schutz → Gespeicherte Abläufe** speichert kombinierte
+  Vorlagen. Die Schritte laufen in der Reihenfolge Texterkennung, Drehen,
+  Verkleinern. Zielordner wird pro Lauf gewählt. Vorhandene Ausgabedateien
+  werden nicht überschrieben.
+
+## Archiv und Barrierefreiheit
+
+- **PDF/A-Archivkopie** erstellt eine sichtbare Seitenbildkopie im Format
+  PDF/A-2b mit dem Windows-sRGB-Farbprofil. Ausfüllbare Felder, Suchtext,
+  Anhänge und Signaturen verbleiben in der ursprünglichen Datei.
+- **Lesereihenfolge & Bildbeschreibungen** erstellt eine Kopie mit
+  Dokumenttitel, Sprache, geordneten Absätzen, Überschriften und
+  Alternativtexten. Die visuelle Ebene wird als Bild übernommen.
+  Links und Formulare bleiben deshalb in der Originaldatei interaktiv.
+  Bei Scans gegebenenfalls zuerst Texterkennung ausführen.
+- **PDF/A oder PDF/UA prüfen** verwendet lokal den separat erhältlichen
+  [veraPDF-CLI-Prüfer](https://docs.verapdf.org/cli/validation/).
+  Bei der ersten Verwendung können die Dateien `java.exe` und
+  `cli-*.jar` aus der Java- bzw. veraPDF-Installation ausgewählt werden.
+  Lesereihenfolge, Beschreibungen und Eignung für assistive Technik müssen
+  zusätzlich von Hand geprüft werden.
 
 ## Rotes PDF-Symbol
 

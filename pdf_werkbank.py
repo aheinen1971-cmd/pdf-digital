@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unicodedata
+import uuid
 from collections import Counter
 from difflib import SequenceMatcher
 from itertools import zip_longest
@@ -30,13 +31,15 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import prepared_update
 
-from office_export import export_word, export_excel
+from office_export import export_word, export_word_layout, export_excel
+from pdf_standards import accessibility_blocks, export_accessible, export_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import crop_page, edit_image, image_at, scan_command, scanned_document
 from assistants import (add_suggested_field, append_scan, clean_hidden, form_candidates, redaction_candidates,
                         scan_quality, similar_scan, text_changes)
+from recovery import Recovery, atomic_write
 
-VERSION = (1, 7, 0)
+VERSION = (1, 8, 0)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -575,9 +578,9 @@ def redact_area(page, box):
 
 
 class Session:
-    def __init__(self, path, password=None):
+    def __init__(self, path, password=None, snapshot=None):
         self.path = Path(path)
-        self.doc = pdf.open(path)
+        self.doc = pdf.open(stream=snapshot, filetype="pdf") if snapshot is not None else pdf.open(path)
         self.password = password
         if not self.doc.is_pdf or not len(self.doc):
             self.doc.close()
@@ -595,6 +598,9 @@ class Session:
         self.page = 0
         self.changed = False
         self.history = []
+        self.recovery_id = uuid.uuid4().hex
+        self.recovery_path = self.path.resolve()
+        self.recovery_dirty = True
 
     def checkpoint(self):
         self.history.append((self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP), self.page, self.changed))
@@ -607,6 +613,7 @@ class Session:
             self.doc = pdf.open(stream=content, filetype="pdf")
             if self.doc.needs_pass:
                 self.doc.authenticate(self.password)
+            self.recovery_dirty = True
 
 
 class Canvas(QLabel):
@@ -640,6 +647,7 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.sessions = []
+        self.recovery = None
         self.zoom = 1.0
         self.scale = 1.0
         self.mode = "Lesen"
@@ -686,7 +694,12 @@ class Window(QMainWindow):
             ("Dokument", [("Lesezeichen", self.bookmarks), ("Link einfügen", lambda: self.set_mode("Link")),
                            ("Seitenzahlen", self.add_page_numbers), ("Stempel", lambda: self.set_mode("Stempel"))]),
             ("Export & Schutz", [("Word", self.export_office), ("Excel", lambda: self.export_office(True)),
-                                 ("Passwortschutz", self.protect_copy), ("Stapelverarbeitung", self.batch_process)]),
+                                 ("Word mit Layout", lambda: self.export_office(layout=True)),
+                                 ("Passwortschutz", self.protect_copy), ("Stapelverarbeitung", self.batch_process),
+                                 ("Gespeicherte Abläufe", self.batch_profiles)]),
+            ("Archiv & Zugang", [("PDF/A-Archivkopie", self.archive_copy),
+                                ("PDF/A oder PDF/UA prüfen", self.standard_check),
+                                ("Lesereihenfolge & Bildbeschreibungen", self.accessible_copy)]),
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
@@ -776,21 +789,85 @@ class Window(QMainWindow):
         for path in paths:
             self.open_path(path)
 
-    def open_path(self, path):
+    def open_path(self, path, snapshot=None, page=0):
         try:
-            with pdf.open(path) as probe:
+            with (pdf.open(stream=snapshot, filetype="pdf") if snapshot is not None else pdf.open(path)) as probe:
                 password = None
                 if probe.needs_pass:
                     password, ok = QInputDialog.getText(self, "PDF öffnen", "Passwort", QLineEdit.EchoMode.Password)
                     if not ok:
                         return
-            session = Session(path, password)
+            session = Session(path, password, snapshot)
         except Exception as exc:
             self.error(exc)
             return
+        session.page = max(0, min(page, len(session.doc) - 1))
+        session.changed = snapshot is not None
         self.sessions.append(session)
-        tab = self.tabs.addTab(session.path.name)
+        tab = self.tabs.addTab(session.path.name + (" *" if session.changed else ""))
         self.tabs.setCurrentIndex(tab)
+        self.write_recovery()
+        return session
+
+    def start_recovery(self, root):
+        try:
+            self.recovery = Recovery(root)
+            timer = QTimer(self, interval=5000)
+            timer.timeout.connect(self.write_recovery)
+            timer.start()
+            for folder, lock in self.recovery.pending():
+                try:
+                    records = self.recovery.records(folder)
+                    if not records:
+                        self.recovery.clear(folder, lock)
+                        continue
+                    choice = QMessageBox.question(self, "Sitzung wiederherstellen",
+                                                  f"{len(records)} offene PDF-Tabs aus einer früheren Sitzung wiederherstellen?",
+                                                  QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
+                                                  QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Yes)
+                    if choice == QMessageBox.StandardButton.Cancel:
+                        continue
+                    if choice == QMessageBox.StandardButton.No:
+                        self.recovery.clear(folder, lock)
+                        continue
+                    active, failures = None, []
+                    for entry in records:
+                        try:
+                            filename = entry["snapshot"]
+                            if filename and not re.fullmatch(r"[a-f0-9]{32}\.pdf", filename):
+                                raise ValueError("Ungültiger Wiederherstellungspfad.")
+                            snapshot = (folder / filename).read_bytes() if filename else None
+                            restored = self.open_path(entry["path"], snapshot, int(entry["page"]))
+                            if restored is None:
+                                failures.append(entry)
+                            elif entry.get("active"):
+                                active = restored
+                        except (OSError, ValueError, KeyError, TypeError) as exc:
+                            self.error(exc)
+                            failures.append(entry)
+                    if active is not None:
+                        self.tabs.setCurrentIndex(self.sessions.index(active))
+                    if self.write_recovery():
+                        if failures:
+                            atomic_write(folder / "tabs.json", json.dumps(failures, ensure_ascii=False).encode("utf-8"))
+                        else:
+                            self.recovery.clear(folder, lock)
+                except (OSError, ValueError) as exc:
+                    self.error(exc)
+                finally:
+                    lock.unlock()
+        except (OSError, ValueError) as exc:
+            self.error(exc)
+
+    def write_recovery(self):
+        if not self.recovery:
+            return False
+        try:
+            self.recovery.save(self.sessions, self.current)
+            return True
+        except Exception as exc:
+            self.statusBar().showMessage(f"Wiederherstellung konnte nicht gesichert werden: {exc}", 8000)
+            return False
 
     def switch_doc(self, index):
         self.search_text = ""
@@ -1518,7 +1595,7 @@ class Window(QMainWindow):
             raise
         return True
 
-    def export_office(self, excel=False):
+    def export_office(self, excel=False, layout=False):
         session = self.current
         if not session:
             return
@@ -1535,13 +1612,182 @@ class Window(QMainWindow):
         fd, temp = tempfile.mkstemp(suffix=extension, dir=path.parent)
         os.close(fd)
         try:
-            (export_excel if excel else export_word)(session.doc, temp)
+            writer = export_excel if excel else export_word_layout if layout else export_word
+            writer(session.doc, temp)
             os.replace(temp, path)
             self.statusBar().showMessage(f"Export gespeichert: {path.name}", 6500)
         except Exception as exc:
             self.error(exc)
         finally:
             Path(temp).unlink(missing_ok=True)
+
+    def standards_source(self):
+        session = self.current
+        if session and session.doc.needs_pass:
+            self.error("Für diese Kopie wird eine PDF ohne Passwortschutz benötigt.")
+            return None
+        return session
+
+    def archive_copy(self):
+        session = self.standards_source()
+        if not session:
+            return
+        if QMessageBox.question(self, "PDF/A-Archivkopie",
+                                "Die Archivkopie speichert das sichtbare Seitenbild. Suchtext, "
+                                "ausfüllbare Felder, Anhänge und Signaturen werden nicht übernommen. Fortfahren?"
+                                ) != QMessageBox.StandardButton.Yes:
+            return
+        target = self.output_path(" - Archiv", "PDF/A-Archivkopie speichern")
+        if not target:
+            return
+        try:
+            with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                candidate = Path(folder) / "Archiv.pdf"
+                profile = Path(os.environ["WINDIR"]) / "System32/spool/drivers/color/sRGB Color Space Profile.icm"
+                export_archive(session.doc, candidate, profile)
+                os.replace(candidate, target)
+            self.statusBar().showMessage(f"Archivkopie gespeichert: {target.name}. Konformität separat prüfen.", 9000)
+        except Exception as exc:
+            self.error(exc)
+
+    def standard_check(self):
+        label, ok = QInputDialog.getItem(self, "PDF-Norm prüfen", "Prüfprofil",
+                                          ["PDF/A-2b (Archiv)", "PDF/UA-1 (Barrierefreiheit)"], editable=False)
+        if not ok:
+            return
+        path, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF prüfen", "", "PDF-Dateien (*.pdf)")
+        if not path:
+            return
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
+        jars = sorted((base / "veraPDF" / "bin").glob("cli-*.jar"))
+        java = settings.value("standards/java", "", str) or str(base / "Java" / "bin" / "java.exe")
+        jar = settings.value("standards/jar", "", str) or (str(jars[0]) if jars else "")
+        if not Path(java).is_file():
+            java, _ = QFileDialog.getOpenFileName(self, "Java für veraPDF auswählen", "", "Java (java.exe)")
+        if not java:
+            return
+        if not jar or not Path(jar).is_file():
+            jar, _ = QFileDialog.getOpenFileName(self, "veraPDF-CLI aus dem Ordner bin auswählen", "",
+                                                 "veraPDF CLI (*.jar)")
+        if not jar:
+            return
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            passed, details = validate_standard(java, jar, path, "2b" if label.startswith("PDF/A") else "ua1")
+        except Exception as exc:
+            self.error(exc)
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+        settings.setValue("standards/java", java)
+        settings.setValue("standards/jar", jar)
+        result = QMessageBox(self)
+        result.setWindowTitle(label)
+        result.setText("veraPDF-Prüfung bestanden." if passed else "veraPDF hat Abweichungen gefunden.")
+        if label.startswith("PDF/UA"):
+            result.setInformativeText("Lesereihenfolge und Qualität von Bildbeschreibungen zusätzlich von Hand prüfen.")
+        if details:
+            result.setDetailedText("\n".join(details))
+        result.exec()
+
+    def accessible_copy(self):
+        session = self.standards_source()
+        if not session:
+            return
+        try:
+            pages = [accessibility_blocks(page) for page in session.doc]
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Lesereihenfolge und Bildbeschreibungen")
+            dialog.resize(820, 600)
+            layout = QVBoxLayout(dialog)
+            info = QLabel("Die Kopie behält das Seitenbild und erhält eine separate Lesestruktur. "
+                          "Formulare und Links werden als Seitenbild übernommen. Für Scans zuerst Texterkennung ausführen.")
+            info.setWordWrap(True)
+            layout.addWidget(info)
+            form = QFormLayout()
+            title = QLineEdit(session.doc.metadata.get("title") or session.path.stem)
+            language = QLineEdit("de-DE")
+            form.addRow("Dokumenttitel", title)
+            form.addRow("Sprache", language)
+            layout.addLayout(form)
+            selector = QComboBox()
+            selector.addItems([f"Seite {index + 1}" for index in range(len(pages))])
+            layout.addWidget(selector)
+            listing = QListWidget()
+            layout.addWidget(listing, 1)
+            controls = QHBoxLayout()
+            layout.addLayout(controls)
+            roles = {"Absatz": "P", **{f"Überschrift {level}": f"H{level}" for level in range(1, 7)}}
+
+            def redraw(row=0):
+                listing.clear()
+                for role, _, text in pages[selector.currentIndex()]:
+                    label = {"Figure": "Bild", "Artifact": "Dekoratives Bild", "P": "Absatz"}.get(role, role)
+                    listing.addItem(label + " · " + (" ".join(text.split())[:140] or "Beschreibung fehlt"))
+                listing.setCurrentRow(row)
+
+            def move(offset):
+                row = listing.currentRow()
+                blocks = pages[selector.currentIndex()]
+                if 0 <= row < len(blocks) and 0 <= row + offset < len(blocks):
+                    blocks[row], blocks[row + offset] = blocks[row + offset], blocks[row]
+                    redraw(row + offset)
+
+            def edit():
+                row = listing.currentRow()
+                if row < 0:
+                    return
+                blocks = pages[selector.currentIndex()]
+                role, rect, text = blocks[row]
+                if role in ("Figure", "Artifact"):
+                    choice, accepted = QInputDialog.getItem(dialog, "Bild", "Funktion", ["Bild beschreiben", "Dekorativ"],
+                                                              int(role == "Artifact"), editable=False)
+                    if not accepted:
+                        return
+                    if choice == "Dekorativ":
+                        blocks[row] = ("Artifact", rect, "")
+                    else:
+                        value, accepted = QInputDialog.getMultiLineText(dialog, "Bildbeschreibung", "Beschreibung", text)
+                        if accepted:
+                            blocks[row] = ("Figure", rect, value.strip())
+                else:
+                    choice, accepted = QInputDialog.getItem(dialog, "Textstruktur", "Rolle", list(roles),
+                                                              list(roles.values()).index(role), editable=False)
+                    if accepted:
+                        blocks[row] = (roles[choice], rect, text)
+                redraw(row)
+
+            for label, callback in (("Nach oben", lambda: move(-1)), ("Nach unten", lambda: move(1)), ("Rolle oder Beschreibung", edit)):
+                button = QPushButton(label)
+                button.clicked.connect(callback)
+                controls.addWidget(button)
+            listing.itemDoubleClicked.connect(lambda _: edit())
+            selector.currentIndexChanged.connect(lambda _: redraw())
+            redraw()
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+            buttons.accepted.connect(dialog.accept)
+            buttons.rejected.connect(dialog.reject)
+            layout.addWidget(buttons)
+            while dialog.exec() == QDialog.DialogCode.Accepted:
+                if not title.text().strip() or not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*", language.text().strip()):
+                    self.error("Bitte Titel und gültige Sprachkennung wie de-DE angeben.")
+                    continue
+                if any(role == "Figure" and not text for blocks in pages for role, _, text in blocks):
+                    self.error("Bitte jedem relevanten Bild eine Beschreibung geben oder das Bild als dekorativ markieren.")
+                    continue
+                target = self.output_path(" - Lesefassung", "PDF mit Lesestruktur speichern")
+                if target:
+                    with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                        candidate = Path(folder) / "Lesefassung.pdf"
+                        included = [[block for block in blocks if block[0] != "Artifact"] for blocks in pages]
+                        font = Path(os.environ["WINDIR"]) / "Fonts/arial.ttf"
+                        export_accessible(session.doc, candidate, included, title.text().strip(), language.text().strip(), font)
+                        os.replace(candidate, target)
+                    self.statusBar().showMessage(f"Lesefassung gespeichert: {target.name}. PDF/UA separat prüfen.", 9000)
+                return
+        except Exception as exc:
+            self.error(exc)
 
     def sign_document(self):
         folder = str(self.current.path.parent) if self.current else ""
@@ -1631,6 +1877,86 @@ class Window(QMainWindow):
         action, ok = QInputDialog.getItem(self, "Stapelverarbeitung", "Aufgabe", actions, editable=False)
         if not ok:
             return
+        self.run_batch(paths, (("compress",), ("rotate",), ("ocr",))[actions.index(action)])
+
+    def batch_profiles(self):
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        try:
+            profiles = json.loads(settings.value("batch/profiles", "{}", str))
+            if not isinstance(profiles, dict):
+                raise ValueError()
+        except ValueError:
+            profiles = {}
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Gespeicherte Abläufe")
+        form = QFormLayout(dialog)
+        existing = QComboBox()
+        existing.addItem("Neuer Ablauf")
+        existing.addItems(sorted(profiles))
+        form.addRow("Vorlage", existing)
+        name = QLineEdit()
+        form.addRow("Name", name)
+        steps = {key: QCheckBox(label) for key, label in
+                 (("ocr", "Texterkennung (Deutsch und Englisch)"),
+                  ("rotate", "Alle Seiten nach rechts drehen"), ("compress", "Scans verkleinern"))}
+        for check in steps.values():
+            form.addRow(check)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        save = buttons.addButton("Vorlage speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        run = buttons.addButton("Dateien auswählen und starten", QDialogButtonBox.ButtonRole.AcceptRole)
+        remove = buttons.addButton("Vorlage entfernen", QDialogButtonBox.ButtonRole.ActionRole)
+        form.addRow(buttons)
+
+        def select(index):
+            profile = existing.itemText(index) if index > 0 else ""
+            name.setText(profile)
+            for key, check in steps.items():
+                check.setChecked(key in profiles.get(profile, []))
+            remove.setEnabled(index > 0)
+
+        def persist():
+            settings.setValue("batch/profiles", json.dumps(profiles, ensure_ascii=False))
+            settings.sync()
+
+        def save_profile():
+            title = name.text().strip()
+            selected = [key for key, check in steps.items() if check.isChecked()]
+            if not title or not selected or title == existing.itemText(0):
+                self.error("Bitte einen eigenen Namen und mindestens einen Schritt wählen.")
+                return
+            if title in profiles and title != existing.currentText() and QMessageBox.question(
+                    dialog, "Vorlage ersetzen?", f"Die Vorlage „{title}“ ersetzen?") != QMessageBox.StandardButton.Yes:
+                return
+            if title not in profiles:
+                existing.addItem(title)
+            profiles[title] = selected
+            persist()
+            existing.setCurrentText(title)
+
+        def remove_profile():
+            index = existing.currentIndex()
+            if index > 0:
+                del profiles[existing.currentText()]
+                existing.removeItem(index)
+                persist()
+
+        existing.currentIndexChanged.connect(select)
+        save.clicked.connect(save_profile)
+        remove.clicked.connect(remove_profile)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        existing.setCurrentIndex(1 if profiles else 0)
+        select(existing.currentIndex())
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        selected = [key for key, check in steps.items() if check.isChecked()]
+        if not selected:
+            return
+        paths, _ = QFileDialog.getOpenFileNames(self, "PDFs für den Ablauf auswählen", "", "PDF-Dateien (*.pdf)")
+        if paths:
+            self.run_batch(paths, selected)
+
+    def run_batch(self, paths, steps):
         folder = QFileDialog.getExistingDirectory(self, "Zielordner für die Kopien auswählen")
         if not folder:
             return
@@ -1653,21 +1979,28 @@ class Window(QMainWindow):
                     with pdf.open(path) as doc:
                         if not doc.is_pdf or doc.needs_pass or not len(doc):
                             raise ValueError("Keine lesbare ungeschützte PDF.")
-                        if action == actions[0]:
-                            compressed_copy(doc, target, "Kleine Datei")
-                        else:
-                            if action == actions[1]:
-                                for page in doc:
-                                    page.set_rotation((page.rotation + 90) % 360)
+                        for page in doc:
+                            QApplication.processEvents()
+                            if progress.wasCanceled():
+                                break
+                            if "ocr" in steps and not page.get_text().strip():
+                                try:
+                                    if page.rotation:
+                                        page.remove_rotation()
+                                    recognize_page(page, "deu+eng", Path(__file__).with_name("tessdata"))
+                                except (ValueError, RuntimeError) as exc:
+                                    failures.append(f"{path.name}, Seite {page.number + 1}: {exc}")
+                            if "rotate" in steps:
+                                page.set_rotation((page.rotation + 90) % 360)
+                        if progress.wasCanceled():
+                            break
+                        with tempfile.TemporaryDirectory(dir=folder) as temp:
+                            candidate = Path(temp) / "Kopie.pdf"
+                            if "compress" in steps:
+                                compressed_copy(doc, candidate, "Kleine Datei")
                             else:
-                                root = Path(__file__).parent
-                                for page in doc:
-                                    if not page.get_text().strip():
-                                        try:
-                                            recognize_page(page, "deu+eng", root / "tessdata")
-                                        except (ValueError, RuntimeError) as exc:
-                                            failures.append(f"{path.name}, Seite {page.number + 1}: {exc}")
-                            save_copy(doc, target)
+                                save_copy(doc, candidate)
+                            candidate.rename(target)
                     count += 1
                 except Exception as exc:
                     failures.append(f"{path.name}: {exc}")
@@ -2220,6 +2553,8 @@ class Window(QMainWindow):
 
     def changed(self, refresh=True):
         self.current.changed = True
+        self.current.recovery_dirty = True
+        self.write_recovery()
         self.tabs.setTabText(self.tabs.currentIndex(), self.current.path.name + " *")
         if refresh:
             self.refresh_thumbs()
@@ -2295,6 +2630,7 @@ class Window(QMainWindow):
     def undo(self):
         if self.current:
             self.current.undo()
+            self.write_recovery()
             marker = " *" if self.current.changed else ""
             self.tabs.setTabText(self.tabs.currentIndex(), self.current.path.name + marker)
             self.refresh_thumbs()
@@ -2320,6 +2656,8 @@ class Window(QMainWindow):
             return False
         self.statusBar().showMessage(f"Kopie gespeichert: {Path(target).name}", 6500)
         session.changed = False
+        session.recovery_path = Path(target).resolve()
+        self.write_recovery()
         session.history = [(data, page, True) for data, page, _ in session.history]
         self.tabs.setTabText(self.tabs.currentIndex(), session.path.name)
         return True
@@ -2341,12 +2679,19 @@ class Window(QMainWindow):
             self.sessions.pop(index).doc.close()
             self.tabs.removeTab(index)
             self.switch_doc(self.tabs.currentIndex())
+            self.write_recovery()
 
     def closeEvent(self, event):
         for index in range(len(self.sessions)):
             if not self.confirm_close(index):
                 event.ignore()
                 return
+        if self.recovery:
+            try:
+                self.recovery.clear(self.recovery.folder, self.recovery.lock)
+            except OSError as exc:
+                self.error(exc)
+            self.recovery = None
         event.accept()
 
     def print_dialog(self, samsung=False):
@@ -2632,6 +2977,7 @@ def main():
         except OSError:
             pass
     window = Window()
+    window.start_recovery(Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Wiederherstellung")
     for path in sys.argv[1:]:
         if Path(path).is_file():
             window.open_path(path)
