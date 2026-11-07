@@ -1,0 +1,8 @@
+# Paket<TAB>Typ<TAB>Dateiname<TAB>SHA-256<TAB>Original-URL
+Python 3.14.10	python	python-3.14.10-embed-amd64.zip	90905e64a840557d8c1bc4f5b74db3d7ee85e3ffb217611cac1c7813acea4159	https://www.python.org/ftp/python/3.14.10/python-3.14.10-embed-amd64.zip
+Shiboken 6.12.0	wheel	shiboken6-6.12.0-cp310-abi3-win_amd64.whl	a1906cb8116869178c64b6bab52623bbc8b4ceed7b30bfc3c9aa0f6e67f6438e	https://files.pythonhosted.org/packages/2a/b6/bee97e7a2edeab72aafabb46ee5adc939790a638d107860b4cad7a20e407/shiboken6-6.12.0-cp310-abi3-win_amd64.whl
+Qt für Python 6.12.0	wheel	pyside6_essentials-6.12.0-cp310-abi3-win_amd64.whl	c9a95102aa23c1f86516a30d5a9be37552d324eee7e567eb7508973f1218cb42	https://files.pythonhosted.org/packages/03/61/9a7e32a37b224f68506785bfb0f288d516098ec71681782d72b695a6c95d/pyside6_essentials-6.12.0-cp310-abi3-win_amd64.whl
+PyMuPDF 1.26.7	wheel	pymupdf-1.26.7-cp310-abi3-win_amd64.whl	425b1befe40d41b72eb0fe211711c7ae334db5eb60307e9dd09066ed060cceba	https://files.pythonhosted.org/packages/dd/c3/d0047678146c294469c33bae167c8ace337deafb736b0bf97b9bc481aa65/pymupdf-1.26.7-cp310-abi3-win_amd64.whl
+OCR Deutsch	data	deu.traineddata	19d219bbb6672c869d20a9636c6816a81eb9a71796cb93ebe0cb1530e2cdb22d	https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/deu.traineddata
+OCR Englisch	data	eng.traineddata	7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2	https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata
+KI-Motor llama.cpp	engine	llama-b12189-bin-win-cpu-x64.zip	f912ea5e3e397c63405c81e732131ab0fa6e72411c80546bb5ad643f7dd82aac	https://github.com/ggml-org/llama.cpp/releases/download/b12189/llama-b12189-bin-win-cpu-x64.zip

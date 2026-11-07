@@ -1,0 +1,72 @@
+# PDF Werkbank 1.3.1 für Windows
+
+PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
+speichert und druckt ohne Demo-Wasserzeichen.
+
+## Starten
+
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.3.1.exe` starten.
+2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
+   Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
+   Originalquellen und prüft jede Datei mit SHA-256.
+3. PDFs in der App öffnen oder als Dateipfad an die EXE übergeben.
+
+Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
+und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.3.1`.
+Eine eigene Python- oder Qt-Installation ist nicht nötig.
+
+Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
+ein Modell von rund 1,1 GB. Danach laufen die Textvorschläge lokal.
+Das Modell liegt unter `%LOCALAPPDATA%\PDF Werkbank\KI`. Eine bereits
+vorhandene passende Modelldatei wird verwendet.
+
+## Funktionen
+
+- PDFs in Tabs öffnen, durchsuchen, markieren und kommentieren.
+- Seiten drehen, verschieben, anhängen oder als neue PDF extrahieren.
+- Textfelder und Kontrollkästchen ausfüllen, Textabschnitte korrigieren
+  und Seitenbereiche dauerhaft schwärzen.
+- Scan-PDFs komprimieren, Scanbilder aufbereiten und Dokumente auf Deutsch
+  und Englisch per OCR durchsuchbar machen.
+- PDF-Fassungen nebeneinander vergleichen.
+- Druckvorschau und Duplexdruck nach den Fähigkeiten des Druckertreibers.
+- Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
+  zum jeweiligen Dokument.
+
+## Updates
+
+PDF Werkbank prüft beim Start im Hintergrund die öffentliche GitHub-Release.
+Mit **Datei → Online-Update suchen** kannst du die Prüfung sofort auslösen.
+Bei einer neueren stabilen Version mit passendem Windows-Paket fragt die
+App, ob sie die Release-Seite öffnen soll. Download und Start der neuen
+Version erfolgen auf deine Entscheidung.
+
+## Aus dem Quellcode bauen
+
+Öffne PowerShell in diesem Ordner und führe `./Bauen.ps1` aus.
+Der Windows-.NET-Framework-Compiler baut die EXE in `dist`.
+Der Build benötigt keine Drittanbieter-Binärdateien. Die EXE enthält den
+C#-Starter als Programmcode und die Python-Dateien als Quelltext.
+
+## Qt austauschen
+
+Beende PDF Werkbank. Qt und seine Python-Bindungen liegen in
+`python\Lib\site-packages\PySide6` und `python\Lib\site-packages\shiboken6`
+unter dem oben genannten Laufzeitordner. Sichere die vorhandenen Ordner.
+Ersetze sie durch kompatible x64-Builds und starte PDF Werkbank erneut.
+Ein kompatibles Qt-DLL- oder Plugin-Update kann auch innerhalb von
+`PySide6` vorgenommen werden. Der Starter prüft die Originalpakete beim
+Download und verwendet beim nächsten Start die Dateien aus diesen Ordnern.
+
+Für eine separate Laufzeit kannst du vor dem Start die Umgebungsvariable
+`PDF_WERKBANK_RUNTIME_ROOT` auf einen absoluten lokalen Pfad setzen.
+
+## Lizenz
+
+Der Quellcode der Anwendung und des Starters steht unter AGPL-3.0-only.
+Die Lizenzen und Quellcode-Verweise der Abhängigkeiten stehen in
+`THIRD_PARTY.md`. Die Downloads bleiben bei ihren Originalanbietern.
+
+
+
