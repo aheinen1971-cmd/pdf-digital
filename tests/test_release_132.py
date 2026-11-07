@@ -68,20 +68,27 @@ with TemporaryDirectory() as folder:
                 table.item(0, 2).setCheckState(Qt.CheckState.Checked)
                 save.click()
         else:
-            assert title == "Formular-Export prüfen – Kundenliste"
-            assert table.horizontalHeaderItem(2).text() == "Kunden-ID"
-            snapshots.append([(table.item(row, 2).text(), table.item(row, 2).toolTip()) for row in range(5)])
-            button(dialog, "Mit Hinweisen speichern").click()
+            raise AssertionError(title)
         return dialog.result()
+
+    def save_preview():
+        dialog = window.form_preview
+        table = dialog.findChild(QTableWidget)
+        assert dialog.windowTitle() == "Formular-Export prüfen – Kundenliste"
+        assert table.horizontalHeaderItem(2).text() == "Kunden-ID"
+        snapshots.append([(table.item(row, 2).text(), table.item(row, 2).toolTip()) for row in range(5)])
+        button(dialog, "Mit Hinweisen speichern").click()
 
     with patch.object(QDialog, "exec", interact), \
             patch("pdf_werkbank.QFileDialog.getOpenFileNames", return_value=(list(map(str, files)), "")), \
             patch("pdf_werkbank.QFileDialog.getSaveFileName", return_value=(str(target), "")), \
             patch.object(window, "error", side_effect=AssertionError):
         window.export_form_batch(use_template=True)
+        save_preview()
         window.favorite_settings = QSettings(str(config), QSettings.Format.IniFormat)
         reuse = True
         window.export_form_batch(use_template=True)
+        save_preview()
 
     assert snapshots[0] == snapshots[1]
     preview = snapshots[0]

@@ -38,7 +38,7 @@ from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
 
 from office_export import (export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet,
-                           map_form_values, read_form_values)
+                           form_fields, map_form_values, read_form_values)
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
 from invoice_validation import KOSIT_FOLDER, RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
@@ -66,7 +66,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 32, 0)
+VERSION = (1, 33, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -819,6 +819,8 @@ class Window(QMainWindow):
         self.scale = 1.0
         self.mode = "Lesen"
         self.search_text = ""
+        self.form_preview = None
+        self.form_jump = None
         self.thumb_icons = OrderedDict()
         self.page_cache = OrderedDict()
         self.setWindowTitle("PDF Werkbank " + ".".join(map(str, VERSION)))
@@ -1449,13 +1451,20 @@ class Window(QMainWindow):
         try:
             self.scale = min(self.zoom, 4096 / max(page.rect.width, page.rect.height))
             image = self.displayed_page(session, page)
-            if self.search_text or self.grid_mm:
+            fields = self.form_highlights(session, page)
+            if self.search_text or self.grid_mm or fields:
                 image = QPixmap(image)
                 painter = QPainter(image)
                 for result in search_rectangles(page, self.search_text) if self.search_text else ():
                     rect = result * page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
                     painter.fillRect(QRect(int(rect.x0), int(rect.y0), int(rect.width), int(rect.height)),
                                      QColor(255, 206, 32, 110))
+                for box in fields:
+                    rect = box * page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
+                    area = QRectF(rect.x0, rect.y0, rect.width, rect.height)
+                    painter.fillRect(area, QColor(255, 153, 32, 80))
+                    painter.setPen(QColor("#a44800"))
+                    painter.drawRect(area)
                 if self.grid_mm:
                     spacing = self.grid_mm * POINTS_PER_MM * self.scale
                     if spacing >= 3:
@@ -5324,31 +5333,89 @@ class Window(QMainWindow):
         dialog.exec()
         return result
 
-    def export_form_batch(self, use_template=False):
-        names, _ = QFileDialog.getOpenFileNames(self, "Ausgefüllte PDF-Formulare auswählen", "", "PDF (*.pdf)")
-        if not names:
+    def form_highlights(self, session, page):
+        if self.form_jump is None or self.form_jump[0] is not session:
+            return []
+        _, aliases, filled = self.form_jump
+        return [box for name, value, box in form_fields(page) if name in aliases and (not filled or value.strip())]
+
+    def jump_to_form_field(self, path, aliases, filled, preview):
+        session = next((item for item in self.sessions if item.path.resolve() == path), None)
+        if session is None:
+            session = self.open_path(str(path))
+        if session is None:
             return
-        paths = list(dict.fromkeys(Path(name).resolve() for name in names))
+        self.form_jump = session, frozenset(aliases), filled
+        if not any(self.form_highlights(session, page) for page in session.doc):
+            self.form_jump = None
+            self.render()
+            QMessageBox.information(preview, "Kein passendes Formularfeld",
+                                    "Gesuchte PDF-Feldnamen:\n" + "\n".join(aliases))
+            return
+        preview.hide()
+        self.tabs.setCurrentIndex(self.sessions.index(session))
+        self.raise_()
+        self.activateWindow()
+        self.set_mode("Formular")
+        self.next_form_field(start=0)
+
+    def next_form_field(self, start=None):
+        if self.form_jump is None or self.form_jump[0] is not self.current:
+            return
+        session = self.current
+        if start is None:
+            start = session.page + 1
+        for offset in range(len(session.doc)):
+            index = (start + offset) % len(session.doc)
+            page = session.doc[index]
+            boxes = self.form_highlights(session, page)
+            if boxes:
+                self.thumbs.setCurrentRow(index)
+                self.go_page(index)
+                box = boxes[0] * page.rotation_matrix
+                self.scroll.ensureVisible(round(box.x0 * self.scale), round(box.y0 * self.scale), 25, 65)
+                return
+
+    def export_form_batch(self, use_template=False, paths=None, template=None):
+        if use_template and self.form_preview is not None:
+            self.form_preview.show()
+            self.form_preview.raise_()
+            self.form_preview.activateWindow()
+            return
+        if paths is None:
+            names, _ = QFileDialog.getOpenFileNames(self, "Ausgefüllte PDF-Formulare auswählen", "", "PDF (*.pdf)")
+            if not names:
+                return
+            paths = list(dict.fromkeys(Path(name).resolve() for name in names))
         if len(paths) > 1000:
             self.error("Bitte höchstens 1.000 PDFs auf einmal auswählen.")
             return
+        signatures = {}
 
         def inspect(path):
+            stamp = None
             try:
+                if use_template:
+                    stamp = file_signature(path)
                 fields = read_form_values(path, separate=use_template)
+                if use_template and file_signature(path) != stamp:
+                    return {}, "Die Datei wurde beim Einlesen geändert."
                 return fields, "" if fields else "Keine exportierbaren Formularfelder"
             except (OSError, RuntimeError, ValueError) as exc:
                 return {}, str(exc)
+            finally:
+                if use_template:
+                    signatures[path] = stamp
 
         outcomes = self.inspect_pdfs(paths, "Formularfelder werden gelesen …", inspect)
         if len(outcomes) != len(paths):
             return
         columns = sorted({name for _, (fields, _) in outcomes for name in fields}, key=lambda name: (name.casefold(), name))
-        template = None
         cell_issues = {}
         if use_template:
             try:
-                template = self.form_template_dialog(columns)
+                if template is None:
+                    template = self.form_template_dialog(columns)
             except (OSError, ValueError) as exc:
                 self.error(exc)
                 return
@@ -5376,6 +5443,7 @@ class Window(QMainWindow):
         layout = QVBoxLayout(dialog)
         guidance = ("Pflichtwerte und Widersprüche sind markiert. Fahre mit der Maus über eine markierte Zelle, "
                     "um die Feldnamen und gegebenenfalls die unterschiedlichen Werte zu sehen. "
+                    "Ein Doppelklick springt zum Formularfeld. Nach dem Speichern der PDF kannst du die Vorschau neu einlesen. "
                     "Betroffene Zellen bleiben beim Export leer. Die Spalte „Hinweis“ hält den Grund fest."
                     if template else "„Fehlt“ bedeutet, dass das Feld in dieser Datei anders heißt oder nicht existiert.")
         notice = QLabel(f"{len(rows)} von {len(paths)} PDF-Dateien eingelesen. {guidance} "
@@ -5409,14 +5477,70 @@ class Window(QMainWindow):
         save = buttons.addButton("Mit Hinweisen speichern" if template and any(row[1] for row in rows)
                                  else "Als Excel speichern", QDialogButtonBox.ButtonRole.AcceptRole)
         save.setEnabled(bool(columns))
-        buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+
+        def save_export():
             name, _ = QFileDialog.getSaveFileName(self, "Formulardaten speichern", "Formulardaten.xlsx", "Excel (*.xlsx)")
             if name:
                 self.save_workbook(name, lambda path: export_linked_sheet(
                     rows, path, "Formulardaten", header, [45, 35, *([24] * len(columns))]))
+
+        if not template:
+            buttons.accepted.connect(dialog.accept)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                save_export()
+            return
+
+        def open_cell(row, column):
+            if column < 2 or column >= len(header):
+                return
+            _, aliases, _ = mappings[column - 2]
+            problem = cell_issues.get((row, column))
+            filled = problem is not None and problem[0].startswith("Widerspruch:")
+            self.jump_to_form_field(paths[row], aliases, filled, dialog)
+
+        def finish(result):
+            self.form_preview = self.form_jump = None
+            for button in (back, next_page):
+                self.statusBar().removeWidget(button)
+                button.deleteLater()
+            self.render()
+            dialog.deleteLater()
+            if result == QDialog.DialogCode.Accepted:
+                save_export()
+
+        def reload_preview():
+            dialog.reject()
+            self.export_form_batch(use_template=True, paths=paths, template=template)
+
+        def accept_current():
+            for path, previous in signatures.items():
+                try:
+                    current = file_signature(path)
+                except OSError:
+                    current = None
+                if current != previous:
+                    QMessageBox.information(dialog, "Vorschau aktualisieren",
+                                            f"„{path.name}“ hat sich geändert. Bitte zuerst die PDFs neu einlesen.")
+                    return
+            dialog.accept()
+
+        table.cellDoubleClicked.connect(open_cell)
+        buttons.accepted.connect(accept_current)
+        reload_button = buttons.addButton("PDFs neu einlesen", QDialogButtonBox.ButtonRole.ActionRole)
+        reload_button.clicked.connect(reload_preview)
+        back = QPushButton("Zur Formularvorschau")
+        back.clicked.connect(lambda: self.export_form_batch(use_template=True))
+        next_page = QPushButton("Nächste Feldseite")
+        next_page.clicked.connect(lambda: self.next_form_field())
+        self.statusBar().addPermanentWidget(back)
+        self.statusBar().addPermanentWidget(next_page)
+        next_page.hide()
+        table.cellDoubleClicked.connect(lambda *_: next_page.setVisible(self.form_jump is not None))
+        dialog.finished.connect(finish)
+        self.form_preview = dialog
+        dialog.show()
 
     def flatten_form_copy(self):
         session = self.standards_source()
@@ -7198,6 +7322,8 @@ class Window(QMainWindow):
         watch = getattr(self, "_invoice_folder_window", None)
         if watch is not None:
             watch.done(QDialog.DialogCode.Rejected)
+        if self.form_preview is not None:
+            self.form_preview.reject()
         event.accept()
 
     def booklet_dialog(self):
@@ -7476,8 +7602,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Excel-Formularvorlagen mit Feldzuordnung "
-                         "und Vorschau für Pflichtwerte und Widersprüche.")
+                         "Neu in dieser Version: Aus der Excel-Formularvorschau direkt "
+                         "zu markierten Feldern im PDF springen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

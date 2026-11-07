@@ -10,28 +10,30 @@ REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 OFFICE_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
+def form_fields(page):
+    for field in page.widgets():
+        if not field.field_name or field.field_type in (pdf.PDF_WIDGET_TYPE_BUTTON, pdf.PDF_WIDGET_TYPE_SIGNATURE):
+            continue
+        if field.field_type == pdf.PDF_WIDGET_TYPE_TEXT and field.field_flags & pdf.PDF_TX_FIELD_IS_PASSWORD:
+            continue
+        value = field.field_value
+        if isinstance(value, (list, tuple)):
+            value = " | ".join(map(str, value))
+        if field.field_type in (pdf.PDF_WIDGET_TYPE_CHECKBOX, pdf.PDF_WIDGET_TYPE_RADIOBUTTON) and value == "Off":
+            value = ""
+        yield field.field_name, "" if value is None else str(value), field.rect
+
+
 def read_form_values(path, separate=False):
     values = {}
     with pdf.open(path) as document:
         if not document.is_pdf or document.needs_pass:
             raise ValueError("Keine lesbare PDF oder Passwort erforderlich.")
         for page in document:
-            for field in page.widgets():
-                if field.field_type in (pdf.PDF_WIDGET_TYPE_BUTTON, pdf.PDF_WIDGET_TYPE_SIGNATURE):
-                    continue
-                if field.field_type == pdf.PDF_WIDGET_TYPE_TEXT and field.field_flags & pdf.PDF_TX_FIELD_IS_PASSWORD:
-                    continue
-                name = field.field_name
-                if not name:
-                    continue
-                value = field.field_value
-                if isinstance(value, (list, tuple)):
-                    value = " | ".join(map(str, value))
-                if field.field_type in (pdf.PDF_WIDGET_TYPE_CHECKBOX, pdf.PDF_WIDGET_TYPE_RADIOBUTTON) and value == "Off":
-                    value = ""
+            for name, value, _ in form_fields(page):
                 options = values.setdefault(name, {})
-                if value not in (None, ""):
-                    options[str(value)] = None
+                if value:
+                    options[value] = None
     if separate:
         return {name: tuple(options) for name, options in values.items()}
     return {name: " | ".join(options) for name, options in values.items()}
