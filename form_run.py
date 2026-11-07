@@ -46,6 +46,12 @@ class FormRun:
             if not isinstance(value, str) or not Path(value).is_absolute() or Path(value).suffix.lower() != suffix:
                 raise ValueError("Ungültiger Eingabepfad im Formularlauf.")
         validate_form_templates({"Serienlauf": data.get("columns")})
+        overview = data.get("overview")
+        if overview is not None and (
+                not isinstance(overview, list) or len(overview) != 4
+                or any(type(value) is not int for value in overview[:3]) or not 1 <= overview[0] <= 500
+                or not isinstance(overview[3], str)):
+            raise ValueError("Ungültige Übersicht im Formularlauf.")
         for key, record in data["records"].items():
             if (not re.fullmatch(r"[1-9][0-9]{0,7}", key) or not isinstance(record, dict)
                     or not valid_digest(record.get("row")) or not valid_digest(record.get("pdf"))
@@ -57,6 +63,12 @@ class FormRun:
 
     def write(self):
         atomic_write(self.path, json.dumps(self.data, ensure_ascii=False).encode("utf-8"))
+
+    def remember_overview(self, total, workbook_stamp):
+        overview = [total, *workbook_stamp]
+        if self.data.get("overview") != overview:
+            self.data["overview"] = overview
+            self.write()
 
     @staticmethod
     def row_hash(name, values):

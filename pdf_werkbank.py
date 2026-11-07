@@ -68,7 +68,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 36, 0)
+VERSION = (1, 37, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -823,6 +823,7 @@ class Window(QMainWindow):
         self.search_text = ""
         self.form_preview = None
         self.form_jump = None
+        self.open_work_dialog = None
         self.thumb_icons = OrderedDict()
         self.page_cache = OrderedDict()
         self.setWindowTitle("PDF Werkbank " + ".".join(map(str, VERSION)))
@@ -850,7 +851,7 @@ class Window(QMainWindow):
                        ("Broschürendruck", self.booklet_dialog),
                        ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
                        ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Info", self.update_info), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
-            ("Start", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
+            ("Start", [("Offene Arbeiten", self.show_open_work), ("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Wiederholen", self.redo), ("Änderungsverlauf", self.edit_history),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
@@ -962,6 +963,9 @@ class Window(QMainWindow):
         self.invoice_badge.clicked.connect(lambda: self.invoice_folder())
         self.statusBar().addPermanentWidget(self.invoice_badge)
         self.invoice_badge.hide()
+        work_badge = QPushButton("Offene Arbeiten")
+        work_badge.clicked.connect(lambda: self.show_open_work())
+        self.statusBar().addPermanentWidget(work_badge)
         for label, callback in [("‹", lambda: self.turn(-1)), ("›", lambda: self.turn(1)),
                                 ("−", lambda: self.change_zoom(-0.2)), ("+", lambda: self.change_zoom(0.2))]:
             button = QPushButton(label)
@@ -2986,7 +2990,16 @@ class Window(QMainWindow):
         save_copy(doc, target)
         return target
 
-    def scan_inbox(self):
+    def scan_drafts(self):
+        drafts = []
+        for path in pdf_files(self.inbox_folder(), False):
+            try:
+                drafts.append((path.stat().st_mtime_ns, path))
+            except OSError:
+                continue
+        return [path for _, path in sorted(drafts, reverse=True)]
+
+    def scan_inbox(self, selected_path=None):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         folder = self.inbox_folder()
         dialog = QDialog(self)
@@ -3023,7 +3036,7 @@ class Window(QMainWindow):
         drafts = []
 
         def refresh():
-            drafts[:] = sorted(folder.glob("*.pdf"), key=lambda path: path.stat().st_mtime, reverse=True)
+            drafts[:] = self.scan_drafts()
             rows.clear()
             for index, path in enumerate(drafts):
                 rows.addItem(f"{path.name[:10]} · Scan {len(drafts) - index}")
@@ -3121,6 +3134,11 @@ class Window(QMainWindow):
         split.clicked.connect(split_selected)
         discard.clicked.connect(discard_draft)
         refresh()
+        if selected_path is not None:
+            if selected_path not in drafts:
+                self.statusBar().showMessage("Dieser Scan liegt nicht mehr im Posteingang.", 8000)
+                return
+            rows.setCurrentRow(drafts.index(selected_path))
         dialog.exec()
 
     def review_archive_batch(self, drafts, initial_folder):
@@ -4463,13 +4481,15 @@ class Window(QMainWindow):
         dialog.exec()
 
 
-    def invoice_folder(self, show=True):
+    def invoice_folder(self, show=True, selected_path=None):
         previous = getattr(self, "_invoice_folder_window", None)
         if previous is not None:
             if show:
                 previous.show()
                 previous.raise_()
                 previous.activateWindow()
+                if selected_path is not None:
+                    previous.focus_invoice(selected_path)
             return
         settings = self.favorite_settings
         class InvoiceFolderDialog(QDialog):
@@ -4589,6 +4609,27 @@ class Window(QMainWindow):
             except ValueError:
                 pass
             return None, ""
+
+        def due_entries():
+            today = date.today()
+            due = []
+            for path, record in records.items():
+                day, memo = get_reminder(record.source.digest)
+                if day is not None and day <= today:
+                    due.append((day, path, memo))
+            return sorted(due)
+
+        def focus_invoice(path):
+            filter.setCurrentText("Wiedervorlage fällig")
+            for row in range(table.rowCount()):
+                if table.item(row, 0).data(Qt.ItemDataRole.UserRole) == path:
+                    table.setCurrentCell(row, 0)
+                    table.selectRow(row)
+                    return
+            status.setText("Der Beleg ist nicht mehr in den fälligen Wiedervorlagen.")
+
+        dialog.due_entries = due_entries
+        dialog.focus_invoice = focus_invoice
 
         def refresh():
             update_badge()
@@ -4906,6 +4947,8 @@ class Window(QMainWindow):
         if show:
             dialog.show()
             update_badge()
+            if selected_path is not None:
+                focus_invoice(selected_path)
 
 
     def invoice_review(self, names=None):
@@ -5593,7 +5636,10 @@ class Window(QMainWindow):
                                                sorted(templates, key=str.casefold), editable=False)
             if not ok:
                 return
+            stamp = file_signature(workbook)
             rows = read_form_sheet(workbook, sheet)
+            if file_signature(workbook) != stamp:
+                raise ValueError("Die Excel-Datei wurde beim Einlesen geändert. Bitte erneut versuchen.")
             folder = QFileDialog.getExistingDirectory(self, "Zielordner für die PDF-Kopien", str(source.parent))
             if not folder:
                 return
@@ -5607,7 +5653,7 @@ class Window(QMainWindow):
                 plan = form_row_plan(document, templates[mapping], rows, target, source)
             run = FormRun.begin(target, source, hashlib.sha256(original).hexdigest(), workbook, sheet, templates[mapping])
             self.favorite_settings.setValue("form-export/run-folder", str(target))
-            self.run_form_fill(run.path, original, plan)
+            self.run_form_fill(run.path, original, plan, stamp)
         except Exception as exc:
             self.error(exc)
 
@@ -5617,6 +5663,134 @@ class Window(QMainWindow):
         if len(original) > 32 * 1024 * 1024:
             raise ValueError("Die PDF-Vorlage darf bis zu 32 MiB groß sein.")
         return original
+
+    def open_form_runs(self):
+        settings = self.favorite_settings
+        paths = [Path(name) for name in settings.value("form-export/runs", [], list)]
+        latest = settings.value("form-export/run-folder", "", str)
+        if latest:
+            paths.extend(Path(latest).glob("*.werkbanklauf"))
+        entries = []
+        for journal in list(dict.fromkeys(paths))[:200]:
+            if not journal.is_absolute() or journal.suffix.lower() != ".werkbanklauf" or not journal.is_file():
+                continue
+            title = journal.name
+            try:
+                run = FormRun.load(journal)
+                workbook = Path(run.data["workbook"])
+                title = workbook.name
+                stamp = file_signature(workbook)
+                overview = run.data.get("overview")
+                total = overview[0] if overview else len(read_form_sheet(workbook, run.data["sheet"]))
+                remaining = max(0, total - sum(record["done"] for record in run.records.values()))
+                if overview and tuple(overview[1:]) != stamp:
+                    status = "Excel geändert · erneut prüfen"
+                elif remaining:
+                    status = f"{remaining} Zeile(n) offen oder zu prüfen"
+                else:
+                    continue
+            except Exception as exc:
+                status = f"Prüfung erforderlich: {exc}"
+            entries.append(("Formularlauf", title, status, journal))
+        return entries
+
+    def show_open_work(self):
+        if self.open_work_dialog is not None:
+            self.open_work_dialog.refresh_entries()
+            self.open_work_dialog.show()
+            self.open_work_dialog.raise_()
+            self.open_work_dialog.activateWindow()
+            return
+        if self.favorite_settings.value("invoice-watch/folder", "", str):
+            self.invoice_folder(show=False)
+        dialog = QDialog(self)
+        self.open_work_dialog = dialog
+        dialog.setWindowTitle("Offene Arbeiten")
+        dialog.resize(870, 460)
+        layout = QVBoxLayout(dialog)
+        start = QCheckBox("Beim Start der Werkbank anzeigen")
+        start.setChecked(self.favorite_settings.value("work-overview/start", True, bool))
+        start.toggled.connect(lambda enabled: self.favorite_settings.setValue("work-overview/start", enabled))
+        layout.addWidget(start)
+        summary = QLabel()
+        layout.addWidget(summary)
+        table = QTableWidget(0, 3)
+        table.setHorizontalHeaderLabels(["Bereich", "Eintrag", "Stand"])
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        table.setColumnWidth(0, 135)
+        table.setColumnWidth(2, 285)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        refresh = buttons.addButton("Aktualisieren", QDialogButtonBox.ButtonRole.ActionRole)
+        jump = buttons.addButton("Zum Eintrag", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        entries, base = [], []
+        timer = QTimer(dialog, interval=1500)
+
+        def update(full=False):
+            if full:
+                scans = self.scan_drafts()
+                base[:] = self.open_form_runs()
+                base.extend(("Scan", f"{path.name[:10]} · Scan {len(scans) - index}", "Wartet auf Prüfung oder Ablage", path)
+                            for index, path in enumerate(scans))
+            watcher = getattr(self, "_invoice_folder_window", None)
+            today = date.today()
+            due = [("Rechnung", path.name, f"{day:%d.%m.%Y} · "
+                    + ("Überfällig" if day < today else "Heute fällig") + (f" · {memo}" if memo else ""), path)
+                   for day, path, memo in watcher.due_entries()] if watcher is not None else []
+            current = table.currentRow()
+            selected = entries[current][3] if 0 <= current < len(entries) else None
+            updated = [*base, *due]
+            if updated != entries:
+                entries[:] = updated
+                table.setRowCount(len(entries))
+                for row, (kind, name, status, path) in enumerate(entries):
+                    for col, value in enumerate((kind, name, status)):
+                        item = QTableWidgetItem(value)
+                        item.setToolTip(str(path) if col == 1 else value)
+                        table.setItem(row, col, item)
+                if entries:
+                    table.selectRow(next((i for i, entry in enumerate(entries) if entry[3] == selected), 0))
+            jump.setEnabled(bool(entries))
+            summary.setText(f"{len(entries)} offene Einträge" if entries else "Zurzeit keine offenen Einträge gefunden.")
+
+        def open_item(row, *_):
+            if not 0 <= row < len(entries):
+                return
+            kind, _, _, path = entries[row]
+            dialog.hide()
+            if kind == "Rechnung":
+                self.invoice_folder(selected_path=path)
+                return
+            try:
+                if kind == "Scan":
+                    self.scan_inbox(selected_path=path)
+                else:
+                    self.run_form_fill(path)
+            except Exception as exc:
+                self.error(exc)
+            if self.open_work_dialog is dialog:
+                update(True)
+                dialog.show()
+
+        def finish(_):
+            timer.stop()
+            self.open_work_dialog = None
+            dialog.deleteLater()
+
+        dialog.refresh_entries = lambda: update(True)
+        dialog.finished.connect(finish)
+        timer.timeout.connect(lambda: update() if dialog.isVisible() else None)
+        refresh.clicked.connect(dialog.refresh_entries)
+        jump.clicked.connect(lambda: open_item(table.currentRow()))
+        table.cellDoubleClicked.connect(open_item)
+        update(True)
+        timer.start()
+        dialog.show()
 
     def resume_form_fill(self):
         start = self.favorite_settings.value("form-export/run-folder", "", str)
@@ -5628,22 +5802,31 @@ class Window(QMainWindow):
             except Exception as exc:
                 self.error(exc)
 
-    def run_form_fill(self, journal, original=None, plan=None):
+    def run_form_fill(self, journal, original=None, plan=None, stamp=None):
         lock = QLockFile(str(journal) + ".lock")
         lock.setStaleLockTime(0)
         if not lock.tryLock(0):
             raise ValueError("Dieser Formularlauf ist bereits in einem anderen Fenster geöffnet.")
         try:
             run = FormRun.load(journal)
+            recent = self.favorite_settings.value("form-export/runs", [], list)
+            self.favorite_settings.setValue("form-export/runs", list(dict.fromkeys([str(journal), *recent]))[:200])
+            self.favorite_settings.sync()
             if original is None:
                 source = Path(run.data["source"])
                 original = self.form_source_bytes(source)
                 if hashlib.sha256(original).hexdigest() != run.data["source_hash"]:
                     raise ValueError("Die PDF-Vorlage wurde geändert. Für eine neue Vorlage starte einen neuen Formularlauf.")
-                rows = read_form_sheet(Path(run.data["workbook"]), run.data["sheet"])
+                workbook = Path(run.data["workbook"])
+                stamp = file_signature(workbook)
+                rows = read_form_sheet(workbook, run.data["sheet"])
+                if file_signature(workbook) != stamp:
+                    raise ValueError("Die Excel-Datei wurde beim Einlesen geändert. Bitte erneut versuchen.")
                 with pdf.open(stream=original, filetype="pdf") as document:
                     plan = form_row_plan(document, run.data["columns"], rows, journal.parent, source)
-            self.review_form_fill(original, plan, run, run.reconcile(plan))
+            completed = run.reconcile(plan)
+            run.remember_overview(len(plan), stamp)
+            self.review_form_fill(original, plan, run, completed)
         finally:
             lock.unlock()
 
@@ -7566,6 +7749,8 @@ class Window(QMainWindow):
             watch.done(QDialog.DialogCode.Rejected)
         if self.form_preview is not None:
             self.form_preview.reject()
+        if self.open_work_dialog is not None:
+            self.open_work_dialog.reject()
         event.accept()
 
     def booklet_dialog(self):
@@ -7844,8 +8029,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Formular-Serienläufe fortsetzen, korrigierte "
-                         "Excel-Zeilen erneut prüfen und Ergebnisberichte speichern.")
+                         "Neu in dieser Version: Offene Formularläufe, Scan-Entwürfe und "
+                         "fällige Wiedervorlagen in einer Übersicht öffnen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
@@ -8100,6 +8285,8 @@ def main():
         for path in arguments:
             if Path(path).is_file():
                 window.open_path(path)
+        if not arguments and settings.value("work-overview/start", True, bool):
+            window.show_open_work()
 
     QTimer.singleShot(0, load_initial_documents)
     if settings.value("invoice-watch/folder", "", str):
