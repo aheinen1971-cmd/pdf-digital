@@ -1,11 +1,11 @@
-# PDF Werkbank 1.3.1 für Windows
+# PDF Werkbank 1.4.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.3.1.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.4.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.3.1`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.4.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -33,6 +33,21 @@ vorhandene passende Modelldatei wird verwendet.
 - Druckvorschau und Duplexdruck nach den Fähigkeiten des Druckertreibers.
 - Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
   zum jeweiligen Dokument.
+
+## Versand, Schwärzungsprüfung und Druckprofile
+
+- **Werkzeuge → Versandkopie** vereint Seitenauswahl, OCR und Bildkomprimierung.
+  Die Vorschau zeigt die tatsächliche Dateigröße und die Originalseiten,
+  für die OCR keine Textebene erzeugt hat. Das Original bleibt erhalten.
+- **Werkzeuge → Schwärzung prüfen** sucht in einer gespeicherten Kopie
+  nach eingegebenen Begriffen und nennt die Fundorte. Erfasst werden
+  auslesbarer Text, Kommentare, Formularfelder, Metadaten, Lesezeichen
+  und Anlagennamen. Bildinhalte ohne Textebene und der Inhalt eingebetteter
+  Dateien sind außerhalb dieser Prüfung.
+- **Datei → Samsung-Profil** wählt einen unterstützten Samsung-Drucker
+  mit A4 und Duplex an der langen Kante. Die Duplex-Vorschau zeigt
+  Vorder- und Rückseite pro Blatt. Bei ungerader Seitenanzahl wird die
+  letzte Rückseite als leer angezeigt.
 
 ## Updates
 
@@ -67,6 +82,3 @@ Für eine separate Laufzeit kannst du vor dem Start die Umgebungsvariable
 Der Quellcode der Anwendung und des Starters steht unter AGPL-3.0-only.
 Die Lizenzen und Quellcode-Verweise der Abhängigkeiten stehen in
 `THIRD_PARTY.md`. Die Downloads bleiben bei ihren Originalanbietern.
-
-
-

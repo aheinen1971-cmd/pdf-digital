@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.3.1";
+    private const string Version = "1.4.0";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
@@ -271,5 +271,3 @@ internal sealed class SetupWindow : Form
         };
     }
 }
-
-

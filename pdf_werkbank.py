@@ -2,20 +2,23 @@
 import hashlib
 import os
 import re
+import shutil
 import sys
 import tempfile
+import unicodedata
 from collections import Counter
 from difflib import SequenceMatcher
 from itertools import zip_longest
 from pathlib import Path
+from xml.etree import ElementTree
 
 import pymupdf as pdf
 from PySide6.QtCore import QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QImage, QPainter, QPixmap
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QImage, QPageSize, QPainter, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
-    QHBoxLayout, QInputDialog, QLabel, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
+    QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
     QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter, QTabBar,
     QVBoxLayout, QWidget,
 )
@@ -24,7 +27,7 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 
 from online_updates import ReleaseCheck
 
-VERSION = (1, 3, 1)
+VERSION = (1, 4, 0)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -303,6 +306,69 @@ def enhance_scan(page, profile, dpi=220):
     return pdf.Pixmap(colorspace, raster.width, raster.height, result, False)
 
 
+def normalize_text(value):
+    return " ".join(unicodedata.normalize("NFKC", str(value or "")).casefold().split())
+
+
+def redaction_findings(doc, terms):
+    keys = [(term, normalize_text(term)) for term in terms if normalize_text(term)]
+    findings = {term: [] for term, _ in keys}
+
+    def inspect(location, values):
+        content = normalize_text(" ".join(str(value) for value in values if value is not None))
+        for term, key in keys:
+            if key in content:
+                findings[term].append(location)
+
+    for page in doc:
+        number = page.number + 1
+        inspect(f"Seite {number} · Text / OCR", [page.get_text(sort=True)])
+        for annotation in page.annots():
+            inspect(f"Seite {number} · Kommentar", annotation.info.values())
+        for field in page.widgets():
+            inspect(f"Seite {number} · Formularfeld", [field.field_name, field.field_label, field.field_value])
+    inspect("Dokumenteigenschaften", (doc.metadata or {}).values())
+    if doc.get_xml_metadata():
+        xml = doc.get_xml_metadata()
+        try:
+            values = list(ElementTree.fromstring(xml).itertext())
+        except ElementTree.ParseError:
+            values = [xml]
+        inspect("XML-Metadaten", [xml, *values])
+    for _, title, _ in doc.get_toc():
+        inspect("Lesezeichen", [title])
+    for name in doc.embfile_names():
+        inspect("Dateiname einer Anlage", [name])
+    return {term: list(dict.fromkeys(locations)) for term, locations in findings.items() if locations}
+
+
+def print_sheets(indices, duplex):
+    if not duplex:
+        return [(index,) for index in indices]
+    return [(indices[i], indices[i + 1] if i + 1 < len(indices) else None)
+            for i in range(0, len(indices), 2)]
+
+
+def print_preview_image(doc, index, printer, width):
+    paper = printer.pageLayout()
+    sheet = paper.fullRectPoints()
+    printable = paper.paintRectPoints()
+    scale = min(width / sheet.width(), 495 / sheet.height())
+    preview = QPixmap(max(1, round(sheet.width() * scale)), max(1, round(sheet.height() * scale)))
+    preview.fill(Qt.GlobalColor.white)
+    if index is not None:
+        page = doc[index]
+        ratio = min(printable.width() / page.rect.width, printable.height() / page.rect.height) * scale
+        content = pixmap(page, ratio)
+        painter = QPainter(preview)
+        painter.drawPixmap(round((printable.x() + printable.width() / 2) * scale - content.width() / 2),
+                           round((printable.y() + printable.height() / 2) * scale - content.height() / 2),
+                           content)
+        painter.end()
+    return preview
+
+
+
 def print_pages(doc, printer, indices):
     painter = QPainter()
     if not painter.begin(printer):
@@ -477,7 +543,7 @@ class Window(QMainWindow):
         self.tools.setExpanding(False)
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
-                       ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder)]),
+                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder)]),
             ("Start", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Suchen", self.search), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
@@ -490,7 +556,7 @@ class Window(QMainWindow):
                         ("Löschen", lambda: self.edit_page("delete")), ("PDF anhängen", self.append)]),
             ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True))]),
             ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
-                           ("PDF-Versionen vergleichen", self.compare)]),
+                           ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send), ("Schwärzung prüfen", self.verify_redaction)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Formular", [("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
         ]
@@ -921,6 +987,154 @@ class Window(QMainWindow):
             dialog.deleteLater()
 
 
+    def prepare_send(self):
+        session = self.current
+        if not session:
+            return
+        options = QDialog(self)
+        options.setWindowTitle("Für den Versand fertig machen")
+        form = QFormLayout(options)
+        pages = QLineEdit(f"1-{len(session.doc)}")
+        pages.setToolTip("Seiten und Reihenfolge, zum Beispiel 1, 3-5, 8")
+        form.addRow("Seiten", pages)
+        ocr = QComboBox()
+        languages = {"Deutsch und Englisch": "deu+eng", "Deutsch": "deu", "Englisch": "eng"}
+        ocr.addItems([*languages, "Ohne Texterkennung"])
+        form.addRow("Texterkennung", ocr)
+        compression = QComboBox()
+        compression.addItems([*COMPRESSION, "Ohne Bildkomprimierung"])
+        form.addRow("Bildqualität", compression)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Versandkopie vorbereiten")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        buttons.accepted.connect(options.accept)
+        buttons.rejected.connect(options.reject)
+        form.addRow(buttons)
+        if options.exec() != QDialog.DialogCode.Accepted:
+            return
+        try:
+            indices = page_selection(pages.text(), len(session.doc))
+            with tempfile.TemporaryDirectory() as folder, extract_pages(session.doc, indices) as copy:
+                stage = Path(folder) / "Versandkopie.pdf"
+                language = languages.get(ocr.currentText())
+                added, failures = self.send_ocr(copy, indices, language)
+                if added is None:
+                    return
+                profile = compression.currentText()
+                if profile in COMPRESSION:
+                    compressed_copy(copy, stage, profile)
+                else:
+                    save_copy(copy, stage)
+                summary = f"{len(copy)} Seiten · {stage.stat().st_size / 1024:.1f} KB"
+                if language:
+                    summary += " · 1 Seite mit neuer Textebene" if added == 1 else f" · {added} Seiten mit neuer Textebene"
+                if failures:
+                    summary += "\nOhne neue Textebene: " + ", ".join(map(str, failures)) + " (Originalseiten)"
+                with pdf.open(stage) as preview:
+                    if not self.preview_send(preview, summary):
+                        return
+                target = self.output_path(" - Versand", "Versandkopie speichern")
+                if target:
+                    fd, temp = tempfile.mkstemp(suffix=".pdf", dir=target.parent)
+                    os.close(fd)
+                    try:
+                        shutil.copyfile(stage, temp)
+                        os.replace(temp, target)
+                    finally:
+                        Path(temp).unlink(missing_ok=True)
+                    self.statusBar().showMessage(f"Versandkopie gespeichert: {target.name}", 6500)
+        except Exception as exc:
+            self.error(exc)
+
+    def send_ocr(self, doc, indices, language):
+        if not language:
+            return 0, []
+        progress = QProgressDialog("Texterkennung für die Versandkopie …", "Abbrechen", 0, len(doc), self)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        root = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+        added, failures = 0, []
+        try:
+            for index, page in enumerate(doc):
+                progress.setValue(index)
+                QApplication.processEvents()
+                if progress.wasCanceled():
+                    return None, []
+                if page.get_text().strip():
+                    continue
+                try:
+                    recognize_page(page, language, root / "tessdata")
+                    added += 1
+                except (ValueError, RuntimeError):
+                    failures.append(indices[index] + 1)
+            return (None, []) if progress.wasCanceled() else (added, failures)
+        finally:
+            progress.close()
+
+    def preview_send(self, doc, summary):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Versandkopie prüfen")
+        layout = QVBoxLayout(dialog)
+        info = QLabel(summary)
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        pages = QComboBox()
+        pages.addItems([f"Seite {index + 1}" for index in range(len(doc))])
+        layout.addWidget(pages)
+        area = QScrollArea()
+        area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image = QLabel()
+        area.setWidget(image)
+        layout.addWidget(area, 1)
+
+        def show_page(index):
+            page = doc[index]
+            rendered = pixmap(page, min(490 / page.rect.width, 550 / page.rect.height))
+            image.setPixmap(rendered)
+            image.resize(rendered.size())
+
+        pages.currentIndexChanged.connect(show_page)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Save).setText("Kopie speichern")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(660, 720)
+        show_page(0)
+        return dialog.exec() == QDialog.DialogCode.Accepted
+
+    def verify_redaction(self):
+        folder = str(self.current.path.parent) if self.current else ""
+        path, _ = QFileDialog.getOpenFileName(self, "Gespeicherte geschwärzte Kopie auswählen", folder, "PDF-Dateien (*.pdf)")
+        if not path:
+            return
+        text, ok = QInputDialog.getMultiLineText(self, "Schwärzung prüfen",
+                                                "Welche Begriffe sollen aus der Kopie entfernt sein? Ein Begriff je Zeile.")
+        terms = list(dict.fromkeys(term.strip() for term in text.splitlines() if term.strip()))
+        if not ok or not terms:
+            return
+        try:
+            with pdf.open(path) as copy:
+                if not copy.is_pdf or copy.needs_pass:
+                    raise ValueError("Bitte eine lesbare PDF ohne Passwortschutz auswählen.")
+                findings = redaction_findings(copy, terms)
+        except Exception as exc:
+            self.error(exc)
+            return
+        report = QMessageBox(self)
+        report.setWindowTitle("Abschlussprüfung der Schwärzung")
+        report.setText(f"{Path(path).name}\n" + (f"{len(findings)} von {len(terms)} Suchbegriffen gefunden."
+                                                  if findings else "Keiner der Suchbegriffe wurde gefunden."))
+        report.setInformativeText("Geprüft wurden auslesbarer Text, OCR-Text, Kommentare, Formularfelder, "
+                                  "Lesezeichen, Metadaten und Anlagennamen. Bilder ohne Textebene und "
+                                  "der Inhalt von Anlagen wurden nicht geprüft.")
+        if findings:
+            report.setDetailedText("\n\n".join(f"{term}\n" + "\n".join(locations)
+                                                for term, locations in findings.items()))
+        report.exec()
+
+
     def output_path(self, suffix, title):
         original = self.current.path
         suggested = original.with_stem(original.stem + suffix)
@@ -1211,14 +1425,35 @@ class Window(QMainWindow):
                 return
         event.accept()
 
-    def print_dialog(self):
+    def print_dialog(self, samsung=False):
         session = self.current
         if not session:
             return
-        if not QPrinterInfo.availablePrinters():
+        devices = QPrinterInfo.availablePrinters()
+        if not devices:
             self.error("Windows meldet keinen installierten Drucker.")
             return
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        if samsung:
+            known = settings.value("samsung_printer", "", str)
+            candidates = [device for device in devices if "samsung" in device.printerName().casefold()]
+            device = next((device for device in candidates if device.printerName() == known), None)
+            if device is None:
+                device = next((device for device in candidates if "clx-3300" in device.printerName().casefold()), None)
+            if device is None and candidates:
+                device = candidates[0]
+            if device is None:
+                self.error("Windows meldet keinen Samsung-Drucker. Verwende Datei → Drucken für einen anderen Drucker.")
+                return
+            if QPrinter.DuplexMode.DuplexLongSide not in device.supportedDuplexModes():
+                self.error("Der ausgewählte Samsung-Treiber meldet keinen Duplexdruck an der langen Kante.")
+                return
+            printer = QPrinter(device, QPrinter.PrinterMode.HighResolution)
+            printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+            printer.setDuplex(QPrinter.DuplexMode.DuplexLongSide)
+            settings.setValue("samsung_printer", device.printerName())
+        else:
+            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
         printer.setDocName(session.path.name)
         dialog = QPrintDialog(printer, self)
         dialog.setMinMax(1, len(session.doc))
@@ -1280,12 +1515,28 @@ class Window(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle("Druckvorschau")
         layout = QVBoxLayout(dialog)
-        layout.addWidget(QLabel(f"{printer.printerName()} · {len(indices)} ausgewählte Seiten"))
-        area = QScrollArea()
-        area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        image = QLabel()
-        area.setWidget(image)
-        layout.addWidget(area, 1)
+        duplex = printer.duplex() != QPrinter.DuplexMode.DuplexNone
+        sheets = print_sheets(indices, duplex)
+        edge = {QPrinter.DuplexMode.DuplexLongSide: "lange Kante",
+                QPrinter.DuplexMode.DuplexShortSide: "kurze Kante"}.get(printer.duplex(), "automatisch")
+        description = f"{printer.printerName()} · {len(sheets)} Blatt pro Exemplar"
+        if duplex:
+            description += f" · Duplex, {edge}"
+        layout.addWidget(QLabel(description))
+        panels = QHBoxLayout()
+        layout.addLayout(panels, 1)
+        labels = []
+        for _ in range(2 if duplex else 1):
+            panel = QVBoxLayout()
+            heading = QLabel()
+            panel.addWidget(heading, alignment=Qt.AlignmentFlag.AlignHCenter)
+            area = QScrollArea()
+            area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            image = QLabel()
+            area.setWidget(image)
+            panel.addWidget(area, 1)
+            panels.addLayout(panel, 1)
+            labels.append((heading, image))
         nav = QHBoxLayout()
         prev = QPushButton("‹")
         next_button = QPushButton("›")
@@ -1297,39 +1548,29 @@ class Window(QMainWindow):
         layout.addLayout(nav)
         position = 0
 
-        def show_page(delta=0):
+        def show_sheet(delta=0):
             nonlocal position
-            position = min(len(indices) - 1, max(0, position + delta))
-            index = indices[position]
-            paper = printer.pageLayout()
-            sheet = paper.fullRectPoints()
-            printable = paper.paintRectPoints()
-            scale = min(390 / sheet.width(), 495 / sheet.height())
-            preview = QPixmap(max(1, round(sheet.width() * scale)), max(1, round(sheet.height() * scale)))
-            preview.fill(Qt.GlobalColor.white)
-            page = doc[index]
-            ratio = min(printable.width() / page.rect.width, printable.height() / page.rect.height) * scale
-            content = pixmap(page, ratio)
-            painter = QPainter(preview)
-            painter.drawPixmap(round((printable.x() + printable.width() / 2) * scale - content.width() / 2),
-                               round((printable.y() + printable.height() / 2) * scale - content.height() / 2),
-                               content)
-            painter.end()
-            image.setPixmap(preview)
-            image.resize(preview.size())
-            count.setText(f"{position + 1} von {len(indices)} · PDF-Seite {index + 1}")
+            position = min(len(sheets) - 1, max(0, position + delta))
+            for side, ((heading, image), index) in enumerate(zip(labels, sheets[position])):
+                label = "Vorderseite" if side == 0 else "Rückseite"
+                heading.setText(f"{label} · PDF-Seite {index + 1}" if index is not None else f"{label} · bleibt leer")
+                preview = print_preview_image(doc, index, printer, 340 if duplex else 390)
+                image.setPixmap(preview)
+                image.resize(preview.size())
+            count.setText(f"Blatt {position + 1} von {len(sheets)}")
             prev.setEnabled(position > 0)
-            next_button.setEnabled(position < len(indices) - 1)
+            next_button.setEnabled(position < len(sheets) - 1)
 
-        prev.clicked.connect(lambda: show_page(-1))
-        next_button.clicked.connect(lambda: show_page(1))
+        prev.clicked.connect(lambda: show_sheet(-1))
+        next_button.clicked.connect(lambda: show_sheet(1))
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Jetzt drucken")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
-        dialog.resize(550, 650)
-        show_page()
+        dialog.resize(850 if duplex else 550, 660)
+        show_sheet()
         return dialog.exec() == QDialog.DialogCode.Accepted
 
 
@@ -1412,17 +1653,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
