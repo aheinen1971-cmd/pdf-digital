@@ -234,37 +234,44 @@ def export_invoices(rows, path):
                         (24, 18, 22, 65, 42), 4)
 
 
-def export_linked_sheet(rows, path, title, header, widths, source_column=None):
+def export_linked_sheet(rows, path, title, header, widths, source_column=None, extra_sheets=()):
     namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     workbook = Element("workbook", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
-    SubElement(SubElement(workbook, "sheets"), "sheet", {"name": title, "sheetId": "1", "r:id": "rId1"})
+    sheets = SubElement(workbook, "sheets")
     links = Element("Relationships", xmlns=REL_NS)
-    SubElement(links, "Relationship", Id="rId1", Target="worksheets/sheet1.xml", Type=OFFICE_NS + "/worksheet")
-    sheet = Element("worksheet", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
-    columns = SubElement(sheet, "cols")
-    for index, width in enumerate(widths, 1):
-        SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
-    data = SubElement(sheet, "sheetData")
-    hyperlinks = None
-    sources = Element("Relationships", xmlns=REL_NS)
-    all_rows = [header, *rows]
-    for index, values in enumerate(all_rows, 1):
-        row = SubElement(data, "row", r=str(index))
-        for column, value in enumerate(values, 1):
-            address = f"{column_name(column)}{index}"
-            if type(value) in (int, float):
-                SubElement(SubElement(row, "c", r=address, t="n"), "v").text = str(value)
-            elif value is not None:
-                cell = SubElement(row, "c", r=address, t="inlineStr")
-                SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
-        if source_column and index > 1 and values[source_column - 1]:
-            if hyperlinks is None:
-                hyperlinks = SubElement(sheet, "hyperlinks")
-            key = f"rId{index}"
-            SubElement(hyperlinks, "hyperlink", {"ref": f"{column_name(source_column)}{index}", "r:id": key})
-            SubElement(sources, "Relationship", Id=key, Target=Path(values[source_column - 1]).resolve().as_uri(),
-                       TargetMode="External", Type=OFFICE_NS + "/hyperlink")
     name = "xl/workbook.xml"
-    package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
-            {name: workbook, "xl/_rels/workbook.xml.rels": links, "xl/worksheets/sheet1.xml": sheet,
-             "xl/worksheets/_rels/sheet1.xml.rels": sources})
+    contents = {name: workbook, "xl/_rels/workbook.xml.rels": links}
+    specifications = ((title, header, widths, rows, source_column), *extra_sheets)
+    for number, (title, header, widths, rows, source_column) in enumerate(specifications, 1):
+        ref = f"rId{number}"
+        filename = f"worksheets/sheet{number}.xml"
+        SubElement(sheets, "sheet", {"name": title, "sheetId": str(number), "r:id": ref})
+        SubElement(links, "Relationship", Id=ref, Target=filename, Type=OFFICE_NS + "/worksheet")
+        sheet = Element("worksheet", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
+        columns = SubElement(sheet, "cols")
+        for index, width in enumerate(widths, 1):
+            SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
+        data = SubElement(sheet, "sheetData")
+        hyperlinks = None
+        sources = Element("Relationships", xmlns=REL_NS)
+        for index, values in enumerate((header, *rows), 1):
+            row = SubElement(data, "row", r=str(index))
+            for column, value in enumerate(values, 1):
+                address = f"{column_name(column)}{index}"
+                if type(value) in (int, float):
+                    SubElement(SubElement(row, "c", r=address, t="n"), "v").text = str(value)
+                elif value is not None:
+                    cell = SubElement(row, "c", r=address, t="inlineStr")
+                    SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
+            if source_column and index > 1 and values[source_column - 1]:
+                if hyperlinks is None:
+                    hyperlinks = SubElement(sheet, "hyperlinks")
+                key = f"rId{index}"
+                column = column_name(source_column)
+                SubElement(hyperlinks, "hyperlink", {"ref": f"{column}{index}", "r:id": key})
+                SubElement(sources, "Relationship", Id=key, Target=Path(values[source_column - 1]).resolve().as_uri(),
+                           TargetMode="External", Type=OFFICE_NS + "/hyperlink")
+        contents["xl/" + filename] = sheet
+        if hyperlinks is not None:
+            contents[f"xl/worksheets/_rels/sheet{number}.xml.rels"] = sources
+    package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", contents)

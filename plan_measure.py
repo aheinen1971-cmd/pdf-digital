@@ -92,6 +92,8 @@ class Measurement:
     area: bool = False
     name: str = ""
     cutouts: tuple = ()
+    room: str = ""
+    trade: str = ""
 
     def measured_area(self):
         return self.amount - math.fsum(ring_area(ring) for ring in self.cutouts)
@@ -110,6 +112,8 @@ class Measurement:
 class CountedSymbol:
     point: pdf.Point
     category: str
+    room: str = ""
+    trade: str = ""
 
 
 @dataclass
@@ -166,9 +170,11 @@ def encode_plans(doc, plans):
     for index, plan in plan_entries(doc, plans):
         marks = [{"name": mark.name, "area": mark.area,
                   "points": [[point.x, point.y] for point in mark.points],
-                  "cutouts": [[[point.x, point.y] for point in ring] for ring in mark.cutouts]}
+                  "cutouts": [[[point.x, point.y] for point in ring] for ring in mark.cutouts],
+                  "room": mark.room, "trade": mark.trade}
                  for mark in plan.marks]
-        symbols = [[symbol.category, symbol.point.x, symbol.point.y] for symbol in plan.symbols]
+        symbols = [[symbol.category, symbol.point.x, symbol.point.y, symbol.room, symbol.trade]
+                   for symbol in plan.symbols]
         pages.append({"page": index, "scale": plan.scale, "marks": marks, "symbols": symbols})
     data = json.dumps({"version": 1, "pages": pages}, ensure_ascii=False).encode("utf-8")
     if len(data) > MAX_PLAN_BYTES:
@@ -184,6 +190,13 @@ def checked_vertex(point, bounds):
     if not bounds.contains(vertex):
         raise ValueError("Ein Messpunkt liegt außerhalb der PDF-Seite.")
     return vertex
+
+
+def plan_groups(room, trade):
+    if any(not isinstance(value, str) or len(value) > 80 or any(ord(char) < 32 for char in value)
+           for value in (room, trade)):
+        raise ValueError("Ungültiger Raum oder ungültiges Gewerk in der Messliste.")
+    return " ".join(room.split()), " ".join(trade.split())
 
 
 def decode_plans(doc, data):
@@ -216,7 +229,8 @@ def decode_plans(doc, data):
             amount = polygon_area(vertices) if area else distance(*vertices)
             if amount <= EPSILON:
                 raise ValueError("Die Messung hat keine Ausdehnung.")
-            mark = Measurement(vertices, amount, area, name)
+            room, trade = plan_groups(entry_mark.get("room", ""), entry_mark.get("trade", ""))
+            mark = Measurement(vertices, amount, area, name, room=room, trade=trade)
             cutouts = entry_mark.get("cutouts", [])
             if not isinstance(cutouts, list) or len(cutouts) > 100:
                 raise ValueError("Ungültige Aussparungen in der Messliste.")
@@ -229,10 +243,11 @@ def decode_plans(doc, data):
         if not isinstance(symbols, list):
             raise ValueError("Ungültige Symbole in der Messliste.")
         for symbol in symbols:
-            if (not isinstance(symbol, list) or len(symbol) != 3 or not isinstance(symbol[0], str)
+            if (not isinstance(symbol, list) or len(symbol) not in (3, 5) or not isinstance(symbol[0], str)
                     or not 0 < len(symbol[0]) <= 40 or any(ord(char) < 32 for char in symbol[0])):
                 raise ValueError("Ungültiges Symbol in der Messliste.")
-            plan.symbols.append(CountedSymbol(checked_vertex(symbol[1:], bounds), symbol[0]))
+            room, trade = plan_groups(*symbol[3:]) if len(symbol) == 5 else ("", "")
+            plan.symbols.append(CountedSymbol(checked_vertex(symbol[1:3], bounds), symbol[0], room, trade))
         plans[key] = plan
     return plans
 
@@ -376,34 +391,52 @@ def decode_project(doc, data, digest):
     return decode_plans(doc, json.dumps(project["plans"]))
 
 
-def measurement_rows(doc, measurements):
+def measurement_details(doc, measurements):
+    for index, plan in plan_entries(doc, measurements):
+        for mark in plan.marks:
+            group = mark.room, mark.trade
+            if mark.area:
+                yield (index + 1, mark.name, mark.measured_area() * plan.scale ** 2, "m²", *group, "Flächen")
+                prefix = mark.name + " · " if mark.name else ""
+                yield (index + 1, prefix + "Umfang", polygon_perimeter(mark.points) * plan.scale, "m", *group, "Umfänge")
+                if mark.cutouts:
+                    inner = math.fsum(polygon_perimeter(ring) for ring in mark.cutouts) * plan.scale
+                    yield (index + 1, prefix + "Innenkanten", inner, "m", *group, "Innenkanten")
+            else:
+                yield (index + 1, mark.name, mark.amount * plan.scale, "m", *group, "Strecken")
+        counts = Counter((symbol.category, symbol.room, symbol.trade) for symbol in plan.symbols)
+        for (category, room, trade), count in counts.items():
+            yield (index + 1, category, count, "Stk.", room, trade, "Stückzahlen")
+
+
+def measurement_rows(doc, measurements, grouped=False):
     rows = []
     totals = {name: [] for name in ("Umfänge", "Innenkanten", "Strecken", "Flächen")}
     symbols = Counter()
-    for index, plan in plan_entries(doc, measurements):
-        for mark in plan.marks:
-            if mark.area:
-                value = mark.measured_area() * plan.scale ** 2
-                totals["Flächen"].append(value)
-                rows.append((index + 1, mark.name, value, "m²"))
-                outer = polygon_perimeter(mark.points) * plan.scale
-                totals["Umfänge"].append(outer)
-                rows.append((index + 1, (mark.name + " · " if mark.name else "") + "Umfang", outer, "m"))
-                if mark.cutouts:
-                    inner = math.fsum(polygon_perimeter(ring) for ring in mark.cutouts) * plan.scale
-                    totals["Innenkanten"].append(inner)
-                    rows.append((index + 1, (mark.name + " · " if mark.name else "") + "Innenkanten", inner, "m"))
-            else:
-                value = mark.amount * plan.scale
-                totals["Strecken"].append(value)
-                rows.append((index + 1, mark.name, value, "m"))
-        counts = Counter(symbol.category for symbol in plan.symbols)
-        symbols.update(counts)
-        rows.extend((index + 1, category, count, "Stk.") for category, count in counts.items())
+    for detail in measurement_details(doc, measurements):
+        _, name, value, _, _, _, kind = detail
+        rows.append(detail[:6] if grouped else detail[:4])
+        if kind == "Stückzahlen":
+            symbols[name] += value
+        else:
+            totals[kind].append(value)
     rows.extend((None, "Summe " + category, count, "Stk.") for category, count in symbols.items())
     rows.extend((None, "Summe " + label, math.fsum(values), "m²" if label == "Flächen" else "m")
                 for label, values in totals.items() if values)
     return rows
+
+
+def measurement_group_totals(doc, measurements):
+    groups = {}
+    kinds = ("Flächen", "Strecken", "Stückzahlen", "Umfänge", "Innenkanten")
+    for _, _, value, _, room, trade, kind in measurement_details(doc, measurements):
+        key = room.casefold(), trade.casefold()
+        if key not in groups:
+            groups[key] = ((room, trade), {name: [] for name in kinds})
+        groups[key][1][kind].append(value)
+    return [(*groups[key][0], *(sum(groups[key][1][kind]) if kind == "Stückzahlen"
+                                else math.fsum(groups[key][1][kind]) for kind in kinds))
+            for key in sorted(groups)]
 
 
 def polygon_perimeter(points):

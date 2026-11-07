@@ -59,10 +59,10 @@ from work_backup import (BACKUP_GROUPS, app_backup_root, archive_remap, automati
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
-                          alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry,
+                          alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 28, 0)
+VERSION = (1, 29, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -1001,6 +1001,7 @@ class Window(QMainWindow):
         self.favorite_menu = QMenu(button)
         button.setMenu(self.favorite_menu)
         self.favorite_toolbar.addWidget(button)
+        self.favorite_toolbar.addAction("Info", self.show_program_info)
         self.populate_favorite_menu()
         self.refresh_favorites()
 
@@ -1646,9 +1647,9 @@ class Window(QMainWindow):
             if index >= len(plan.marks):
                 continue
             current = plan.marks[index]
-            if replace(current, name=after.name) != after:
+            if replace(current, name=after.name, room=after.room, trade=after.trade) != after:
                 continue
-            plan.marks[index] = replace(before, name=current.name)
+            plan.marks[index] = replace(before, name=current.name, room=current.room, trade=current.trade)
             self.clear_measure_draft()
             self.canvas.update()
             self.statusBar().showMessage("Messpunkt zurückgesetzt · " + plan.marks[index].caption(plan.scale), 8000)
@@ -1782,15 +1783,21 @@ class Window(QMainWindow):
 
     def export_measurement_excel(self):
         session = self.current
-        rows = measurement_rows(session.doc, session.plan_measurements)
+        rows = measurement_rows(session.doc, session.plan_measurements, grouped=True)
         if not rows:
             QMessageBox.information(self, "Messliste", "Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen.")
             return
         name, _ = QFileDialog.getSaveFileName(self, "Messliste als Excel speichern",
                                                str(session.path.with_suffix(".xlsx")), "Excel (*.xlsx)")
         if name:
+            totals = measurement_group_totals(session.doc, session.plan_measurements)
             self.save_workbook(name, lambda target: export_linked_sheet(
-                rows, target, "Messliste", ("Seite", "Name", "Messwert", "Einheit"), (10, 45, 18, 12)))
+                rows, target, "Messliste", ("Seite", "Name", "Messwert", "Einheit", "Raum", "Gewerk"),
+                (10, 45, 18, 12, 24, 24), extra_sheets=(
+                    ("Gruppensummen", ("Raum", "Gewerk", "Flächen (m²)", "Strecken (m)", "Stückzahlen",
+                                       "Außenumfang (m)", "Innenkanten (m)"),
+                     (28, 28, 19, 19, 17, 22, 22), totals, None),
+                )))
 
     def transfer_measurement_project(self, importing):
         session = self.current
@@ -2015,22 +2022,30 @@ class Window(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle("Messliste")
         layout = QVBoxLayout(dialog)
-        info = QLabel("Messnamen per Doppelklick bearbeiten. „Messliste speichern“ speichert alle Maße und Maßstäbe "
+        info = QLabel("Namen, Räume und Gewerke per Doppelklick bearbeiten. „Messliste speichern“ speichert die Zuordnungen und Maße "
                       "lokal für diese PDF-Fassung.")
         info.setWordWrap(True)
         layout.addWidget(info)
-        rows = QTableWidget(0, 5)
-        rows.setHorizontalHeaderLabels(["Seite", "Name", "Messwert", "Umfang", "Innenkanten"])
+        rows = QTableWidget(0, 7)
+        rows.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        rows.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        rows.setHorizontalHeaderLabels(["Seite", "Name / Symbol", "Messwert", "Umfang", "Innenkanten", "Raum", "Gewerk"])
         rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        entries = [(index, plan, number) for index, plan in plan_entries(session.doc, session.plan_measurements)
-                   for number in range(len(plan.marks))]
+        entries = []
+        for index, plan in plan_entries(session.doc, session.plan_measurements):
+            entries.extend((index, plan, number, False) for number in range(len(plan.marks)))
+            entries.extend((index, plan, number, True) for number in range(len(plan.symbols)))
         rows.setRowCount(len(entries))
-        for row, (index, plan, number) in enumerate(entries):
-            mark = plan.marks[number]
-            outer, inner = self.area_edges(mark, plan.scale) if mark.area else ("", "")
-            for column, value in enumerate((str(index + 1), mark.name, mark.label(plan.scale), outer, inner)):
+        for row, (index, plan, number, is_symbol) in enumerate(entries):
+            mark = (plan.symbols if is_symbol else plan.marks)[number]
+            if is_symbol:
+                values = (str(index + 1), mark.category, "1 Stk.", "", "", mark.room, mark.trade)
+            else:
+                outer, inner = self.area_edges(mark, plan.scale) if mark.area else ("", "")
+                values = (str(index + 1), mark.name, mark.label(plan.scale), outer, inner, mark.room, mark.trade)
+            for column, value in enumerate(values):
                 item = QTableWidgetItem(value)
-                if column != 1:
+                if column not in (5, 6) and (column != 1 or is_symbol):
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 rows.setItem(row, column, item)
         layout.addWidget(rows)
@@ -2052,29 +2067,67 @@ class Window(QMainWindow):
         extra.setMenu(menu)
         jump = buttons.addButton("Zur Seite", QDialogButtonBox.ButtonRole.ActionRole)
         jump.setEnabled(bool(entries))
+        assign = buttons.addButton("Raum / Gewerk zuweisen", QDialogButtonBox.ButtonRole.ActionRole)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
-        def name_changed(item):
-            if item.column() == 1:
-                _, plan, number = entries[item.row()]
-                value = "".join(char for char in item.text().strip() if ord(char) >= 32)[:80]
-                plan.marks[number] = replace(plan.marks[number], name=value)
-                if item.text() != value:
-                    item.setText(value)
-                self.canvas.update()
+        def edit_item(item):
+            field = {1: "name", 5: "room", 6: "trade"}.get(item.column())
+            if not field:
+                return
+            _, plan, number, is_symbol = entries[item.row()]
+            marks = plan.symbols if is_symbol else plan.marks
+            if field == "name" and is_symbol:
+                return
+            value = "".join(char for char in item.text().strip() if ord(char) >= 32)[:80]
+            if field != "name":
+                value = " ".join(value.split())
+            marks[number] = replace(marks[number], **{field: value})
+            if item.text() != value:
+                item.setText(value)
+            self.canvas.update()
 
+        def assign_group():
+            selected = rows.selectionModel().selectedRows()
+            if not selected:
+                return
+            group = QDialog(dialog)
+            group.setWindowTitle("Raum und Gewerk zuweisen")
+            form = QFormLayout(group)
+            form.addRow(QLabel("Leere Felder lassen die bisherige Zuordnung unverändert."))
+            fields = []
+            for column, label in ((5, "Raum"), (6, "Gewerk")):
+                entry = QComboBox()
+                entry.setEditable(True)
+                known = {rows.item(row, column).text() for row in range(rows.rowCount())}
+                entry.addItems(["", *sorted(known - {""}, key=str.casefold)])
+                entry.lineEdit().setMaxLength(80)
+                form.addRow(label, entry)
+                fields.append((column, entry))
+            actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+            actions.accepted.connect(group.accept)
+            actions.rejected.connect(group.reject)
+            form.addRow(actions)
+            if group.exec() == QDialog.DialogCode.Accepted:
+                for column, entry in fields:
+                    value = entry.currentText().strip()
+                    if value:
+                        for index in selected:
+                            rows.item(index.row(), column).setText(value)
         def go():
             if rows.currentRow() >= 0:
                 self.go_page(entries[rows.currentRow()][0])
                 dialog.accept()
 
-        rows.itemChanged.connect(name_changed)
+        rows.itemChanged.connect(edit_item)
+        rows.itemSelectionChanged.connect(lambda: assign.setEnabled(bool(rows.selectionModel().selectedRows())))
+        assign.clicked.connect(assign_group)
+        assign.setEnabled(False)
         save.clicked.connect(lambda: self.save_measurements(session))
         jump.clicked.connect(go)
         if entries:
             rows.setCurrentCell(0, 1)
-        dialog.resize(840, 450)
+        dialog.resize(1080, 490)
         dialog.exec()
 
     def export_measurements(self):
@@ -6974,6 +7027,52 @@ class Window(QMainWindow):
         dialog.resize(850 if duplex else 550, 660)
         show_sheet()
         return dialog.exec() == QDialog.DialogCode.Accepted
+
+
+    def show_program_info(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Info zu PDF Werkbank")
+        layout = QVBoxLayout(dialog)
+        title = QLabel("PDF Werkbank " + ".".join(map(str, VERSION)))
+        title.setStyleSheet("font-size: 20px; font-weight: bold;")
+        layout.addWidget(title)
+        details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
+                         "Quellcode unter AGPL-3.0-only.\n\n"
+                         "Neu in dieser Version: Räume und Gewerke in der Messliste, getrennte "
+                         "Gruppensummen in Excel und dieser Info-Bereich.")
+        details.setWordWrap(True)
+        layout.addWidget(details)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.addButton("Update-Info", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(self.update_info)
+        buttons.addButton("Lizenz anzeigen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+            lambda: self.show_program_license(dialog))
+        buttons.addButton("Projekt auf GitHub", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/aheinen1971-cmd/pdf-werkbank")))
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(550, 260)
+        dialog.exec()
+
+    def show_program_license(self, parent):
+        try:
+            content = Path(__file__).with_name("LICENSE").read_text(encoding="utf-8")
+        except OSError as exc:
+            self.error(exc)
+            return
+        dialog = QDialog(parent)
+        dialog.setWindowTitle("Lizenz · PDF Werkbank")
+        layout = QVBoxLayout(dialog)
+        text = QPlainTextEdit()
+        text.setReadOnly(True)
+        text.setPlainText(content)
+        layout.addWidget(text)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(720, 580)
+        dialog.exec()
 
 
     def update_info(self):

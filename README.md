@@ -1,11 +1,11 @@
-# PDF Werkbank 1.28.0 für Windows
+# PDF Werkbank 1.29.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.28.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.29.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.28.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.29.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -63,7 +63,10 @@ PDF-Kopie mit sichtbaren Maßlinien, Flächen und Beschriftungen.
 
 **Messoptionen** bietet Fangpunkte für Vektorlinien und eine Lupe für
 Bildscans. In **Messliste → Export und Projekte** lassen sich Messwerte
-als Excel mit getrennten Strecken- und Flächensummen ausgeben.
+als Excel ausgeben. Namen, Räume und Gewerke können direkt in der Tabelle
+bearbeitet oder mehreren Einträgen gemeinsam zugewiesen werden.
+Das Excel-Blatt Gruppensummen trennt Flächen, Strecken, Stückzahlen,
+Außenumfänge und Innenkanten je Raum und Gewerk.
 Eine .messprojekt-Datei enthält Namen, Messungen und Maßstäbe und lässt
 sich auf einem anderen PC zur bytegleichen PDF-Fassung öffnen.
 Mit **Pläne überlagern** richtest du zwei Seiten über je zwei
@@ -316,6 +319,11 @@ Suchindex, Arbeitsmappen und gespeicherte Ordnerpfade sind davon getrennt.
 Unter **Datei → PDF-Standard** öffnet PDF Werkbank die Windows-Einstellungen.
 Wähle dort PDF Werkbank für **.pdf**. Windows verwendet dann das rote
 Dateisymbol, auch für PDFs auf dem Desktop.
+
+## Info
+
+Die Schaltfläche **Info** neben **Favoriten** zeigt die laufende Version,
+Neuerungen, Lizenz und den Zugang zur Update-Prüfung.
 
 ## Updates
 
