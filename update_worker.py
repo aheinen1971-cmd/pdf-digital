@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
+import base64
 import hashlib
 import json
 import os
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from zipfile import ZipFile
@@ -17,6 +19,57 @@ RELEASES = f"https://github.com/{REPOSITORY}/releases"
 MAX_PACKAGE = 20 * 1024 * 1024
 VERSION_PATTERN = r"(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})"
 SHA_PATTERN = r"[a-f0-9]{64}"
+
+
+PUBLIC_MODULUS = (
+    "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp"
+)
+SIGNER = "PDF Werkbank · Projektschlüssel 2026-01"
+SIGNATURE_LIMIT = 8192
+
+
+class SignatureError(ValueError):
+    pass
+
+
+def signature_url(version):
+    return f"{RELEASES}/download/v{version}/PDF-Werkbank-{version}-Signatur.json"
+
+
+def verify_release_signature(raw, version, package_hash=None, size=None):
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import padding, rsa
+
+    try:
+        if len(raw) > SIGNATURE_LIMIT:
+            raise ValueError()
+        manifest = json.loads(raw)
+        payload = base64.b64decode(manifest["payload"], validate=True)
+        signature = base64.b64decode(manifest["signature"], validate=True)
+        public = rsa.RSAPublicNumbers(65537, int.from_bytes(base64.b64decode(PUBLIC_MODULUS), "big")).public_key()
+        public.verify(signature, payload, padding.PKCS1v15(), hashes.SHA256())
+        marker, label, archive_hash, archive_size, executable, end = payload.decode("ascii").split("\n")
+        if (marker != "PDF-Werkbank-Update-v1" or label != version or version_tuple(label) is None or end
+                or not re.fullmatch(SHA_PATTERN, archive_hash) or not re.fullmatch(SHA_PATTERN, executable)
+                or not re.fullmatch(r"[1-9][0-9]{0,7}", archive_size) or not 0 < int(archive_size) <= MAX_PACKAGE
+                or manifest.get("sha256") != executable or (package_hash is not None and archive_hash != package_hash)
+                or (size is not None and int(archive_size) != size)):
+            raise ValueError()
+        return executable
+    except (InvalidSignature, ValueError, TypeError, KeyError, UnicodeError, RecursionError) as exc:
+        raise SignatureError("Die Projektsignatur des Updates fehlt oder ist ungültig.") from exc
+
+
+def verified_launcher(exe, version, marker=None):
+    marker = marker or update_root() / f"{version}.json"
+    if exe.is_symlink() or marker.is_symlink():
+        raise ValueError("Eine verknüpfte Update-Datei ist unzulässig.")
+    with marker.open("rb") as stream:
+        expected = verify_release_signature(stream.read(SIGNATURE_LIMIT + 1), version)
+    if digest_file(exe) != expected:
+        raise SignatureError("Die EXE stimmt nicht mit der signierten Freigabe überein.")
+    return expected
 
 
 def version_tuple(text):
@@ -79,12 +132,11 @@ def prepared_update(current):
                 candidates.append((version, marker))
         for version, marker in sorted(candidates, reverse=True):
             try:
-                data = json.loads(marker.read_text(encoding="utf-8"))
                 exe = root / f"PDF-Werkbank-{marker.stem}.exe"
-                digest = data.get("sha256") if isinstance(data, dict) else None
-                if (isinstance(digest, str) and re.fullmatch(SHA_PATTERN, digest) and not failed_update(marker.stem, digest)
-                        and runtime_ready(marker.stem) and not exe.is_symlink()
-                        and exe.is_file() and digest_file(exe) == digest):
+                if not runtime_ready(marker.stem) or not exe.is_file():
+                    continue
+                digest = verified_launcher(exe, marker.stem, marker)
+                if not failed_update(marker.stem, digest):
                     return exe
             except (OSError, ValueError):
                 continue
@@ -120,6 +172,17 @@ def stage_update(version, digest, size):
             return 0
         with tempfile.TemporaryDirectory(dir=root) as folder:
             temp = Path(folder)
+            signature = Request(signature_url(version), headers={"User-Agent": "PDF-Werkbank"})
+            try:
+                with build_opener(GitHubRedirect()).open(signature, timeout=30) as response:
+                    signed = response.read(SIGNATURE_LIMIT + 1)
+            except HTTPError as exc:
+                if exc.code == 404:
+                    raise SignatureError("Die signierte Freigabe fehlt.") from exc
+                raise
+            expected_exe = verify_release_signature(signed, version, digest, size)
+            if failed_update(version, expected_exe):
+                return 4
             package = temp / "update.zip"
             request = Request(package_url(version), headers={"User-Agent": "PDF-Werkbank"})
             with build_opener(GitHubRedirect()).open(request, timeout=30) as response, package.open("wb") as output:
@@ -142,7 +205,8 @@ def stage_update(version, digest, size):
                     raise ValueError("Die Größe der Programmdatei stimmt nicht.")
                 with archive.open(entry) as source, candidate.open("wb") as output:
                     output.write(source.read(MAX_PACKAGE + 1))
-            exe_hash = digest_file(candidate)
+            if digest_file(candidate) != expected_exe:
+                raise SignatureError("Die EXE stimmt nicht mit der signierten Freigabe überein.")
             env = os.environ.copy()
             env.pop("PDF_WERKBANK_RUNTIME_ROOT", None)
             subprocess.run([str(candidate), "--prepare-update"], env=env, check=True, timeout=360,
@@ -150,7 +214,7 @@ def stage_update(version, digest, size):
             if not runtime_ready(version):
                 raise ValueError("Die neue Laufzeit wurde nicht vollständig eingerichtet.")
             marker = temp / "verified.json"
-            marker.write_text(json.dumps({"sha256": exe_hash}), encoding="utf-8")
+            marker.write_bytes(signed)
             os.replace(candidate, root / name)
             os.replace(marker, root / f"{version}.json")
     return 0
@@ -160,5 +224,7 @@ if __name__ == "__main__":
     try:
         version, digest, size = sys.argv[1:]
         sys.exit(stage_update(version, digest, int(size)))
+    except SignatureError:
+        sys.exit(3)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
         sys.exit(1)

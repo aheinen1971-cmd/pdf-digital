@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
 from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 
 from online_updates import ReleaseCheck
-from update_worker import digest_file, failed_update, prepared_update
+from update_worker import SIGNER, digest_file, prepared_update, verified_launcher
 
 from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
@@ -52,13 +52,14 @@ from document_review import attachments, comments, insert_labels, label_conflict
 from filing import archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches, pdf_files, scan_breaks, scan_ranges
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
+from work_backup import BACKUP_GROUPS, read_backup, restore_backup, write_backup
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
                           alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry,
-                          CountedSymbol, add_cutout, numbered_symbols, polygon_perimeter)
+                          CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 25, 0)
+VERSION = (1, 26, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -796,6 +797,7 @@ class Window(QMainWindow):
         super().__init__()
         self.sessions = []
         self.measure_points = []
+        self.measure_edit = None
         self.measure_assist = "Automatisch"
         self.symbol_category = ""
         self.measure_cursor = None
@@ -832,10 +834,10 @@ class Window(QMainWindow):
         self.tools.setExpanding(False)
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
-                       ("Einstellungen übertragen", self.transfer_preferences), ("Explorer-Befehle einrichten", self.configure_explorer),
+                       ("Einstellungen übertragen", self.transfer_preferences), ("Arbeitsstand sichern", self.work_backup), ("Explorer-Befehle einrichten", self.configure_explorer),
                        ("Broschürendruck", self.booklet_dialog),
                        ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
-                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
+                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Info", self.update_info), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
             ("Start", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Wiederholen", self.redo), ("Änderungsverlauf", self.edit_history),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
@@ -860,7 +862,7 @@ class Window(QMainWindow):
                         ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement),
                         ("Messliste", self.measurement_list), ("PDF mit Maßen", self.export_measurements),
                         ("Messoptionen", self.measurement_options), ("Pläne überlagern", self.plan_overlay),
-                        ("Aufmaß", self.takeoff_tools)]),
+                        ("Aufmaß", self.takeoff_tools), ("Messpunkt verschieben", lambda: self.start_measure("Messpunkt verschieben"))]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
@@ -1522,6 +1524,80 @@ class Window(QMainWindow):
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
+    def work_backup(self):
+        action, ok = QInputDialog.getItem(self, "Arbeitsstand sichern", "Aktion",
+                                          ("Backup speichern", "Backup wiederherstellen"), editable=False)
+        if not ok:
+            return
+        settings = self.favorite_settings
+        kind = "Werkbank-Backup (*.werkbankbackup)"
+        try:
+            if action == "Backup speichern":
+                name, _ = QFileDialog.getSaveFileName(self, action, "PDF-Werkbank.werkbankbackup", kind)
+                if name:
+                    target = Path(name if name.lower().endswith(".werkbankbackup") else name + ".werkbankbackup")
+                    with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                        temporary = Path(folder) / target.name
+                        write_backup(temporary, settings, self.measurement_store())
+                        os.replace(temporary, target)
+                    self.statusBar().showMessage(f"Arbeitsstand gesichert: {target.name}", 8000)
+                return
+            name, _ = QFileDialog.getOpenFileName(self, action, "", kind)
+            if not name:
+                return
+            data = read_backup(name)
+            dialog = QDialog(self)
+            dialog.setWindowTitle(action)
+            layout = QVBoxLayout(dialog)
+            layout.addWidget(QLabel("Wähle aus, was übernommen werden soll. Geöffnete PDFs zum Laden der Messlisten erneut öffnen."))
+            checks = {key: QCheckBox(label) for key, label in BACKUP_GROUPS.items()}
+            for box in checks.values():
+                box.setChecked(True)
+                layout.addWidget(box)
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+            buttons.accepted.connect(dialog.accept)
+            buttons.rejected.connect(dialog.reject)
+            layout.addWidget(buttons)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+            conflicts = restore_backup(data, {key for key, box in checks.items() if box.isChecked()},
+                                       settings, self.measurement_store())
+            self.refresh_favorites()
+            self.statusBar().showMessage(f"Backup übernommen. Beibehaltene lokale Messlisten: {conflicts}.", 10000)
+        except Exception as exc:
+            self.error(exc)
+
+    def edit_measure_point(self, point):
+        plan = self.current_plan()
+        if not plan or not plan.marks:
+            self.statusBar().showMessage("Auf dieser Seite gibt es keine Messpunkte.", 6500)
+            return
+        if self.measure_edit is None:
+            candidates = [(distance(point, vertex), index, ring_index, vertex_index, vertex)
+                          for index, mark in enumerate(plan.marks)
+                          for ring_index, ring in enumerate((mark.points, *mark.cutouts))
+                          for vertex_index, vertex in enumerate(ring)]
+            gap, index, ring_index, vertex_index, vertex = min(candidates, key=lambda entry: entry[0])
+            if gap * self.scale > 12:
+                self.statusBar().showMessage("Bitte nahe an einen markierten End- oder Eckpunkt klicken.", 6500)
+                return
+            self.measure_edit = index, ring_index, vertex_index
+            self.measure_points[:] = [vertex]
+            self.canvas.update()
+            self.statusBar().showMessage("Neue Position anklicken. Esc bricht ab.", 8000)
+            return
+        index, ring_index, vertex_index = self.measure_edit
+        try:
+            changed = move_vertex(plan.marks[index], ring_index, vertex_index, point)
+        except ValueError as exc:
+            self.statusBar().showMessage(str(exc), 10000)
+            return
+        plan.marks[index] = changed
+        self.clear_measure_draft()
+        self.canvas.update()
+        self.statusBar().showMessage(changed.caption(plan.scale), 8000)
+
+
     def takeoff_tools(self):
         if not self.current:
             return
@@ -1809,6 +1885,8 @@ class Window(QMainWindow):
             return
         data = stored_bytes(path)
         session.plan_saved_token = plan_token(data)
+        if data is None:
+            data = stored_bytes(self.measurement_store() / "Importiert" / path.name)
         if data is not None:
             session.plan_measurements = decode_plans(session.doc, data)
 
@@ -1941,6 +2019,7 @@ class Window(QMainWindow):
         return session.plan_measurements.get(key)
 
     def clear_measure_draft(self):
+        self.measure_edit = None
         self.measure_points.clear()
         self.measure_hover = None
         self.measure_cursor = None
@@ -1981,7 +2060,8 @@ class Window(QMainWindow):
                  "Strecke messen": "Anfang und Ende der Strecke anklicken.",
                  "Fläche messen": "Eckpunkte der Reihe nach anklicken und mit Eingabe oder „Fläche abschließen“ bestätigen.",
                  "Aussparung messen": "Umriss innerhalb der zuletzt gemessenen Fläche anklicken und mit Eingabe abschließen.",
-                 "Symbole zählen": f"Kategorie {self.symbol_category}. Jedes Symbol einmal anklicken."}
+                 "Symbole zählen": f"Kategorie {self.symbol_category}. Jedes Symbol einmal anklicken.",
+                 "Messpunkt verschieben": "End- oder Eckpunkt und danach seine neue Position anklicken."}
         self.statusBar().showMessage(hints[mode] + " Esc verwirft die angefangene Messung.", 15000)
 
     def measure_position(self, screen, hover=False):
@@ -2003,6 +2083,9 @@ class Window(QMainWindow):
     def measure_click(self, screen):
         point = self.measure_position(screen)
         if point is None:
+            return
+        if self.mode == "Messpunkt verschieben":
+            self.edit_measure_point(point)
             return
         if self.mode == "Symbole zählen":
             plan = self.current_plan(create=True)
@@ -4014,8 +4097,11 @@ class Window(QMainWindow):
         layout.addWidget(location)
         status = QLabel("Die Werkbank überwacht den gewählten Ordner auch bei geschlossenem Rechnungsfenster.")
         layout.addWidget(status)
-        table = QTableWidget(0, 5)
-        table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten", "Archiv"])
+        filter = QComboBox()
+        filter.addItems(["Alle", "Neu", "Fehler", "Dubletten", "Archiviert"])
+        layout.addWidget(filter)
+        table = QTableWidget(0, 6)
+        table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten", "Archiv", "Notiz"])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -4029,6 +4115,8 @@ class Window(QMainWindow):
         choose = controls.addButton("Ordner wählen", QDialogButtonBox.ButtonRole.ActionRole)
         review = controls.addButton("Beleg ansehen", QDialogButtonBox.ButtonRole.ActionRole)
         validate = controls.addButton("Prüfdetails", QDialogButtonBox.ButtonRole.ActionRole)
+        note = controls.addButton("Notiz", QDialogButtonBox.ButtonRole.ActionRole)
+        reviewed = controls.addButton("Prüfstatus ändern", QDialogButtonBox.ButtonRole.ActionRole)
         archive = controls.addButton("Für Archiv freigeben", QDialogButtonBox.ButtonRole.ActionRole)
         controls.rejected.connect(dialog.reject)
         layout.addWidget(controls)
@@ -4070,7 +4158,20 @@ class Window(QMainWindow):
             exact, possible = duplicate_groups([record.source for record in records.values()])
             exact = {source.path for group in exact for source in group}
             possible = {source.path for group in possible for source in group}
-            ordered = sorted(records, key=lambda path: path.name.casefold())
+            ordered = []
+            visible = []
+            for path in sorted(records, key=lambda path: path.name.casefold()):
+                record = records[path]
+                source = record.source
+                history = settings.value(archive_setting_key(path), "", str).partition("|")
+                archived = history[0] == source.digest and history[2] and Path(history[2]).is_file()
+                checked = settings.value("invoice-watch/reviewed/" + source.digest, False, bool)
+                problem = (record.validation and record.validation.status != "passed") or source.problem or (
+                    record.check_problem and record.check_problem != "E-Rechnung noch nicht geprüft")
+                flags = (True, not archived and not checked, problem, path in exact or path in possible, archived)
+                if flags[filter.currentIndex()]:
+                    ordered.append(path)
+                    visible.append((archived, checked, history[2]))
             table.setRowCount(len(ordered))
             for row, path in enumerate(ordered):
                 record = records[path]
@@ -4079,20 +4180,21 @@ class Window(QMainWindow):
                          record.check_problem or source.problem or "–")
                 marks = [label for group, label in ((exact, "Dateiidentisch"), (possible, "Möglicher Doppelbeleg"))
                          if path in group]
-                stored = settings.value(archive_setting_key(path), "", str).partition("|")
-                archived = stored[0] == source.digest and stored[2] and Path(stored[2]).is_file()
+                archived, checked, destination = visible[row]
+                note_text = settings.value("invoice-watch/note/" + source.digest, "", str)
                 values = (path.name, source.fields[0].value if source.fields[0] else "", check,
-                          " · ".join(marks), "Freigegeben und kopiert" if archived else "Offen")
+                          " · ".join(marks), "Freigegeben und kopiert" if archived else "Gesehen" if checked else "Offen",
+                          note_text)
                 for column, value in enumerate(values):
                     item = QTableWidgetItem(value)
-                    item.setToolTip(str(path) if column == 0 else stored[2] if column == 4 and archived else value)
+                    item.setToolTip(str(path) if column == 0 else destination if column == 4 and archived else value)
                     if column == 0:
                         item.setData(Qt.ItemDataRole.UserRole, path)
                     table.setItem(row, column, item)
             if ordered:
                 old = current.source.path if current else None
                 table.selectRow(ordered.index(old) if old in ordered else 0)
-            for button in (review, validate, archive):
+            for button in (review, validate, archive, note, reviewed):
                 button.setEnabled(bool(ordered))
 
         def change_folder():
@@ -4178,6 +4280,28 @@ class Window(QMainWindow):
                 records[path] = replace(record, validation=validation, embedded=embedded, check_problem="")
                 refresh()
 
+        def edit_note():
+            record = selected()
+            if not record:
+                return
+            key = "invoice-watch/note/" + record.source.digest
+            text, ok = QInputDialog.getMultiLineText(dialog, "Belegnotiz", "Notiz zu dieser Datei",
+                                                    settings.value(key, "", str))
+            if ok:
+                if text.strip():
+                    settings.setValue(key, text.strip()[:1000])
+                else:
+                    settings.remove(key)
+                refresh()
+
+        def toggle_review():
+            record = selected()
+            if not record:
+                return
+            key = "invoice-watch/reviewed/" + record.source.digest
+            settings.setValue(key, not settings.value(key, False, bool))
+            refresh()
+
         def approve():
             record = selected()
             if not record:
@@ -4210,6 +4334,9 @@ class Window(QMainWindow):
         review.clicked.connect(lambda: self.invoice_review([str(record.source.path)]) if (record := selected()) else None)
         validate.clicked.connect(show_check)
         archive.clicked.connect(approve)
+        note.clicked.connect(edit_note)
+        reviewed.clicked.connect(toggle_review)
+        filter.currentIndexChanged.connect(refresh)
         dialog.finished.connect(finish)
         timer.timeout.connect(tick)
         timer.start(750)
@@ -6520,11 +6647,32 @@ class Window(QMainWindow):
         return dialog.exec() == QDialog.DialogCode.Accepted
 
 
+    def update_info(self):
+        label = ".".join(map(str, VERSION))
+        launcher = os.environ.get("PDF_WERKBANK_LAUNCHER")
+        status = "Für diese gestartete EXE ist keine Projektsignatur nachgewiesen."
+        if launcher:
+            executable = Path(launcher)
+            try:
+                marker = executable.with_name(f"PDF-Werkbank-{label}-Signatur.json")
+                verified_launcher(executable, label, marker if marker.is_file() else None)
+                status = "Projektsignatur und EXE-Prüfsumme gültig. Freigabe: " + SIGNER
+            except (OSError, ValueError) as exc:
+                status += "\n" + str(exc)
+        pending = prepared_update(VERSION)
+        check = getattr(self, "update_result", "Noch keine Update-Suche in dieser Sitzung.")
+        QMessageBox.information(self, "Update-Info",
+                                f"Version {label}\n\n{status}\n\n{check}\n"
+                                + (f"Signiertes Update bereit: {pending.name}\n" if pending else "")
+                                + "\nWindows-Herausgebersignatur und Virenscan sind separate Prüfungen.")
+
+
     def check_online(self):
         self.statusBar().showMessage("Suche nach Updates …", 6000)
         self.release_check.check(manual=True)
 
     def show_online_update(self, update, success, manual):
+        self.update_result = ("Update-Suche abgeschlossen." if success else "Die Update-Suche ist fehlgeschlagen.")
         if prepared_update(VERSION):
             self.statusBar().showMessage("Ein Update ist bereit und startet beim nächsten Öffnen.", 8000)
             return
@@ -6538,10 +6686,6 @@ class Window(QMainWindow):
             self.statusBar().showMessage("Ein Update wird bereits vorbereitet.", 8000)
             return
         version, digest, size = update
-        if failed_update(version, digest):
-            if manual:
-                self.statusBar().showMessage(f"Version {version} ist beim Start fehlgeschlagen. Die frühere Version bleibt aktiv.", 10000)
-            return
         worker = Path(__file__).with_name("update_worker.py")
         try:
             self.update_process = subprocess.Popen(
@@ -6563,8 +6707,13 @@ class Window(QMainWindow):
             message = "Update bereit. Beim nächsten Öffnen startet die neue Version."
         elif result == 2:
             message = "Ein anderes Fenster bereitet das Update bereits vor."
+        elif result == 3:
+            message = "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig."
+        elif result == 4:
+            message = "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen."
         else:
             message = "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft."
+        self.update_result = message
         self.statusBar().showMessage(message, 10000)
 
 
@@ -6604,7 +6753,7 @@ class Window(QMainWindow):
             result = QMessageBox.question(
                 self, "Automatische Updates",
                 "Beim Start führt PDF Werkbank neuere Programmdateien aus diesem Ordner aus. "
-                "Wähle einen Ordner, in den nur du oder eine vertrauenswürdige Person schreiben kann. Aktivieren?")
+                "Die EXE und ihre signierte Freigabe müssen zusammen im Ordner liegen. Aktivieren?")
             if result == QMessageBox.StandardButton.Yes:
                 settings.setValue("updates", folder)
                 self.statusBar().showMessage("Automatische Updates aus dem gewählten Ordner aktiviert.", 6500)
@@ -6620,6 +6769,11 @@ def find_update(folder, version=VERSION):
         if match and candidate.is_file() and not candidate.is_symlink():
             newer = tuple(map(int, match.groups()))
             if newer > version:
+                label = ".".join(map(str, newer))
+                try:
+                    verified_launcher(candidate, label, candidate.with_name(f"PDF-Werkbank-{label}-Signatur.json"))
+                except (OSError, ValueError):
+                    continue
                 matches.append((newer, candidate))
     return max(matches, default=(version, None))[1]
 

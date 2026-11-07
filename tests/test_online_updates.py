@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
+import base64
 import hashlib
 from io import BytesIO
 import json
@@ -7,6 +8,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from zipfile import ZipFile
+
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 import update_worker as updates
 
@@ -30,13 +34,33 @@ assert updates.available_release(dict(release, assets=[dict(asset, browser_downl
 assert updates.available_release(dict(release, assets=[dict(asset, digest=None)]), (1, 4, 1)) is None
 
 
+private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+modulus = base64.b64encode(private.public_key().public_numbers().n.to_bytes(256, "big")).decode()
+exe_hash = hashlib.sha256(b"verified executable").hexdigest()
+message = f"PDF-Werkbank-Update-v1\n{version}\n{checksum}\n{len(data)}\n{exe_hash}\n".encode("ascii")
+signature = private.sign(message, padding.PKCS1v15(), hashes.SHA256())
+manifest = {"payload": base64.b64encode(message).decode(), "signature": base64.b64encode(signature).decode(),
+            "sha256": exe_hash}
+signed = json.dumps(manifest).encode()
+
+
 class FakeOpener:
     def open(self, request, timeout):
+        if request.full_url == updates.signature_url(version):
+            return BytesIO(signed)
         assert request.full_url == updates.package_url(version)
         return BytesIO(data)
 
 
-with TemporaryDirectory() as folder, patch.dict(os.environ, {"LOCALAPPDATA": folder}):
+with TemporaryDirectory() as folder, patch.dict(os.environ, {"LOCALAPPDATA": folder}), patch.object(updates, "PUBLIC_MODULUS", modulus):
+    assert updates.verify_release_signature(signed, version, checksum, len(data)) == exe_hash
+    for changed in (dict(manifest, sha256="0" * 64), dict(manifest, signature="AAAA"), {}):
+        try:
+            updates.verify_release_signature(json.dumps(changed).encode(), version)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Manipulierte Freigabe akzeptiert.")
     runtime = Path(folder) / "PDF Werkbank" / "GitHub" / version
     invoked = []
 
@@ -63,6 +87,10 @@ with TemporaryDirectory() as folder, patch.dict(os.environ, {"LOCALAPPDATA": fol
         assert result and result.name == name
         assert updates.prepared_update((1, 10, 0)) is None
         assert not list(Path(folder).rglob("outside.txt"))
+        marker = updates.update_root() / f"{version}.json"
+        marker.write_text(json.dumps({"sha256": exe_hash}), encoding="utf-8")
+        assert updates.prepared_update((1, 4, 1)) is None
+        marker.write_bytes(signed)
         result.write_bytes(b"changed")
         assert updates.prepared_update((1, 4, 1)) is None
 print("Automatisches Update: stabile Releases, Paketprüfung, stille Einrichtung und Startmarker getestet.")

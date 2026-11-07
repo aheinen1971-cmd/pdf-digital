@@ -1,11 +1,11 @@
-# PDF Werkbank 1.25.0 für Windows
+# PDF Werkbank 1.26.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.25.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.26.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.25.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.26.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -35,6 +35,13 @@ vorhandene passende Modelldatei wird verwendet.
 - Druckvorschau und Duplexdruck nach den Fähigkeiten des Druckertreibers.
 - Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
   zum jeweiligen Dokument.
+
+## Arbeitsstand sichern
+
+**Datei → Arbeitsstand sichern** speichert Einstellungen, lokale Messlisten
+und den Verlauf der Rechnungsfreigaben und Notizen. Beim Import können
+die Gruppen ausgewählt werden. Die PDFs und Rechnungsdateien selbst sind
+separat zu übertragen. Freigaben verweisen weiterhin auf ihren Ablagepfad.
 
 ## Pläne messen
 
@@ -307,6 +314,10 @@ Wähle dort PDF Werkbank für **.pdf**. Windows verwendet dann das rote
 Dateisymbol, auch für PDFs auf dem Desktop.
 
 ## Updates
+
+Ab 1.26.0 prüft der neue Starter die Projektsignatur der Freigabe.
+Unter **Datei → Update-Info** steht der Status für die gestartete EXE.
+Auch Updates aus einem lokalen Ordner brauchen die passende Signaturdatei.
 
 Die Titelleiste zeigt die tatsächlich laufende Version an.
 

@@ -88,7 +88,7 @@ updates = work / "test-updates"
 updates.mkdir(exist_ok=True)
 for name in ("PDF-Werkbank-1.0.0.exe", "PDF-Werkbank-1.2.0.exe", "PDF-Werkbank-1.10.0.exe", "PDF-Werkbank-999.exe"):
     (updates / name).touch()
-assert find_update(updates, (1, 3, 0)).name == "PDF-Werkbank-1.10.0.exe"
+assert find_update(updates, (1, 3, 0)) is None
 assert find_update(updates, (1, 10, 0)) is None
 window.open_path(str(path))
 assert len(window.sessions) == 2

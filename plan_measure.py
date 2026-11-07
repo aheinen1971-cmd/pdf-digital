@@ -13,7 +13,7 @@ from update_worker import digest_file
 
 
 METRES_PER_POINT = 0.0254 / 72
-MEASURE_MODES = ("Kalibrieren", "Strecke messen", "Fläche messen", "Aussparung messen", "Symbole zählen")
+MEASURE_MODES = ("Kalibrieren", "Strecke messen", "Fläche messen", "Aussparung messen", "Symbole zählen", "Messpunkt verschieben")
 MAX_VERTICES = 300
 EPSILON = 1e-8
 
@@ -136,7 +136,7 @@ def plan_entries(doc, measurements):
 def store_path(root, source, stamp, create=False):
     key = hashlib.sha256(os.path.normcase(str(source.resolve())).encode("utf-8")).hexdigest()
     directory = root / key
-    if not create and not directory.is_dir():
+    if not create and not directory.is_dir() and not (root / "Importiert").is_dir():
         return None
     if stamp is None or file_signature(source) != stamp:
         raise ValueError("Die PDF auf dem Datenträger wurde geändert. Bitte erneut öffnen.")
@@ -444,3 +444,16 @@ def numbered_symbols(symbols):
     for symbol in symbols:
         counts[symbol.category] += 1
         yield symbol, counts[symbol.category]
+
+
+def move_vertex(mark, ring_index, point_index, point):
+    rings = [list(ring) for ring in (mark.points, *mark.cutouts)]
+    rings[ring_index][point_index] = point
+    outer = tuple(rings[0])
+    amount = polygon_area(outer) if mark.area else distance(*outer)
+    if amount <= EPSILON:
+        raise ValueError("Die Messung hat keine Ausdehnung.")
+    updated = replace(mark, points=outer, amount=amount, cutouts=())
+    for ring in rings[1:]:
+        updated = add_cutout(updated, tuple(ring))
+    return updated

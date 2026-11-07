@@ -17,8 +17,9 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.25.0";
+    private const string Version = "1.26.0";
     private const string Title = "PDF Werkbank";
+    private const string UpdatePublicModulus = "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp";
 
     [STAThread]
     private static int Main(string[] args)
@@ -44,8 +45,11 @@ internal static class Launcher
                 return Ready(root) ? 0 : 1;
             }
             string cached = Path.Combine(UpdateRoot(), "PDF-Werkbank-" + Version + ".exe");
-            string digest = String.Equals(cached, Assembly.GetExecutingAssembly().Location, StringComparison.OrdinalIgnoreCase)
-                ? VerifiedDigest(Version) : null;
+            string executable = Assembly.GetExecutingAssembly().Location;
+            bool fromCache = String.Equals(cached, executable, StringComparison.OrdinalIgnoreCase);
+            string digest = fromCache ? VerifiedDigest(Version) ?? MigrateSignedMarker(executable) : null;
+            if (fromCache && digest == null)
+                throw new IOException("Die Projektsignatur des Updates fehlt oder ist ungültig.");
             if (digest != null && IsFailed(Version, digest) && StartFallback())
                 return 0;
             if (!Ready(root))
@@ -167,21 +171,91 @@ internal static class Launcher
             string exe = Path.Combine(root, "PDF-Werkbank-" + version + ".exe");
             string marker = Path.Combine(root, version + ".json");
             if (!File.Exists(marker) || !File.Exists(exe)
-                || (File.GetAttributes(exe) & FileAttributes.ReparsePoint) != 0)
+                || (File.GetAttributes(exe) & FileAttributes.ReparsePoint) != 0
+                || (File.GetAttributes(marker) & FileAttributes.ReparsePoint) != 0
+                || new FileInfo(marker).Length > 8192)
                 return null;
-            var match = Regex.Match(File.ReadAllText(marker), "\"sha256\"\\s*:\\s*\"([a-f0-9]{64})\"");
-            if (!match.Success)
+            return VerifyManifest(File.ReadAllText(marker), version, exe);
+        }
+        catch (IOException) { return null; }
+        catch (UnauthorizedAccessException) { return null; }
+    }
+
+    private static string VerifyManifest(string json, string version, string exe)
+    {
+        if (json.Length > 8192)
+            return null;
+        try
+        {
+            var payload = Regex.Match(json, "\"payload\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
+            var signature = Regex.Match(json, "\"signature\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
+            if (!payload.Success || !signature.Success)
+                return null;
+            byte[] bytes = Convert.FromBase64String(payload.Groups[1].Value);
+            using (var rsa = new RSACryptoServiceProvider(new CspParameters(24)))
+            {
+                rsa.PersistKeyInCsp = false;
+                rsa.ImportParameters(new RSAParameters {
+                    Modulus = Convert.FromBase64String(UpdatePublicModulus),
+                    Exponent = new byte[] { 1, 0, 1 }
+                });
+                if (!rsa.VerifyData(bytes, CryptoConfig.MapNameToOID("SHA256"),
+                                    Convert.FromBase64String(signature.Groups[1].Value)))
+                    return null;
+            }
+            string[] fields = Encoding.ASCII.GetString(bytes).Split('\n');
+            if (fields.Length != 6 || fields[0] != "PDF-Werkbank-Update-v1" || fields[1] != version || fields[5] != ""
+                || !Regex.IsMatch(fields[2], @"\A[a-f0-9]{64}\z")
+                || !Regex.IsMatch(fields[4], @"\A[a-f0-9]{64}\z"))
+                return null;
+            var declared = Regex.Match(json, "\"sha256\"\\s*:\\s*\"([a-f0-9]{64})\"");
+            if (!declared.Success || declared.Groups[1].Value != fields[4])
                 return null;
             using (var sha = SHA256.Create())
             using (var file = File.OpenRead(exe))
             {
                 string actual = BitConverter.ToString(sha.ComputeHash(file)).Replace("-", "").ToLowerInvariant();
-                return actual == match.Groups[1].Value ? actual : null;
+                return actual == fields[4] ? actual : null;
+            }
+        }
+        catch (FormatException) { return null; }
+        catch (CryptographicException) { return null; }
+    }
+
+    private static string MigrateSignedMarker(string exe)
+    {
+        // The previous updater staged only a hash marker. Authenticate this bridge build before starting its UI.
+        string marker = Path.Combine(UpdateRoot(), Version + ".json");
+        if (Version != "1.26.0" || !File.Exists(marker) || new FileInfo(marker).Length > 8192
+            || File.ReadAllText(marker).Contains("\"signature\""))
+            return null;
+        try
+        {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(12), MaxResponseContentBufferSize = 8192 })
+            {
+                string url = "https://github.com/aheinen1971-cmd/pdf-werkbank/releases/download/v" + Version
+                    + "/PDF-Werkbank-" + Version + "-Signatur.json";
+                string json = client.GetStringAsync(url).GetAwaiter().GetResult();
+                string digest = VerifyManifest(json, Version, exe);
+                if (digest == null)
+                    return null;
+                string temporary = marker + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    File.WriteAllText(temporary, json);
+                    File.Replace(temporary, marker, null);
+                }
+                finally { if (File.Exists(temporary)) File.Delete(temporary); }
+                return digest;
             }
         }
         catch (IOException) { return null; }
+        catch (HttpRequestException) { return null; }
         catch (UnauthorizedAccessException) { return null; }
+        catch (TaskCanceledException) { return null; }
     }
+
 
     private static bool IsFailed(string version, string digest)
     {
@@ -330,6 +404,7 @@ internal static class Launcher
                     CopyResource("invoice_validation.py", Path.Combine(app, "invoice_validation.py"));
                     CopyResource("invoice_watch.py", Path.Combine(app, "invoice_watch.py"));
                     CopyResource("plan_measure.py", Path.Combine(app, "plan_measure.py"));
+                    CopyResource("work_backup.py", Path.Combine(app, "work_backup.py"));
                     CopyResource("pdf_signatures.py", Path.Combine(app, "pdf_signatures.py"));
                     CopyResource("LICENSE", Path.Combine(app, "LICENSE"));
                     CopyResource("THIRD_PARTY.md", Path.Combine(app, "THIRD_PARTY.md"));
