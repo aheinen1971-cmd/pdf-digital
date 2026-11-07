@@ -62,6 +62,13 @@ def digest_file(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def failed_update(version, digest):
+    try:
+        return (update_root() / f"{version}.failed").read_text(encoding="utf-8").strip() == digest
+    except (OSError, UnicodeError, KeyError):
+        return False
+
+
 def prepared_update(current):
     try:
         root = update_root()
@@ -75,7 +82,7 @@ def prepared_update(current):
                 data = json.loads(marker.read_text(encoding="utf-8"))
                 exe = root / f"PDF-Werkbank-{marker.stem}.exe"
                 digest = data.get("sha256") if isinstance(data, dict) else None
-                if (isinstance(digest, str) and re.fullmatch(SHA_PATTERN, digest)
+                if (isinstance(digest, str) and re.fullmatch(SHA_PATTERN, digest) and not failed_update(marker.stem, digest)
                         and runtime_ready(marker.stem) and not exe.is_symlink()
                         and exe.is_file() and digest_file(exe) == digest):
                     return exe

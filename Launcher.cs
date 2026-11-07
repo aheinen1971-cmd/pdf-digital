@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.14.0";
+    private const string Version = "1.15.0";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
@@ -35,8 +35,7 @@ internal static class Launcher
         {
             string custom = Environment.GetEnvironmentVariable("PDF_WERKBANK_RUNTIME_ROOT");
             string root = String.IsNullOrWhiteSpace(custom)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                               Title, "GitHub", Version)
+                ? Path.Combine(LocalData(), Title, "GitHub", Version)
                 : Path.GetFullPath(custom);
             if (prepare)
             {
@@ -44,8 +43,19 @@ internal static class Launcher
                     Install(root, new Progress<string>(), CancellationToken.None).GetAwaiter().GetResult();
                 return Ready(root) ? 0 : 1;
             }
+            string cached = Path.Combine(UpdateRoot(), "PDF-Werkbank-" + Version + ".exe");
+            string digest = String.Equals(cached, Assembly.GetExecutingAssembly().Location, StringComparison.OrdinalIgnoreCase)
+                ? VerifiedDigest(Version) : null;
+            if (digest != null && IsFailed(Version, digest) && StartFallback())
+                return 0;
             if (!Ready(root))
             {
+                if (digest != null && StartFallback())
+                {
+                    WriteMarker(Version + ".failed", digest);
+                    Notify("Die Laufzeit von Version " + Version + " ist unvollständig. Eine frühere Version wurde geöffnet.");
+                    return 0;
+                }
                 var answer = MessageBox.Show(
                     "PDF Werkbank lädt beim ersten Start rund 140 MB direkt von Python.org, PyPI und GitHub. " +
                     "Die Dateien werden lokal für dieses Windows-Konto gespeichert. Danach funktioniert die PDF-App offline.\n\n" +
@@ -67,21 +77,170 @@ internal static class Launcher
             run.EnvironmentVariables["PDF_WERKBANK_LAUNCHER"] = Assembly.GetExecutingAssembly().Location;
             if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PDF_WERKBANK_ENTRYPOINT")))
                 run.EnvironmentVariables["PDF_WERKBANK_ENTRYPOINT"] = Assembly.GetExecutingAssembly().Location;
-            using (Process process = Process.Start(run))
+            try
             {
-                if (process.WaitForExit(1800) && process.ExitCode != 0)
-                    throw new IOException("PDF Werkbank konnte nicht gestartet werden. Die lokale Laufzeit kann beschädigt sein.");
+                StartAndWait(run);
+                if (digest != null)
+                {
+                    WriteMarker(Version + ".ok", digest);
+                    WriteMarker(Version + ".failed", "");
+                }
+                return 0;
             }
-            return 0;
+            catch (Exception startup)
+            {
+                if (digest != null)
+                    WriteMarker(Version + ".failed", digest);
+                if (!StartFallback())
+                    throw;
+                Notify("Version " + Version + " konnte nicht gestartet werden. Eine frühere Version wurde geöffnet.\n\n"
+                       + startup.Message);
+                return 0;
+            }
         }
         catch (Exception error)
         {
             if (prepare)
                 Console.Error.WriteLine(error);
             else
-                MessageBox.Show(error.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Notify(error.Message);
             return 1;
         }
+    }
+
+    private static string LocalData()
+    {
+        return Environment.GetEnvironmentVariable("LOCALAPPDATA")
+            ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    }
+
+    private static string UpdateRoot()
+    {
+        return Path.Combine(LocalData(), Title, "Online-Updates");
+    }
+
+    private static void Notify(string message)
+    {
+        if (Environment.GetEnvironmentVariable("QT_QPA_PLATFORM") == "offscreen")
+            Console.Error.WriteLine(message);
+        else
+            MessageBox.Show(message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+    }
+
+    private static void StartAndWait(ProcessStartInfo run)
+    {
+        string marker = Path.Combine(Path.GetTempPath(), "pdf-werkbank-start-" + Guid.NewGuid().ToString("N"));
+        run.EnvironmentVariables["PDF_WERKBANK_STARTUP_READY"] = marker;
+        try
+        {
+            using (Process process = Process.Start(run))
+            {
+                var clock = Stopwatch.StartNew();
+                while (clock.Elapsed < TimeSpan.FromSeconds(30))
+                {
+                    if (File.Exists(marker))
+                        return;
+                    if (process.WaitForExit(100))
+                    {
+                        if (File.Exists(marker))
+                            return;
+                        throw new IOException("Die Anwendung endete während des Starts. Rückgabecode " + process.ExitCode + ".");
+                    }
+                }
+                if (!process.HasExited)
+                    process.Kill();
+                throw new IOException("Die Anwendung hat innerhalb von 30 Sekunden kein Startsignal gesendet.");
+            }
+        }
+        finally
+        {
+            if (File.Exists(marker))
+                File.Delete(marker);
+        }
+    }
+
+    private static string VerifiedDigest(string version)
+    {
+        try
+        {
+            string root = UpdateRoot();
+            string exe = Path.Combine(root, "PDF-Werkbank-" + version + ".exe");
+            string marker = Path.Combine(root, version + ".json");
+            if (!File.Exists(marker) || !File.Exists(exe)
+                || (File.GetAttributes(exe) & FileAttributes.ReparsePoint) != 0)
+                return null;
+            var match = Regex.Match(File.ReadAllText(marker), "\"sha256\"\\s*:\\s*\"([a-f0-9]{64})\"");
+            if (!match.Success)
+                return null;
+            using (var sha = SHA256.Create())
+            using (var file = File.OpenRead(exe))
+            {
+                string actual = BitConverter.ToString(sha.ComputeHash(file)).Replace("-", "").ToLowerInvariant();
+                return actual == match.Groups[1].Value ? actual : null;
+            }
+        }
+        catch (IOException) { return null; }
+        catch (UnauthorizedAccessException) { return null; }
+    }
+
+    private static bool IsFailed(string version, string digest)
+    {
+        try
+        {
+            string marker = Path.Combine(UpdateRoot(), version + ".failed");
+            return File.Exists(marker) && File.ReadAllText(marker).Trim() == digest;
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
+    private static void WriteMarker(string name, string digest)
+    {
+        try
+        {
+            File.WriteAllText(Path.Combine(UpdateRoot(), name), digest);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private static bool StartFallback()
+    {
+        string root = UpdateRoot();
+        if (!Directory.Exists(root))
+            return false;
+        var current = new System.Version(Version);
+        var versions = Directory.GetFiles(root, "*.json").Select(Path.GetFileNameWithoutExtension)
+            .Where(name => Regex.IsMatch(name, @"^\d{1,6}\.\d{1,6}\.\d{1,6}$"))
+            .Select(name => new System.Version(name)).Where(version => version < current)
+            .OrderByDescending(version => File.Exists(Path.Combine(root, version + ".ok")))
+            .ThenByDescending(version => version);
+        foreach (var version in versions)
+        {
+            string label = version.ToString();
+            string digest = VerifiedDigest(label);
+            string runtime = Path.Combine(LocalData(), Title, "GitHub", label);
+            if (digest == null || IsFailed(label, digest) || !File.Exists(Path.Combine(runtime, "ready-" + label))
+                || !File.Exists(Path.Combine(runtime, "python", "pythonw.exe"))
+                || !File.Exists(Path.Combine(runtime, "app", "pdf_werkbank.py")))
+                continue;
+            string exe = Path.Combine(root, "PDF-Werkbank-" + label + ".exe");
+            var start = new ProcessStartInfo(exe, String.Join(" ", Environment.GetCommandLineArgs().Skip(1).Select(Quote)))
+            {
+                UseShellExecute = false,
+                WorkingDirectory = Environment.CurrentDirectory
+            };
+            start.EnvironmentVariables.Remove("PDF_WERKBANK_RUNTIME_ROOT");
+            start.EnvironmentVariables.Remove("PDF_WERKBANK_STARTUP_READY");
+            start.EnvironmentVariables["PDF_WERKBANK_UPDATE_FORWARDED"] = "1";
+            try
+            {
+                using (Process process = Process.Start(start))
+                    return true;
+            }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
+        return false;
     }
 
     private static string Quote(string value)

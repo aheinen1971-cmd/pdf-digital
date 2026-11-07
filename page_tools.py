@@ -52,6 +52,50 @@ def crop_page(page, selection):
     page.set_cropbox(rectangle)
 
 
+def ocr_lines(page):
+    if (not page.get_image_info() or any(run["type"] != 3 for run in page.get_texttrace())
+            or page.get_links() or any(page.widgets())):
+        return []
+    flags = pdf.TEXTFLAGS_DICT & ~pdf.TEXT_PRESERVE_IMAGES
+    return [(pdf.Rect(line["bbox"]), pdf.Point(line["spans"][0]["origin"]), line["spans"][0]["size"], text)
+            for block in page.get_text("dict", flags=flags, sort=True)["blocks"]
+            for line in block.get("lines", ())
+            if line["dir"] == (1.0, 0.0) and line["spans"]
+            and (text := "".join(span["text"] for span in line["spans"]).strip())]
+
+
+def replace_ocr_layer(page, values):
+    lines = ocr_lines(page)
+    if not lines or len(lines) != len(values):
+        raise ValueError("Die OCR-Ebene kann nicht eindeutig bearbeitet werden.")
+    if any(annot.type[0] == pdf.PDF_ANNOT_REDACT for annot in page.annots()):
+        raise ValueError("Bitte zuerst vorgemerkte Schwärzungen bearbeiten.")
+    flags = pdf.TEXTFLAGS_DICT & ~pdf.TEXT_PRESERVE_IMAGES
+    if any(line["dir"] != (1.0, 0.0) for block in page.get_text("dict", flags=flags)["blocks"]
+           for line in block.get("lines", ())):
+        raise ValueError("Die Seite enthält gedrehten OCR-Text.")
+    try:
+        values = [value.strip().encode("cp1252").decode("cp1252") for value in values]
+    except UnicodeEncodeError as exc:
+        raise ValueError("Die OCR-Korrektur unterstützt deutsche und westeuropäische Zeichen.") from exc
+    scale = min(1.3, 1800 / max(page.rect.width, page.rect.height))
+    matrix = pdf.Matrix(scale, scale)
+    before = page.get_pixmap(matrix=matrix).digest
+    page.add_redact_annot(page.rect * page.derotation_matrix, fill=False, cross_out=False)
+    page.apply_redactions(images=pdf.PDF_REDACT_IMAGE_NONE, graphics=pdf.PDF_REDACT_LINE_ART_NONE)
+    font = pdf.Font("helv")
+    shape = page.new_shape()
+    for (box, origin, size, _), value in zip(lines, values):
+        width = font.text_length(value, fontsize=size)
+        if width and box.width:
+            shape.insert_text(origin, value, fontsize=size, fontname="helv", render_mode=3,
+                              morph=(origin, pdf.Matrix(box.width / width, 1)))
+    if shape.text_cont:
+        shape.commit()
+    if page.get_pixmap(matrix=matrix).digest != before:
+        raise ValueError("Die OCR-Korrektur hat das sichtbare Seitenbild verändert und wurde verworfen.")
+
+
 NUMBER = rb"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)"
 IMAGE = re.compile(rb"(?<!\S)q\s+(" + NUMBER + rb"(?:\s+" + NUMBER
                    + rb"){5})\s+cm\s+/([^\s/<>\[\](){}%]+)\s+Do\s+Q(?=\s|$)")

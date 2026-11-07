@@ -1,11 +1,11 @@
-# PDF Werkbank 1.14.0 für Windows
+# PDF Werkbank 1.15.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.14.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.15.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.14.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.15.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -75,6 +75,9 @@ vorhandene passende Modelldatei wird verwendet.
 Funktionen anheften oder ausblenden. Scannen, Samsung → Posteingang,
 Ordnersuche und Samsung-Duplex sind voreingestellt. Eigene Auswahlen
 bleiben beim Neustart erhalten.
+- Unter **Favoriten → Gespeicherte Abläufe** lassen sich auch eigene
+  Stapelvorlagen anheften. Die Funktion fragt nach den Eingabedateien
+  und dem Zielordner und führt die gespeicherten Schritte aus.
 
 - **Strg+K** öffnet die Befehlssuche. Mit Pfeiltasten und Eingabe lässt
   sich eine Funktion aus den Registerkarten starten.
@@ -170,6 +173,9 @@ bleiben beim Neustart erhalten.
   gespeichert. Verschlüsselte Kopien behalten ihren Passwortschutz. Beim
   Wiederöffnen wird das Passwort erneut abgefragt. Die Originaldateien
   werden dafür nicht überschrieben.
+- **Start → Änderungsverlauf** zeigt die letzten Bearbeitungen.
+  **Strg+Z** nimmt den letzten Schritt zurück, **Strg+Y** stellt ihn
+  wieder her. Eine Seitenverschiebung betrifft beide geöffneten PDFs.
 - **Datei → Arbeitsmappe speichern** speichert bewusst einen benannten
   Vorgang mit PDF-Pfaden und zuletzt angezeigten Seiten. Geänderte PDFs
   werden vorher als Kopie gespeichert. **Arbeitsmappe öffnen** ergänzt
@@ -180,6 +186,11 @@ bleiben beim Neustart erhalten.
   werden nicht überschrieben.
 
 ## Archiv und Barrierefreiheit
+
+- **OCR-Korrektur** im Bearbeiten-Menü und im Scan-Posteingang stellt
+  Scanbild und erkannte Zeilen nebeneinander. Sie unterstützt Scan-Seiten
+  mit unsichtbarer Textebene und lässt das Seitenbild unverändert.
+  Für die Korrektur stehen deutsche und westeuropäische Zeichen zur Verfügung.
 
 - **PDF/A-Archivkopie** erstellt eine PDF/A-2b-Kopie des Seitenbilds
   mit durchsuchbarer Textebene. Seiten ohne erkennbaren Text lassen sich
@@ -221,6 +232,11 @@ bei GitHub hinterlegten SHA-256-Prüfsumme geprüft. Die App richtet die
 neue Version im Hintergrund ein. Beim nächsten Start öffnet sich die
 vorbereitete Version. Offene Dokumente bleiben währenddessen geöffnet.
 Über **Datei → Online-Update suchen** kann die Prüfung sofort starten.
+Kann eine aktualisierte Version ihr Fenster beim Start nicht öffnen,
+versucht der Starter eine frühere, lokal vorbereitete und geprüfte
+Version zu öffnen. Die fehlerhafte Version wird anhand ihrer Prüfsumme
+markiert und beim nächsten Start übersprungen, solange ein Rückweg
+verfügbar ist. Das gilt für Fehler vor dem Startsignal des Fensters.
 
 ## Aus dem Quellcode bauen
 
