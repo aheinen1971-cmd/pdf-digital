@@ -15,13 +15,13 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QPoint, QRect, QSettings, QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QColor, QIcon, QImage, QPageSize, QPainter, QPixmap
+from PySide6.QtCore import QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QImage, QPageSize, QPainter, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
-    QApplication, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
     QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
-    QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter, QTabBar,
+    QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter, QSpinBox, QTabBar,
     QVBoxLayout, QWidget,
 )
 
@@ -30,9 +30,11 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import prepared_update
 
+from office_export import export_word, export_excel
+from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import crop_page, edit_image, image_at, scan_command, scanned_document
 
-VERSION = (1, 5, 1)
+VERSION = (1, 6, 0)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -58,13 +60,17 @@ def pixmap(page, scale, annotations=True):
     return QPixmap.fromImage(image)
 
 
-def save_copy(doc, target):
+def save_copy(doc, target, password=None, **options):
     target = Path(target)
     fd, temp = tempfile.mkstemp(suffix=".pdf", dir=target.parent)
     os.close(fd)
     try:
-        doc.save(temp, garbage=4, deflate=True)
+        doc.save(temp, garbage=4, deflate=True, **options)
         with pdf.open(temp) as check:
+            if check.needs_pass and (password is None or not check.authenticate(password)):
+                raise ValueError("Die gespeicherte Kopie konnte mit dem Passwort nicht geöffnet werden.")
+            if password is not None and not check.needs_pass:
+                raise ValueError("Die gespeicherte Kopie ist nicht passwortgeschützt.")
             if len(check) != len(doc):
                 raise ValueError("Die gespeicherte Kopie ist unvollständig.")
         os.replace(temp, target)
@@ -436,7 +442,7 @@ def check_pending_redactions(page):
         raise ValueError("Diese Seite enthält bereits vorgemerkte Schwärzungen. Bitte diese zuerst separat bearbeiten.")
 
 
-def replace_span(page, target, value):
+def replace_span(page, target, value, style=None):
     check_pending_redactions(page)
     if "\n" in value or any(ord(char) < 32 for char in value):
         raise ValueError("Bitte eine einzelne Zeile eingeben.")
@@ -448,17 +454,58 @@ def replace_span(page, target, value):
     for _, other in text_spans(page):
         if other != target and band.intersects(pdf.Rect(other["bbox"])):
             raise ValueError("Die Textbereiche überlappen sich. Dieser Bereich kann nicht einzeln korrigiert werden.")
-    size = target["size"]
-    new_width = pdf.get_text_length(value, fontname="helv", fontsize=size)
+    name, size, color = style or ("helv", target["size"], pdf.sRGB_to_pdf(target["color"]))
+    new_width = pdf.get_text_length(value, fontname=name, fontsize=size)
+    if style and (new_width > box.width or size > target["size"] * 1.5):
+        raise ValueError("Die gewählte Schrift passt nicht in diesen Textbereich.")
     if new_width > box.width:
         size *= box.width / new_width
         if size < target["size"] * 0.8:
             raise ValueError("Der neue Text ist zu lang für den vorhandenen Platz.")
-    color = pdf.sRGB_to_pdf(target["color"])
     page.add_redact_annot(band, fill=False, cross_out=False)
     page.apply_redactions(images=pdf.PDF_REDACT_IMAGE_NONE, graphics=pdf.PDF_REDACT_LINE_ART_NONE)
     if value:
-        page.insert_text(target["origin"], value, fontsize=size, fontname="helv", color=color)
+        page.insert_text(target["origin"], value, fontsize=size, fontname=name, color=color)
+
+
+def paragraph_at(page, point):
+    flags = pdf.TEXTFLAGS_DICT & ~pdf.TEXT_PRESERVE_IMAGES
+    for block in page.get_text("dict", flags=flags)["blocks"]:
+        if not pdf.Rect(block["bbox"]).contains(point):
+            continue
+        lines = block.get("lines", [])
+        if not lines or any(line["dir"] != (1.0, 0.0) for line in lines):
+            continue
+        visible = [[span for span in line["spans"] if span.get("alpha", 255)] for line in lines]
+        spans = [span for line in visible for span in line]
+        if spans:
+            return {"text": "\n".join("".join(span["text"] for span in line) for line in visible),
+                    "size": spans[0]["size"], "paragraph": spans, "bbox": block["bbox"]}
+    raise ValueError("Hier wurde kein horizontaler Textabsatz gefunden.")
+
+
+def replace_paragraph(page, target, value, style):
+    check_pending_redactions(page)
+    font, size, color = style
+    bounds = pdf.Rect(target["bbox"])
+    trial = page.new_shape()
+    if trial.insert_textbox(bounds, value, fontname=font, fontsize=size, color=color) < 0:
+        raise ValueError("Der neue Absatz passt nicht in den vorhandenen Textbereich.")
+    removed = target["paragraph"]
+    bands = []
+    for span in removed:
+        box = pdf.Rect(span["bbox"])
+        y = min(box.y1 - 0.2, max(box.y0 + 0.2, span["origin"][1] - span["size"] * 0.24))
+        bands.append(pdf.Rect(box.x0 + 0.1, y - 0.12, box.x1 - 0.1, y + 0.12))
+    if any(band.intersects(pdf.Rect(span["bbox"])) for _, span in text_spans(page)
+           if span not in removed for band in bands):
+        raise ValueError("Der Absatz überlagert anderen Text und kann nicht sicher ersetzt werden.")
+    for band in bands:
+        page.add_redact_annot(band, fill=False, cross_out=False)
+    page.apply_redactions(images=pdf.PDF_REDACT_IMAGE_NONE, graphics=pdf.PDF_REDACT_LINE_ART_NONE)
+    if page.insert_textbox(bounds, value, fontname=font, fontsize=size, color=color) < 0:
+        raise ValueError("Der Absatz konnte nicht gesetzt werden.")
+
 
 
 def redact_area(page, box):
@@ -475,18 +522,29 @@ def redact_area(page, box):
 
 
 class Session:
-    def __init__(self, path):
+    def __init__(self, path, password=None):
         self.path = Path(path)
         self.doc = pdf.open(path)
-        if not self.doc.is_pdf or not len(self.doc) or self.doc.needs_pass:
+        self.password = password
+        if not self.doc.is_pdf or not len(self.doc):
             self.doc.close()
-            raise ValueError("Diese Version benötigt eine lesbare PDF ohne Passwortschutz.")
+            raise ValueError("Bitte eine lesbare PDF auswählen.")
+        if self.doc.needs_pass:
+            result = self.doc.authenticate(password or "")
+            if not result:
+                self.doc.close()
+                raise PermissionError("Für diese PDF ist das richtige Passwort erforderlich.")
+            if not (result & 4) and not (self.doc.permissions & pdf.PDF_PERM_MODIFY):
+                self.doc.close()
+                raise PermissionError("Diese PDF beschränkt das Bearbeiten. Bitte das Eigentümerpasswort verwenden.")
+        else:
+            self.password = None
         self.page = 0
         self.changed = False
         self.history = []
 
     def checkpoint(self):
-        self.history.append((self.doc.tobytes(), self.page, self.changed))
+        self.history.append((self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP), self.page, self.changed))
         del self.history[:-8]
 
     def undo(self):
@@ -494,6 +552,8 @@ class Session:
             content, self.page, self.changed = self.history.pop()
             self.doc.close()
             self.doc = pdf.open(stream=content, filetype="pdf")
+            if self.doc.needs_pass:
+                self.doc.authenticate(self.password)
 
 
 class Canvas(QLabel):
@@ -507,7 +567,7 @@ class Canvas(QLabel):
         if event.button() == Qt.MouseButton.LeftButton and self.window.current:
             self.origin = event.position().toPoint()
             self.band.setGeometry(QRect(self.origin, QSize()))
-            if self.window.mode in ("Markieren", "Schwärzen", "Zuschneiden"):
+            if self.window.mode in ("Markieren", "Schwärzen", "Zuschneiden", "Link", "Feld"):
                 self.band.show()
 
     def mouseMoveEvent(self, event):
@@ -563,13 +623,18 @@ class Window(QMainWindow):
                         ("Nach rechts drehen", lambda: self.edit_page("rotate", 90)),
                         ("Nach vorn", lambda: self.edit_page("move", -1)), ("Nach hinten", lambda: self.edit_page("move", 1)),
                         ("Löschen", lambda: self.edit_page("delete")), ("PDF anhängen", self.append)]),
-            ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True))]),
+            ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Text einfügen", lambda: self.set_mode("Text einfügen")), ("Text formatieren", lambda: self.set_mode("Textformat")), ("Absatz bearbeiten", lambda: self.set_mode("Absatz")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True))]),
             ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
                            ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send), ("Schwärzung prüfen", self.verify_redaction)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
-            ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
+            ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
                               ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen"))]),
-            ("Formular", [("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
+            ("Dokument", [("Lesezeichen", self.bookmarks), ("Link einfügen", lambda: self.set_mode("Link")),
+                           ("Seitenzahlen", self.add_page_numbers), ("Stempel", lambda: self.set_mode("Stempel"))]),
+            ("Export & Schutz", [("Word", self.export_office), ("Excel", lambda: self.export_office(True)),
+                                 ("Passwortschutz", self.protect_copy), ("Stapelverarbeitung", self.batch_process)]),
+            ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
+            ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
         ]
         for name, _ in self.groups:
             self.tools.addTab(name)
@@ -658,7 +723,13 @@ class Window(QMainWindow):
 
     def open_path(self, path):
         try:
-            session = Session(path)
+            with pdf.open(path) as probe:
+                password = None
+                if probe.needs_pass:
+                    password, ok = QInputDialog.getText(self, "PDF öffnen", "Passwort", QLineEdit.EchoMode.Password)
+                    if not ok:
+                        return
+            session = Session(path, password)
         except Exception as exc:
             self.error(exc)
             return
@@ -763,7 +834,9 @@ class Window(QMainWindow):
                  "Schwärzen": "Einen Bereich aufziehen und die Entfernung bestätigen.",
                  "Zuschneiden": "Den Bereich aufziehen, der sichtbar bleiben soll.",
                  "Bild verschieben": "Ein Bild mit gedrückter Maustaste an die neue Position ziehen.",
-                 "Bild ersetzen": "Ein Bild anklicken und die Ersatzdatei wählen."}
+                 "Bild ersetzen": "Ein Bild anklicken und die Ersatzdatei wählen.",
+                 "Absatz": "Auf den gewünschten Absatz klicken.", "Textformat": "Auf einen bestehenden Textabschnitt klicken.", "Text einfügen": "Auf die Stelle für den neuen Text klicken.",
+                 "Feld": "Einen Bereich für das neue Formularfeld aufziehen.", "Link": "Einen Bereich für den Link aufziehen.", "Stempel": "Auf die Stelle für den Stempel klicken."}
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
@@ -780,7 +853,15 @@ class Window(QMainWindow):
                 for note in page.annots():
                     if note.type[0] == pdf.PDF_ANNOT_TEXT and note.rect.contains(point):
                         QMessageBox.information(self, "PDF-Notiz", note.info.get("content") or "Leere Notiz")
-                        break
+                        return
+                for link in page.get_links():
+                    if not link["from"].contains(point):
+                        continue
+                    if link["kind"] == pdf.LINK_GOTO and 0 <= link.get("page", -1) < len(session.doc):
+                        self.thumbs.setCurrentRow(link["page"])
+                    elif link["kind"] == pdf.LINK_URI and QUrl(link.get("uri", "")).scheme() == "https":
+                        QDesktopServices.openUrl(QUrl(link["uri"]))
+                    break
                 return
             if self.mode in ("Zuschneiden", "Bild verschieben", "Bild ersetzen"):
                 if self.mode == "Bild verschieben":
@@ -807,6 +888,21 @@ class Window(QMainWindow):
                 except Exception:
                     session.undo()
                     raise
+            elif self.mode == "Link":
+                if not self.put_link(page, rect):
+                    return
+            elif self.mode == "Stempel":
+                if not self.put_stamp(page, point):
+                    return
+            elif self.mode == "Feld":
+                if not self.create_field(page, rect):
+                    return
+            elif self.mode in ("Text einfügen", "Textformat", "Absatz"):
+                target = self.text_at(page, point) if self.mode == "Textformat" else None
+                if self.mode == "Absatz":
+                    target = paragraph_at(page, point)
+                if not self.styled_text(page, point, target):
+                    return
             elif self.mode == "Text":
 
                 if not self.correct_text(page, point):
@@ -852,8 +948,11 @@ class Window(QMainWindow):
                     value, ok = QInputDialog.getItem(self, "Kontrollkästchen", widget.field_name,
                                                      ["Aktiviert", "Leer"], editable=False)
                     value = widget.on_state() if value == "Aktiviert" else "Off"
+                elif widget.field_type in (pdf.PDF_WIDGET_TYPE_COMBOBOX, pdf.PDF_WIDGET_TYPE_LISTBOX):
+                    choices = widget.choice_values or []
+                    value, ok = QInputDialog.getItem(self, "Formularfeld", widget.field_name, choices, editable=False)
                 else:
-                    raise ValueError("Diese Version unterstützt Textfelder und Kontrollkästchen.")
+                    raise ValueError("Dieser Formularfeldtyp wird noch nicht unterstützt.")
                 if not ok:
                     return
                 session.checkpoint()
@@ -874,7 +973,7 @@ class Window(QMainWindow):
         except OSError as exc:
             self.error(exc)
             return None
-        progress = QProgressDialog("Scanner liest die Seite ein …", "Abbrechen", 0, 0, self)
+        progress = QProgressDialog("Scanner liest die Seite ein …", "Abbrechen", 0, 0, QApplication.activeModalWidget() or self)
         progress.setWindowTitle("Vom Scanner einlesen")
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
@@ -894,51 +993,529 @@ class Window(QMainWindow):
         stdout, _ = process.communicate()
         return process.returncode, stdout
 
-    def scan_from_device(self):
-        with tempfile.TemporaryDirectory() as folder:
-            scan = Path(folder) / "Scan.png"
-            acquired = self.acquire_scan(scan)
+    def scan_page(self, scan):
+        acquired = self.acquire_scan(scan)
+        if acquired is None:
+            return None
+        status, stdout = acquired
+        if status == 4:
+            try:
+                devices = json.loads(stdout.decode("utf-8"))
+                names = [f"{index + 1}. {device['name']}" for index, device in enumerate(devices)]
+            except (ValueError, KeyError, TypeError):
+                self.error("Die verfügbaren Scanner konnten nicht ermittelt werden.")
+                return None
+            choice, ok = QInputDialog.getItem(self, "Scanner auswählen", "Gerät", names, editable=False)
+            if not ok:
+                return None
+            acquired = self.acquire_scan(scan, devices[names.index(choice)]["id"])
             if acquired is None:
-                return
+                return None
             status, stdout = acquired
-            if status == 4:
+        if status == 2:
+            return None
+        if status == 3:
+            self.error("Windows meldet keinen WIA-Scanner. Prüfe den Anschluss und den Scannertreiber.")
+            return None
+        if status != 0 or not scan.is_file():
+            self.error("Windows konnte kein Bild vom Scanner einlesen. Prüfe das Gerät und versuche es erneut.")
+            return None
+        match = re.search(rb"(\d+),(\d+)", stdout)
+        dpi = tuple(map(int, match.groups())) if match else None
+        return scanned_document(scan, dpi)
+
+    def save_scanned_document(self, document):
+        target, _ = QFileDialog.getSaveFileName(self, "Scan als PDF speichern",
+                                              str(Path.home() / "Documents" / "Scan.pdf"), "PDF-Dateien (*.pdf)")
+        if not target:
+            return
+        path = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
+        if any(path.resolve() == session.path.resolve() for session in self.sessions):
+            self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+            return
+        save_copy(document, path)
+        self.open_path(str(path))
+
+    def scan_from_device(self):
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                document = self.scan_page(Path(folder) / "Scan.png")
+                if document is not None:
+                    with document:
+                        self.save_scanned_document(document)
+        except Exception as exc:
+            self.error(exc)
+
+    def scan_stack(self):
+        with tempfile.TemporaryDirectory() as folder, pdf.open() as document:
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Mehrseitig scannen")
+            layout = QVBoxLayout(dialog)
+            layout.addWidget(QLabel("Lege eine Seite auf und klicke auf „Seite scannen“. Ziehe die Miniaturen zum Sortieren."))
+            pages = QListWidget()
+            pages.setIconSize(QSize(95, 125))
+            pages.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+            layout.addWidget(pages, 1)
+            row = QHBoxLayout()
+            add = QPushButton("Seite scannen")
+            remove = QPushButton("Aus Auswahl entfernen")
+            remove.setEnabled(False)
+            row.addWidget(add)
+            row.addWidget(remove)
+            layout.addLayout(row)
+            ocr = QCheckBox("Scan-PDF durchsuchbar machen (Deutsch und Englisch)")
+            ocr.setChecked(True)
+            layout.addWidget(ocr)
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+            save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
+            save_button.setText("Als eine PDF speichern")
+            save_button.setEnabled(False)
+            buttons.accepted.connect(dialog.accept)
+            buttons.rejected.connect(dialog.reject)
+            layout.addWidget(buttons)
+
+            def capture():
                 try:
-                    devices = json.loads(stdout.decode("utf-8"))
-                    names = [f"{index + 1}. {device['name']}" for index, device in enumerate(devices)]
-                except (ValueError, KeyError, TypeError):
-                    self.error("Die verfügbaren Scanner konnten nicht ermittelt werden.")
-                    return
-                choice, ok = QInputDialog.getItem(self, "Scanner auswählen", "Gerät", names, editable=False)
-                if not ok:
-                    return
-                acquired = self.acquire_scan(scan, devices[names.index(choice)]["id"])
-                if acquired is None:
-                    return
-                status, stdout = acquired
-            if status == 2:
-                return
-            if status == 3:
-                self.error("Windows meldet keinen WIA-Scanner. Prüfe den Anschluss und den Scannertreiber.")
-                return
-            if status != 0 or not scan.is_file():
-                self.error("Windows konnte kein Bild vom Scanner einlesen. Prüfe das Gerät und versuche es erneut.")
-                return
-            match = re.search(rb"(\d+),(\d+)", stdout)
-            dpi = tuple(map(int, match.groups())) if match else None
-            target, _ = QFileDialog.getSaveFileName(self, "Scan als PDF speichern",
-                                                  str(Path.home() / "Documents" / "Scan.pdf"), "PDF-Dateien (*.pdf)")
-            if not target:
-                return
-            path = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
-            if any(path.resolve() == session.path.resolve() for session in self.sessions):
-                self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+                    path = Path(folder) / f"scan-{len(document) + 1}.png"
+                    source = self.scan_page(path)
+                    if source is None:
+                        return
+                    with source:
+                        document.insert_pdf(source)
+                    index = len(document) - 1
+                    page = document[index]
+                    item = QListWidgetItem(QIcon(pixmap(page, min(95 / page.rect.width, 125 / page.rect.height))),
+                                           f"Scan {index + 1}")
+                    item.setData(Qt.ItemDataRole.UserRole, index)
+                    pages.addItem(item)
+                    pages.setCurrentItem(item)
+                    save_button.setEnabled(True)
+                except Exception as exc:
+                    self.error(exc)
+
+            def discard():
+                if pages.currentRow() >= 0:
+                    pages.takeItem(pages.currentRow())
+                save_button.setEnabled(pages.count() > 0)
+
+            add.clicked.connect(capture)
+            remove.clicked.connect(discard)
+            pages.currentRowChanged.connect(lambda index: remove.setEnabled(index >= 0))
+            dialog.resize(620, 575)
+            if dialog.exec() != QDialog.DialogCode.Accepted or not pages.count():
                 return
             try:
-                with scanned_document(scan, dpi) as document:
-                    save_copy(document, path)
-                self.open_path(str(path))
+                order = [pages.item(index).data(Qt.ItemDataRole.UserRole) for index in range(pages.count())]
+                document.select(order)
+                if ocr.isChecked():
+                    count, failures = self.send_ocr(document, range(len(document)), "deu+eng")
+                    if count is None:
+                        return
+                    if failures:
+                        QMessageBox.information(self, "Texterkennung", "Ohne neue Textebene: Seite " +
+                                                ", ".join(map(str, failures)))
+                self.save_scanned_document(document)
             except Exception as exc:
                 self.error(exc)
+
+    def bookmarks(self):
+        session = self.current
+        if not session:
+            return
+        entries = session.doc.get_toc(simple=False)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Lesezeichen")
+        layout = QVBoxLayout(dialog)
+        listing = QListWidget()
+        layout.addWidget(listing, 1)
+        row = QHBoxLayout()
+        for title in ("Zu Seite", "Hinzufügen", "Umbenennen", "Entfernen"):
+            button = QPushButton(title)
+            button.clicked.connect(lambda checked=False, action=title: perform(action))
+            row.addWidget(button)
+        layout.addLayout(row)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def redraw(index=0):
+            listing.clear()
+            for depth, title, page, _ in entries:
+                listing.addItem("    " * (depth - 1) + f"{title}  ·  {page if page > 0 else '–'}")
+            listing.setCurrentRow(min(index, len(entries) - 1))
+
+        def perform(action):
+            nonlocal entries
+            index = listing.currentRow()
+            updated = [entry.copy() for entry in entries]
+            if action == "Hinzufügen":
+                name, ok = QInputDialog.getText(dialog, "Lesezeichen hinzufügen", "Titel")
+                if not ok or not name.strip():
+                    return
+                updated.append([1, name.strip(), session.page + 1, {"kind": pdf.LINK_GOTO, "page": session.page}])
+                index = len(updated) - 1
+            elif index < 0:
+                return
+            elif action == "Zu Seite":
+                if entries[index][2] > 0:
+                    self.thumbs.setCurrentRow(entries[index][2] - 1)
+                    dialog.accept()
+                return
+            elif action == "Umbenennen":
+                name, ok = QInputDialog.getText(dialog, "Lesezeichen umbenennen", "Titel", text=entries[index][1])
+                if not ok or not name.strip():
+                    return
+                updated[index][1] = name.strip()
+            else:
+                depth = updated[index][0]
+                stop = index + 1
+                while stop < len(updated) and updated[stop][0] > depth:
+                    updated[stop][0] -= 1
+                    stop += 1
+                del updated[index]
+            session.checkpoint()
+            try:
+                session.doc.set_toc(updated)
+            except Exception as exc:
+                session.undo()
+                self.error(exc)
+                return
+            entries = updated
+            self.changed()
+            redraw(index)
+
+        listing.itemDoubleClicked.connect(lambda _: perform("Zu Seite"))
+        redraw()
+        dialog.resize(560, 450)
+        dialog.exec()
+
+    def add_page_numbers(self):
+        session = self.current
+        if not session:
+            return
+        value, ok = QInputDialog.getText(self, "Seitenzahlen einfügen", "Seiten (z. B. 1, 3-5)",
+                                         text=f"1-{len(session.doc)}")
+        if not ok:
+            return
+        try:
+            indices = page_selection(value, len(session.doc))
+        except ValueError as exc:
+            self.error(exc)
+            return
+        session.checkpoint()
+        try:
+            for index in indices:
+                page = session.doc[index]
+                number = str(index + 1)
+                width = pdf.get_text_length(number, fontsize=10)
+                point = pdf.Point((page.rect.width - width) / 2, page.rect.height - 17) * page.derotation_matrix
+                page.insert_text(point, number, fontsize=10, rotate=page.rotation)
+        except Exception as exc:
+            session.undo()
+            self.error(exc)
+            return
+        self.changed()
+
+    def put_link(self, page, rect):
+        if rect.width < 3 or rect.height < 3:
+            return False
+        session = self.current
+        value, ok = QInputDialog.getText(self, "Link einfügen", "Ziel: Seitennummer oder https://-Adresse")
+        if not ok:
+            return False
+        value = value.strip()
+        if value.isdecimal() and 1 <= int(value) <= len(session.doc):
+            link = {"kind": pdf.LINK_GOTO, "page": int(value) - 1, "to": pdf.Point(0, 0)}
+        else:
+            url = QUrl(value)
+            if not url.isValid() or url.scheme() != "https" or not url.host():
+                raise ValueError("Bitte eine gültige Seitennummer oder eine HTTPS-Adresse eingeben.")
+            link = {"kind": pdf.LINK_URI, "uri": url.toString()}
+        session.checkpoint()
+        try:
+            page.insert_link(dict(link, **{"from": rect}))
+        except Exception:
+            session.undo()
+            raise
+        return True
+
+    def put_stamp(self, page, point):
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        entries = settings.value("stamp_presets", ["GEPRÜFT", "EINGEGANGEN"], list)
+        value, ok = QInputDialog.getItem(self, "Stempel", "Stempel wählen oder eigenen Text eingeben",
+                                         [str(entry) for entry in entries], editable=True)
+        value = value.strip()
+        if not ok or not value:
+            return False
+        value.encode("cp1252")
+        width = pdf.get_text_length(value, fontname="hebo", fontsize=12) + 16
+        rectangle = pdf.Rect(point.x, point.y, point.x + width, point.y + 25)
+        if not (page.rect * page.derotation_matrix).contains(rectangle):
+            raise ValueError("Der Stempel passt an dieser Stelle nicht vollständig auf die Seite.")
+        session = self.current
+        session.checkpoint()
+        try:
+            shape = page.new_shape()
+            shape.draw_rect(rectangle)
+            shape.finish(color=(0.68, 0.08, 0.13), width=1.5)
+            shape.insert_text(point + (8, 17), value, fontsize=12, fontname="hebo", color=(0.68, 0.08, 0.13))
+            shape.commit()
+        except Exception:
+            session.undo()
+            raise
+        if value not in entries:
+            settings.setValue("stamp_presets", [value, *entries][:20])
+        return True
+
+
+    def create_field(self, page, rect):
+        if rect.width < 15 or rect.height < 9:
+            raise ValueError("Bitte einen größeren Bereich für das Formularfeld aufziehen.")
+        types = {"Textfeld": pdf.PDF_WIDGET_TYPE_TEXT, "Kontrollkästchen": pdf.PDF_WIDGET_TYPE_CHECKBOX,
+                 "Dropdown": pdf.PDF_WIDGET_TYPE_COMBOBOX}
+        kind, ok = QInputDialog.getItem(self, "Formularfeld erstellen", "Feldtyp", list(types), editable=False)
+        if not ok:
+            return False
+        name, ok = QInputDialog.getText(self, "Formularfeld erstellen", "Eindeutiger Feldname")
+        if not ok or not name.strip():
+            return False
+        session = self.current
+        if any(field.field_name == name.strip() for item in session.doc for field in item.widgets()):
+            raise ValueError("Dieser Feldname ist bereits vergeben.")
+        widget = pdf.Widget()
+        widget.rect, widget.field_name, widget.field_type = rect, name.strip(), types[kind]
+        widget.field_border_color = (0.20, 0.42, 0.64)
+        widget.field_border_width = 1
+        if kind == "Dropdown":
+            values, ok = QInputDialog.getMultiLineText(self, "Dropdown", "Eine Auswahlmöglichkeit pro Zeile")
+            if not ok:
+                return False
+            options = list(dict.fromkeys(value.strip() for value in values.splitlines() if value.strip()))
+            if not options:
+                raise ValueError("Bitte mindestens eine Auswahlmöglichkeit eingeben.")
+            widget.choice_values = options
+            widget.field_value = options[0]
+        session.checkpoint()
+        try:
+            page.add_widget(widget)
+        except Exception:
+            session.undo()
+            raise
+        return True
+
+    def styled_text(self, page, point, target=None):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Text formatieren" if target else "Text einfügen")
+        form = QFormLayout(dialog)
+        value = QPlainTextEdit(target["text"] if target else "")
+        value.setMaximumHeight(140)
+        form.addRow("Text", value)
+        families = {"Helvetica": "helv", "Helvetica fett": "hebo", "Times": "tiro", "Courier": "cour"}
+        family = QComboBox()
+        family.addItems(families)
+        form.addRow("Schrift", family)
+        size = QSpinBox()
+        size.setRange(5, 96)
+        size.setValue(round(target["size"]) if target else 12)
+        form.addRow("Größe", size)
+        colors = {"Schwarz": (0, 0, 0), "Blau": (0.06, 0.34, 0.66), "Rot": (0.7, 0.08, 0.13)}
+        color = QComboBox()
+        color.addItems(colors)
+        form.addRow("Farbe", color)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return False
+        text = value.toPlainText().strip()
+        if not text:
+            return False
+        try:
+            text.encode("cp1252")
+        except UnicodeEncodeError as exc:
+            raise ValueError("Die gewählte Standardschrift unterstützt einige Zeichen nicht.") from exc
+        name, points, ink = families[family.currentText()], size.value(), colors[color.currentText()]
+        session = self.current
+        session.checkpoint()
+        try:
+            if target and "paragraph" in target:
+                replace_paragraph(page, target, text, (name, points, ink))
+            elif target:
+                if "\n" in text:
+                    raise ValueError("Bei bestehendem Text kann jeweils ein Abschnitt in einer Zeile formatiert werden.")
+                replace_span(page, target, text, style=(name, points, ink))
+            else:
+                area = page.rect * page.derotation_matrix
+                box = pdf.Rect(point.x, point.y, area.x1 - 10, area.y1 - 10)
+                if box.is_empty or page.insert_textbox(box, text, fontsize=points, fontname=name, color=ink) < 0:
+                    raise ValueError("Der Text passt an dieser Stelle nicht auf die Seite.")
+        except Exception:
+            session.undo()
+            raise
+        return True
+
+    def export_office(self, excel=False):
+        session = self.current
+        if not session:
+            return
+        if session.doc.needs_pass:
+            self.error("Office-Export ist für passwortgeschützte PDFs deaktiviert.")
+            return
+        extension = ".xlsx" if excel else ".docx"
+        label = "Excel" if excel else "Word"
+        target, _ = QFileDialog.getSaveFileName(self, f"Nach {label} exportieren",
+                                                str(session.path.with_suffix(extension)), f"{label} (*{extension})")
+        if not target:
+            return
+        path = Path(target if target.lower().endswith(extension) else target + extension)
+        fd, temp = tempfile.mkstemp(suffix=extension, dir=path.parent)
+        os.close(fd)
+        try:
+            (export_excel if excel else export_word)(session.doc, temp)
+            os.replace(temp, path)
+            self.statusBar().showMessage(f"Export gespeichert: {path.name}", 6500)
+        except Exception as exc:
+            self.error(exc)
+        finally:
+            Path(temp).unlink(missing_ok=True)
+
+    def sign_document(self):
+        folder = str(self.current.path.parent) if self.current else ""
+        source, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF zum Signieren auswählen", folder,
+                                                "PDF-Dateien (*.pdf)")
+        if not source:
+            return
+        certificate, _ = QFileDialog.getOpenFileName(self, "Zertifikat mit privatem Schlüssel auswählen", "",
+                                                     "PKCS#12 (*.pfx *.p12)")
+        if not certificate:
+            return
+        password, ok = QInputDialog.getText(self, "Zertifikat entsperren", "Passwort", QLineEdit.EchoMode.Password)
+        if not ok:
+            return
+        target, _ = QFileDialog.getSaveFileName(self, "Signierte PDF speichern",
+                                                str(Path(source).with_stem(Path(source).stem + " - signiert")),
+                                                "PDF-Dateien (*.pdf)")
+        if not target:
+            return
+        target = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
+        if target.resolve() == Path(source).resolve() or any(target.resolve() == session.path.resolve()
+                                                            for session in self.sessions):
+            self.error("Bitte die signierte Kopie unter einem anderen Namen speichern.")
+            return
+        try:
+            sign_pdf(source, target, certificate, password)
+            self.statusBar().showMessage(f"Signierte Kopie gespeichert: {target.name}", 8000)
+            self.open_path(str(target))
+        except Exception as exc:
+            self.error(exc)
+
+    def check_signatures(self):
+        folder = str(self.current.path.parent) if self.current else ""
+        source, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF zur Signaturprüfung auswählen", folder,
+                                                "PDF-Dateien (*.pdf)")
+        if not source:
+            return
+        trust, _ = QFileDialog.getOpenFileName(self, "Optional: Vertrauenszertifikat wählen oder Abbrechen", "",
+                                               "Zertifikate (*.crt *.cer *.pem *.der)")
+        try:
+            results = verify_pdf(source, trust or None)
+        except Exception as exc:
+            self.error(exc)
+            return
+        report = QMessageBox(self)
+        report.setWindowTitle("Digitale Signaturen prüfen")
+        if not results:
+            report.setText("Keine Dokumentensignatur gefunden.")
+        else:
+            lines = []
+            for name, intact, trusted, valid, _ in results:
+                lines.append(f"{name}: " + ("Prüfung bestanden" if valid else
+                                          "Signatur ist intakt, Vertrauenskette nicht bestätigt" if intact and not trusted else
+                                          "Änderungen oder Prüffehler erkannt"))
+            report.setText("\n".join(lines))
+            report.setDetailedText("\n\n".join(details for *_, details in results))
+        report.setInformativeText("Die Prüfung läuft lokal. Sperrlisten werden nicht aus dem Internet geladen.")
+        report.exec()
+
+
+    def protect_copy(self):
+        if not self.current:
+            return
+        password, ok = QInputDialog.getText(self, "PDF mit Passwort speichern", "Passwort", QLineEdit.EchoMode.Password)
+        if not ok or not password:
+            return
+        confirm, ok = QInputDialog.getText(self, "Passwort wiederholen", "Passwort", QLineEdit.EchoMode.Password)
+        if not ok:
+            return
+        if confirm != password or len(password.encode("utf-8")) > 40:
+            self.error("Die Passwörter müssen übereinstimmen und dürfen höchstens 40 UTF-8-Bytes lang sein.")
+            return
+        target = self.output_path(" - geschützt", "Passwortgeschützte Kopie speichern")
+        if target:
+            try:
+                save_copy(self.current.doc, target, encryption=pdf.PDF_ENCRYPT_AES_256,
+                          owner_pw=password, user_pw=password, password=password)
+                self.statusBar().showMessage(f"Passwortgeschützte Kopie gespeichert: {target.name}", 6500)
+            except Exception as exc:
+                self.error(exc)
+
+    def batch_process(self):
+        paths, _ = QFileDialog.getOpenFileNames(self, "PDFs für Stapelverarbeitung auswählen", "", "PDF-Dateien (*.pdf)")
+        if not paths:
+            return
+        actions = ["Scans verkleinern", "Alle Seiten nach rechts drehen", "OCR für alle Scan-Seiten"]
+        action, ok = QInputDialog.getItem(self, "Stapelverarbeitung", "Aufgabe", actions, editable=False)
+        if not ok:
+            return
+        folder = QFileDialog.getExistingDirectory(self, "Zielordner für die Kopien auswählen")
+        if not folder:
+            return
+        progress = QProgressDialog("PDFs werden bearbeitet …", "Abbrechen", 0, len(paths), self)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        count, failures = 0, []
+        try:
+            for index, name in enumerate(paths):
+                progress.setValue(index)
+                QApplication.processEvents()
+                if progress.wasCanceled():
+                    break
+                path = Path(name)
+                target = Path(folder) / f"{path.stem} - Stapel.pdf"
+                if target.exists():
+                    failures.append(f"{path.name}: Zieldatei existiert bereits.")
+                    continue
+                try:
+                    with pdf.open(path) as doc:
+                        if not doc.is_pdf or doc.needs_pass or not len(doc):
+                            raise ValueError("Keine lesbare ungeschützte PDF.")
+                        if action == actions[0]:
+                            compressed_copy(doc, target, "Kleine Datei")
+                        else:
+                            if action == actions[1]:
+                                for page in doc:
+                                    page.set_rotation((page.rotation + 90) % 360)
+                            else:
+                                root = Path(__file__).parent
+                                for page in doc:
+                                    if not page.get_text().strip():
+                                        try:
+                                            recognize_page(page, "deu+eng", root / "tessdata")
+                                        except (ValueError, RuntimeError) as exc:
+                                            failures.append(f"{path.name}, Seite {page.number + 1}: {exc}")
+                            save_copy(doc, target)
+                    count += 1
+                except Exception as exc:
+                    failures.append(f"{path.name}: {exc}")
+        finally:
+            progress.close()
+        report = QMessageBox(self)
+        report.setWindowTitle("Stapelverarbeitung")
+        report.setText(f"Gespeicherte Kopien: {count}")
+        if failures:
+            report.setDetailedText("\n".join(failures))
+        report.exec()
 
 
     def scan_cleanup(self):
@@ -1106,6 +1683,9 @@ class Window(QMainWindow):
         session = self.current
         if not session:
             return
+        if session.doc.needs_pass:
+            self.error("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz.")
+            return
         options = QDialog(self)
         options.setWindowTitle("Für den Versand fertig machen")
         form = QFormLayout(options)
@@ -1266,6 +1846,9 @@ class Window(QMainWindow):
         session = self.current
         if not session:
             return
+        if session.doc.needs_pass:
+            self.error("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz.")
+            return
         selection, ok = QInputDialog.getText(self, "Seiten extrahieren", "Seiten und Reihenfolge, z. B. 1, 3-5, 8",
                                              text=str(session.page + 1))
         if not ok:
@@ -1283,6 +1866,9 @@ class Window(QMainWindow):
     def compress(self):
         session = self.current
         if not session:
+            return
+        if session.doc.needs_pass:
+            self.error("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz.")
             return
         profile, ok = QInputDialog.getItem(self, "Scan-PDF verkleinern",
                                           "Bildqualität der Kopie (Text und Formularfelder bleiben erhalten)",
@@ -1385,12 +1971,16 @@ class Window(QMainWindow):
         report.exec()
 
 
-    def correct_text(self, page, point):
+    def text_at(self, page, point):
         target = next((span for direction, span in text_spans(page)
                        if direction == (1.0, 0.0) and span.get("alpha", 255)
                        and pdf.Rect(span["bbox"]).contains(point)), None)
         if not target:
             raise ValueError("Hier wurde kein horizontaler Text gefunden.")
+        return target
+
+    def correct_text(self, page, point):
+        target = self.text_at(page, point)
         value, ok = QInputDialog.getText(self, "Text korrigieren",
                                         "Neuer Text (wird in einer Standardschrift gesetzt)",
                                         text=target["text"])
@@ -1505,7 +2095,7 @@ class Window(QMainWindow):
             self.error("Bitte für die Kopie einen anderen Dateinamen wählen.")
             return False
         try:
-            save_copy(session.doc, target)
+            save_copy(session.doc, target, password=session.password, encryption=pdf.PDF_ENCRYPT_KEEP)
         except Exception as exc:
             self.error(exc)
             return False

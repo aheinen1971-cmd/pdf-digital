@@ -22,3 +22,8 @@ Die Originalpakete können weitere Komponenten wie Microsoft Visual C++,
 OpenSSL oder LLVM OpenMP enthalten. Deren Weitergabe als Bestandteil
 eines eigenen Offline-Bundles wurde für dieses Release nicht freigegeben.
 
+
+Für Zertifikatssignaturen bezieht der Starter zusätzlich
+[pyHanko](https://pypi.org/project/pyHanko/) (MIT) und dessen Laufzeitpakete.
+Alle zugehörigen Windows-Wheels sind in DEPENDENCIES.tsv festgeschrieben.
+Die Lizenzen der jeweiligen Pakete liegen in ihren Original-Wheels.

@@ -3,8 +3,8 @@
 1. Ein öffentliches Repository erstellen. Das Quellcode-ZIP entpacken und
    die enthaltenen Dateien einschließlich LICENSE, THIRD_PARTY.md und
    DEPENDENCIES.tsv ins Hauptverzeichnis übernehmen.
-2. Diesen Quellcode als Version v1.5.1 markieren.
-3. Eine GitHub Release zu v1.5.1 anlegen. Das Windows-ZIP als Release-Datei
+2. Diesen Quellcode als Version v1.6.0 markieren.
+3. Eine GitHub Release zu v1.6.0 anlegen. Das Windows-ZIP als Release-Datei
    hinzufügen. Es enthält die dazugehörige EXE und denselben Quellcode.
 4. Für direkte Weitergabe dasselbe Windows-ZIP verwenden. Die Lizenz und
    der zu genau dieser EXE gehörende Quellcode bleiben so beieinander.

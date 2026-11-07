@@ -1,11 +1,11 @@
-# PDF Werkbank 1.5.1 für Windows
+# PDF Werkbank 1.6.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.5.1.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.6.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.5.1`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.6.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -63,6 +63,27 @@ vorhandene passende Modelldatei wird verwendet.
   mit A4 und Duplex an der langen Kante. Die Duplex-Vorschau zeigt
   Vorder- und Rückseite pro Blatt. Bei ungerader Seitenanzahl wird die
   letzte Rückseite als leer angezeigt.
+
+## Dokumentwerkzeuge und Export
+
+- **Bilder & Scan → Mehrseitig scannen** sammelt Seiten in einer Liste.
+  Miniaturen lassen sich verschieben und entfernen. Die PDF kann beim
+  Speichern auf Deutsch und Englisch durchsuchbar gemacht werden.
+- **Bearbeiten** bietet Textformatierung, Absatzkorrektur im bestehenden
+  Textrahmen und frei platzierten mehrzeiligen Text mit Standardschriften.
+- **Formular** erstellt und füllt Textfelder, Kontrollkästchen und Dropdowns.
+- **Dokument** verwaltet Lesezeichen und fügt Seitenlinks, HTTPS-Links,
+  Seitenzahlen und wiederverwendbare Textstempel ein.
+- **Export & Schutz** exportiert auslesbaren Text nach Word und erkannte
+  Tabellen nach Excel. Der Export rekonstruiert das Seitenlayout nicht.
+  Mehrere PDFs lassen sich in einem Durchgang drehen, per OCR erkennen
+  oder komprimieren. Verschlüsselte PDFs werden aus Export- und
+  Stapelfunktionen ausgeschlossen. Normale Kopien behalten ihren Schutz.
+  Eine neue geschützte PDF-Kopie verwendet AES-256.
+- **Signaturen** signiert eine gespeicherte PDF-Kopie mit einem eigenen
+  PKCS#12-Zertifikat und prüft bestehende digitale Dokumentensignaturen.
+  Die Prüfung unterscheidet intakte Signatur und bestätigte Vertrauenskette.
+  Sie fragt keine Online-Sperrlisten ab.
 
 ## Rotes PDF-Symbol
 
