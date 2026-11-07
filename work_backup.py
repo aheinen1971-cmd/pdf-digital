@@ -13,6 +13,8 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 from plan_measure import MAX_PLAN_BYTES
+from form_run import FormRun
+from filing import file_signature
 from preferences import (FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
                          validate_form_templates, validate_groups)
 from recovery import atomic_write
@@ -21,7 +23,11 @@ from update_worker import digest_file, version_tuple
 
 BACKUP_GROUPS = {"settings": "Favoriten und gespeicherte Einstellungen",
                  "plans": "Messlisten und Maßstäbe",
-                 "archive": "Archivfreigaben und Belegnotizen"}
+                 "archive": "Archivfreigaben und Belegnotizen",
+                 "locations": "Ordner und Formularläufe"}
+FOLDER_SETTINGS = {"invoice-watch/folder": "Rechnungsordner", "invoice-watch/archive": "Rechnungsarchiv",
+                   "scan/inbox-folder": "Scan-Posteingang", "scan/archive-folder": "Scan-Archiv",
+                   "form-export/run-folder": "Letzter Ordner für Formularläufe"}
 MAX_TOTAL = 48 * 1024 * 1024
 MAX_ENCRYPTED = MAX_TOTAL + 4 * 1024 * 1024
 ENCRYPTED_PREFIX = b"PDF-WERKBANK-BACKUP\x00"
@@ -35,6 +41,146 @@ REMINDER_KEY = r"invoice-watch/reminder/" + HEX
 
 class BackupPasswordRequired(ValueError):
     pass
+
+
+def default_scan_inbox():
+    return app_backup_root().with_name("Scan-Posteingang")
+
+
+def absolute_path(value):
+    return (isinstance(value, str) and 0 < len(value) <= 4096 and "\x00" not in value
+            and Path(value).is_absolute() and ".." not in Path(value).parts)
+
+
+def local_path(path):
+    return not path.drive.startswith(("\\\\", "//"))
+
+
+def capture_locations(settings):
+    folders = {}
+    for key in FOLDER_SETTINGS:
+        name = settings.value(key, "", str)
+        if absolute_path(name):
+            folders[key] = name
+    if "scan/inbox-folder" not in folders and default_scan_inbox().is_dir():
+        folders["scan/inbox-folder"] = str(default_scan_inbox())
+    paths = [Path(value) for value in settings.value("form-export/runs", [], list) if absolute_path(value)]
+    if "form-export/run-folder" in folders:
+        paths.extend(Path(folders["form-export/run-folder"]).glob("*.werkbanklauf"))
+    runs = {}
+    for path in list(dict.fromkeys(paths))[:200]:
+        if path.suffix.lower() != ".werkbanklauf":
+            continue
+        try:
+            run = FormRun.load(path)
+            overview = run.data.get("overview")
+            if overview and sum(record["done"] for record in run.records.values()) >= overview[0]:
+                try:
+                    if tuple(overview[1:]) == file_signature(Path(run.data["workbook"])):
+                        continue
+                except OSError:
+                    pass
+            runs[str(path)] = run.data
+        except (OSError, ValueError):
+            continue
+    return {"folders": folders, "runs": runs}
+
+
+def validate_locations(data):
+    if not isinstance(data, dict):
+        raise ValueError("Ungültige Ordnerdaten im Backup.")
+    folders, runs = data.get("folders", {}), data.get("runs", {})
+    if (not isinstance(folders, dict) or not folders.keys() <= FOLDER_SETTINGS.keys()
+            or not all(absolute_path(path) for path in folders.values())
+            or not isinstance(runs, dict) or len(runs) > 200):
+        raise ValueError("Ungültige Ordner oder Formularläufe im Backup.")
+    for name, state in runs.items():
+        if not absolute_path(name) or Path(name).suffix.lower() != ".werkbanklauf":
+            raise ValueError("Ungültiger Pfad für einen Formularlauf.")
+        FormRun.from_data(Path(name), state)
+        if not all(absolute_path(state[key]) for key in ("source", "workbook")):
+            raise ValueError("Ungültiger PDF- oder Excel-Pfad im Formularlauf.")
+    return {"folders": folders, "runs": runs}
+
+
+def location_roots(locations):
+    roots = set(locations["folders"].values())
+    for journal, state in locations["runs"].items():
+        roots.update(str(Path(value).parent) for value in (journal, state["source"], state["workbook"]))
+    return sorted(roots, key=str.casefold)
+
+
+def relocated_path(value, replacements):
+    path = Path(value)
+    for old in sorted(replacements, key=lambda name: len(Path(name).parts), reverse=True):
+        if path.is_relative_to(old):
+            root = Path(replacements[old]).resolve(strict=True)
+            candidate = (root / path.relative_to(old)).resolve()
+            if not candidate.is_relative_to(root):
+                raise ValueError("Ein Pfad liegt außerhalb des neu zugeordneten Ordners.")
+            return candidate
+    return path if local_path(path) else None
+
+
+def location_plan(locations, replacements):
+    folders, runs, rows = {}, {}, []
+    for key, old in locations["folders"].items():
+        target = relocated_path(old, replacements)
+        exists = target is not None and target.is_dir()
+        if exists:
+            folders[key] = str(target)
+        rows.append(("Ordner und Läufe", FOLDER_SETTINGS[key] + " · " + str(target or old),
+                     "Übernehmen" if exists else "Ordner fehlt oder wurde nicht geprüft"))
+    for name, state in locations["runs"].items():
+        journal = relocated_path(name, replacements)
+        source = relocated_path(state["source"], replacements)
+        workbook = relocated_path(state["workbook"], replacements)
+        exists = (journal is not None and journal.parent.is_dir() and source is not None and source.is_file()
+                  and workbook is not None and workbook.is_file())
+        if exists:
+            updated = {**state, "source": str(source), "workbook": str(workbook)}
+            if journal in runs:
+                raise ValueError("Zwei Formularläufe würden dieselbe Laufdatei verwenden.")
+            runs[journal] = state, updated
+        rows.append(("Ordner und Läufe", str(journal or name),
+                     "Lauf übernehmen" if exists else "Zielordner, PDF-Vorlage oder Excel-Datei fehlt"))
+    return folders, runs, rows
+
+
+def restore_locations(locations, replacements, settings):
+    from PySide6.QtCore import QLockFile
+
+    folders, runs, _ = location_plan(locations, replacements)
+    restored, warnings = [], []
+    for path, (saved, updated) in runs.items():
+        lock = QLockFile(str(path) + ".lock")
+        lock.setStaleLockTime(0)
+        try:
+            if not lock.tryLock(0):
+                raise OSError("Der Lauf ist bereits geöffnet.")
+            if path.is_symlink():
+                raise ValueError("Die Laufdatei ist eine Verknüpfung.")
+            if path.exists():
+                current = FormRun.load(path).data
+                identity = ("source_hash", "sheet", "columns")
+                if (any(current[key] != saved[key] for key in identity)
+                        or any(current[key] not in (saved[key], updated[key]) for key in ("source", "workbook"))):
+                    raise ValueError("Eine andere Laufdatei ist bereits vorhanden.")
+                updated = {**current, "source": updated["source"], "workbook": updated["workbook"]}
+            FormRun.from_data(path, updated).write()
+            restored.append(str(path))
+        except (OSError, ValueError) as exc:
+            warnings.append(f"{path.name}: {exc}")
+        finally:
+            if lock.isLocked():
+                lock.unlock()
+    for key, value in folders.items():
+        settings.setValue(key, value)
+    if restored:
+        known = settings.value("form-export/runs", [], list)
+        settings.setValue("form-export/runs", list(dict.fromkeys([*restored, *known]))[:200])
+    settings.sync()
+    return warnings
 
 
 def backup_cipher(password, salt):
@@ -67,8 +213,11 @@ def write_backup(target, settings, root, password=None):
         plan_times[relative] = path.stat().st_mtime_ns
     entries["meta.json"] = json.dumps({"plan_times": plan_times, "reminders": reminders,
                                       "form_templates": form_templates(settings),
+                                      "locations": capture_locations(settings),
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
+    if total + len(entries["meta.json"]) > MAX_TOTAL:
+        raise ValueError("Der Arbeitsstand ist für ein gemeinsames Backup zu groß.")
     buffer = io.BytesIO() if password is not None else None
     with ZipFile(target if buffer is None else buffer, "w", ZIP_DEFLATED) as archive:
         archive.writestr("format", b"PDF-Werkbank-Backup-1")
@@ -156,8 +305,9 @@ def read_backup_zip(source):
         if not isinstance(archive_root, str) or len(archive_root) > 4096:
             raise ValueError("Ungültiger Archivpfad im Backup.")
         templates = validate_form_templates(metadata.get("form_templates", {}))
+        locations = validate_locations(metadata.get("locations", {}))
     return {"settings": groups, "plans": plans, "archive": history, "plan_times": times,
-            "archive_root": archive_root, "form_templates": templates}
+            "archive_root": archive_root, "form_templates": templates, "locations": locations}
 
 
 def restore_backup(data, selection, settings, root, mapped=None):
@@ -275,6 +425,9 @@ def reminder_date(value):
 def backup_check_rows(data):
     rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
     rows.extend(("Excel-Formularvorlage", name, "Lesbar") for name in data.get("form_templates", {}))
+    _, _, paths = location_plan(data.get("locations", {"folders": {}, "runs": {}}), {})
+    rows.extend((group, name, status.replace("Übernehmen", "Erreichbar").replace("Lauf übernehmen", "Laufdaten lesbar"))
+                for group, name, status in paths)
     rows.extend(("Messliste", name, "Lesbar") for name in data["plans"])
     labels = {"note": "Belegnotiz", "reviewed": "Prüfstatus", "reminder": "Wiedervorlage"}
     links = set()
@@ -286,7 +439,7 @@ def backup_check_rows(data):
             links.add(value.partition("|")[2])
     for name in sorted(links):
         target = Path(name)
-        if target.drive.startswith(("\\\\", "//")):
+        if not local_path(target):
             state = "Netzwerkpfad nicht geprüft"
         elif not target.is_absolute():
             state = "Kein gültiger absoluter Pfad"

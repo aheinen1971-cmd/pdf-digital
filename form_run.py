@@ -36,7 +36,10 @@ class FormRun:
             raw = stream.read(2 * 1024 * 1024 + 1)
         if len(raw) > 2 * 1024 * 1024:
             raise ValueError("Der gespeicherte Formularlauf ist zu groß.")
-        data = json.loads(raw)
+        return cls.from_data(path, json.loads(raw))
+
+    @classmethod
+    def from_data(cls, path, data):
         if (not isinstance(data, dict) or data.get("version") != 1 or not valid_digest(data.get("source_hash"))
                 or not isinstance(data.get("sheet"), str) or not isinstance(data.get("records"), dict)
                 or len(data["records"]) > 500):

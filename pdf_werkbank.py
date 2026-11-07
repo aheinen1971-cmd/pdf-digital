@@ -61,14 +61,15 @@ from archive_run import ArchiveRun
 from form_run import FormRun
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
                          app_backup_root, archive_remap, automatic_backup, backup_check_rows, backup_preview,
-                         read_backup, reminder_date, restore_backup, write_backup)
+                         default_scan_inbox, location_plan, location_roots, read_backup, reminder_date,
+                         restore_backup, restore_locations, write_backup)
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 37, 1)
+VERSION = (1, 38, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -1692,6 +1693,12 @@ class Window(QMainWindow):
         table.setColumnWidth(2, 290)
         layout.addWidget(table)
         base_rows = backup_preview(data, settings, self.measurement_store())
+        locations = data.get("locations", {"folders": {}, "runs": {}})
+        replacements = {}
+        roots = location_roots(locations)
+        choose_locations = QPushButton("Ordner und Formularläufe neu zuordnen")
+        choose_locations.setEnabled(bool(roots))
+        layout.addWidget(choose_locations)
         mapped = {}
         remap_rows = []
         new_archive = None
@@ -1701,8 +1708,10 @@ class Window(QMainWindow):
 
         def show_rows():
             rows = []
-            for entry in base_rows + remap_rows:
-                group = {"Einstellungen": "settings", "Messlisten": "plans"}.get(entry[0], "archive")
+            _, _, path_rows = location_plan(locations, replacements)
+            for entry in base_rows + remap_rows + path_rows:
+                group = {"Einstellungen": "settings", "Messlisten": "plans",
+                         "Ordner und Läufe": "locations"}.get(entry[0], "archive")
                 if checks[group].isChecked():
                     rows.append(entry)
             table.setRowCount(len(rows))
@@ -1733,6 +1742,29 @@ class Window(QMainWindow):
             show_rows()
 
         remap.clicked.connect(choose_archive)
+
+        def choose_location():
+            old, ok = QInputDialog.getItem(dialog, "Ordner neu zuordnen", "Bisheriger Ordner", roots, editable=False)
+            if not ok:
+                return
+            new = QFileDialog.getExistingDirectory(dialog, "Ordner am neuen Ort auswählen", replacements.get(old, ""))
+            if not new:
+                return
+            proposed = {**replacements, old: new}
+            try:
+                location_plan(locations, proposed)
+                if old == locations["folders"].get("invoice-watch/archive"):
+                    updated, report = archive_remap(data["archive"], old, new)
+                    mapped.clear()
+                    mapped.update(updated)
+                    remap_rows[:] = report
+            except (OSError, ValueError) as exc:
+                self.error(exc)
+                return
+            replacements.update(proposed)
+            show_rows()
+
+        choose_locations.clicked.connect(choose_location)
         for box in checks.values():
             box.toggled.connect(show_rows)
         show_rows()
@@ -1746,10 +1778,25 @@ class Window(QMainWindow):
             return
         selection = {key for key, box in checks.items() if box.isChecked()}
         conflicts = restore_backup(data, selection, settings, self.measurement_store(), mapped)
+        warnings = []
+        if "locations" in selection:
+            previous = settings.value("invoice-watch/folder", "", str)
+            warnings = restore_locations(locations, replacements, settings)
+            current = settings.value("invoice-watch/folder", "", str)
+            if previous != current:
+                watcher = getattr(self, "_invoice_folder_window", None)
+                if watcher is not None:
+                    watcher.done(QDialog.DialogCode.Rejected)
+                if current:
+                    self.invoice_folder(show=False)
         if "archive" in selection and new_archive:
             settings.setValue("invoice-watch/archive", new_archive)
             settings.sync()
         self.refresh_favorites()
+        if self.open_work_dialog is not None:
+            self.open_work_dialog.refresh_entries()
+        if warnings:
+            QMessageBox.warning(self, "Formularläufe teilweise übernommen", "\n".join(warnings))
         self.statusBar().showMessage(f"Backup übernommen. Beibehaltene lokale Messlisten: {conflicts}.", 10000)
 
     def undo_measure_point(self):
@@ -2979,9 +3026,8 @@ class Window(QMainWindow):
             except Exception as exc:
                 self.error(exc)
 
-    @staticmethod
-    def inbox_folder():
-        return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Scan-Posteingang"
+    def inbox_folder(self):
+        return Path(self.favorite_settings.value("scan/inbox-folder", str(default_scan_inbox()), str))
 
     def queue_scan(self, doc):
         folder = self.inbox_folder()
@@ -8029,8 +8075,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Offene Formularläufe, Scan-Entwürfe und "
-                         "fällige Wiedervorlagen in einer Übersicht öffnen.")
+                         "Neu in dieser Version: Ordner und offene Formularläufe sichern "
+                         "und nach einem Umzug neu zuordnen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
