@@ -1,10 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-only
+import io
 import json
 import os
 import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
+
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 from plan_measure import MAX_PLAN_BYTES
 from preferences import GROUPS, export_package, import_groups, validate_groups
@@ -16,10 +21,28 @@ BACKUP_GROUPS = {"settings": "Favoriten und gespeicherte Einstellungen",
                  "plans": "Messlisten und Maßstäbe",
                  "archive": "Archivfreigaben und Belegnotizen"}
 MAX_TOTAL = 48 * 1024 * 1024
+MAX_ENCRYPTED = MAX_TOTAL + 4 * 1024 * 1024
+ENCRYPTED_PREFIX = b"PDF-WERKBANK-BACKUP\x00"
+ENCRYPTED_VERSION = b"\x01"
+MIN_PASSWORD = 8
+MAX_PASSWORD = 1024
 HEX = r"[a-f0-9]{64}"
 
 
-def write_backup(target, settings, root):
+class BackupPasswordRequired(ValueError):
+    pass
+
+
+def backup_cipher(password, salt):
+    if not 1 <= len(password) <= MAX_PASSWORD:
+        raise ValueError("Die Passwortlänge ist ungültig.")
+    key = Scrypt(salt=salt, length=32, n=2**17, r=8, p=1).derive(password.encode("utf-8"))
+    return AESGCM(key)
+
+
+def write_backup(target, settings, root, password=None):
+    if password is not None and not MIN_PASSWORD <= len(password) <= MAX_PASSWORD:
+        raise ValueError(f"Das Passwort muss {MIN_PASSWORD} bis {MAX_PASSWORD} Zeichen lang sein.")
     keys = [key for key in settings.allKeys() if re.fullmatch(r"invoice-watch/(archived|archived-digest|note|reviewed)/" + HEX, key)]
     history = {key: settings.value(key, "", str) for key in keys}
     entries = {"settings.json": export_package(settings),
@@ -40,14 +63,52 @@ def write_backup(target, settings, root):
     entries["meta.json"] = json.dumps({"plan_times": plan_times,
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
-    with ZipFile(target, "w", ZIP_DEFLATED) as archive:
+    buffer = io.BytesIO() if password is not None else None
+    with ZipFile(target if buffer is None else buffer, "w", ZIP_DEFLATED) as archive:
         archive.writestr("format", b"PDF-Werkbank-Backup-1")
         for name, data in entries.items():
             archive.writestr(name, data)
+    if buffer is not None:
+        salt, nonce = os.urandom(16), os.urandom(12)
+        header = ENCRYPTED_PREFIX + ENCRYPTED_VERSION + salt + nonce
+        payload = buffer.getvalue()
+        if len(header) + len(payload) + 16 > MAX_ENCRYPTED:
+            raise ValueError("Das Werkbank-Backup ist zu groß.")
+        encrypted = backup_cipher(password, salt).encrypt(nonce, payload, header)
+        with Path(target).open("wb") as stream:
+            stream.write(header)
+            stream.write(encrypted)
 
 
-def read_backup(path):
-    with ZipFile(path) as archive:
+def read_backup(path, password=None):
+    with Path(path).open("rb") as stream:
+        if stream.read(len(ENCRYPTED_PREFIX)) != ENCRYPTED_PREFIX:
+            if password is not None:
+                raise ValueError("Das verschlüsselte Backup wurde beim Lesen verändert.")
+            stream.seek(0)
+            return read_backup_zip(stream)
+        version = stream.read(1)
+        if version != ENCRYPTED_VERSION:
+            raise ValueError("Dieses verschlüsselte Backup-Format wird nicht unterstützt.")
+        salt, nonce = stream.read(16), stream.read(12)
+        header = ENCRYPTED_PREFIX + version + salt + nonce
+        size = os.fstat(stream.fileno()).st_size
+        if len(nonce) != 12 or not len(header) + 16 <= size <= MAX_ENCRYPTED:
+            raise ValueError("Das verschlüsselte Backup ist beschädigt oder zu groß.")
+        if password is None:
+            raise BackupPasswordRequired("Dieses Backup ist mit einem Passwort geschützt.")
+        ciphertext = stream.read(MAX_ENCRYPTED - len(header) + 1)
+        if len(ciphertext) != size - len(header):
+            raise ValueError("Das verschlüsselte Backup wurde beim Lesen verändert.")
+    try:
+        payload = backup_cipher(password, salt).decrypt(nonce, ciphertext, header)
+    except InvalidTag as exc:
+        raise ValueError("Das Passwort ist falsch oder die Sicherungsdatei wurde beschädigt.") from exc
+    return read_backup_zip(io.BytesIO(payload))
+
+
+def read_backup_zip(source):
+    with ZipFile(source) as archive:
         entries = archive.infolist()
         names = [entry.filename for entry in entries]
         if (len(set(names)) != len(names) or sum(entry.file_size for entry in entries) > MAX_TOTAL

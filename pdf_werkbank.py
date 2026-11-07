@@ -54,15 +54,16 @@ from document_review import attachments, comments, insert_labels, label_conflict
 from filing import archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches, pdf_files, scan_breaks, scan_ranges
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
-from work_backup import (BACKUP_GROUPS, app_backup_root, archive_remap, automatic_backup,
-                         backup_preview, read_backup, restore_backup, write_backup)
+from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
+                         app_backup_root, archive_remap, automatic_backup, backup_preview,
+                         read_backup, restore_backup, write_backup)
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 29, 1)
+VERSION = (1, 30, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -1544,19 +1545,77 @@ class Window(QMainWindow):
             if action == "Backup speichern":
                 name, _ = QFileDialog.getSaveFileName(self, action, "PDF-Werkbank.werkbankbackup", kind)
                 if name:
+                    confirmed, password = self.backup_password_dialog()
+                    if not confirmed:
+                        return
                     target = Path(name if name.lower().endswith(".werkbankbackup") else name + ".werkbankbackup")
                     with tempfile.TemporaryDirectory(dir=target.parent) as folder:
                         temporary = Path(folder) / target.name
-                        write_backup(temporary, settings, self.measurement_store())
+                        write_backup(temporary, settings, self.measurement_store(), password)
+                        read_backup(temporary, password)
                         os.replace(temporary, target)
                     self.statusBar().showMessage(f"Arbeitsstand gesichert: {target.name}", 8000)
                 return
             name, _ = QFileDialog.getOpenFileName(self, action, str(app_backup_root()), kind)
             if not name:
                 return
-            self.restore_backup_dialog(read_backup(name), settings)
+            try:
+                data = read_backup(name)
+            except BackupPasswordRequired:
+                password, confirmed = QInputDialog.getText(
+                    self, "Geschütztes Backup öffnen", "Passwort für dieses Backup", QLineEdit.EchoMode.Password)
+                if not confirmed:
+                    return
+                data = read_backup(name, password)
+            self.restore_backup_dialog(data, settings)
         except Exception as exc:
             self.error(exc)
+
+    def backup_password_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Backup speichern")
+        layout = QVBoxLayout(dialog)
+        protect = QCheckBox("Backup mit Passwort schützen")
+        layout.addWidget(protect)
+        fields = QWidget(dialog)
+        form = QFormLayout(fields)
+        password, repeat = QLineEdit(), QLineEdit()
+        for field in (password, repeat):
+            field.setEchoMode(QLineEdit.EchoMode.Password)
+            field.setMaxLength(MAX_PASSWORD)
+        form.addRow("Passwort", password)
+        form.addRow("Passwort wiederholen", repeat)
+        note = QLabel(f"Mindestens {MIN_PASSWORD} Zeichen. Bewahre das Passwort sicher auf. "
+                      "Es kann später nicht zurückgesetzt werden.")
+        note.setWordWrap(True)
+        form.addRow(note)
+        error = QLabel()
+        error.setWordWrap(True)
+        form.addRow(error)
+        layout.addWidget(fields)
+        fields.setVisible(False)
+        protect.toggled.connect(fields.setVisible)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Save).setText("Speichern")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        layout.addWidget(buttons)
+
+        def accept():
+            if protect.isChecked():
+                if len(password.text()) < MIN_PASSWORD:
+                    error.setText(f"Das Passwort muss mindestens {MIN_PASSWORD} Zeichen lang sein.")
+                    password.setFocus()
+                    return
+                if password.text() != repeat.text():
+                    error.setText("Die beiden Passwörter stimmen nicht überein.")
+                    repeat.setFocus()
+                    return
+            dialog.accept()
+
+        buttons.accepted.connect(accept)
+        buttons.rejected.connect(dialog.reject)
+        confirmed = dialog.exec() == QDialog.DialogCode.Accepted
+        return confirmed, password.text() if confirmed and protect.isChecked() else None
 
     def restore_backup_dialog(self, data, settings):
         dialog = QDialog(self)
