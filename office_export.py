@@ -10,6 +10,31 @@ REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 OFFICE_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
+def read_form_values(path):
+    values = {}
+    with pdf.open(path) as document:
+        if not document.is_pdf or document.needs_pass:
+            raise ValueError("Keine lesbare PDF oder Passwort erforderlich.")
+        for page in document:
+            for field in page.widgets():
+                if field.field_type in (pdf.PDF_WIDGET_TYPE_BUTTON, pdf.PDF_WIDGET_TYPE_SIGNATURE):
+                    continue
+                if field.field_type == pdf.PDF_WIDGET_TYPE_TEXT and field.field_flags & pdf.PDF_TX_FIELD_IS_PASSWORD:
+                    continue
+                name = field.field_name
+                if not name:
+                    continue
+                value = field.field_value
+                if isinstance(value, (list, tuple)):
+                    value = " | ".join(map(str, value))
+                if field.field_type in (pdf.PDF_WIDGET_TYPE_CHECKBOX, pdf.PDF_WIDGET_TYPE_RADIOBUTTON) and value == "Off":
+                    value = ""
+                options = values.setdefault(name, {})
+                if value not in (None, ""):
+                    options[str(value)] = None
+    return {name: " | ".join(options) for name, options in values.items()}
+
+
 def safe_text(value):
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff]", "", str(value or ""))[:32767]
 

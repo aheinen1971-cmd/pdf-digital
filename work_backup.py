@@ -3,6 +3,7 @@ import io
 import json
 import os
 import re
+from datetime import date
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
@@ -27,6 +28,8 @@ ENCRYPTED_VERSION = b"\x01"
 MIN_PASSWORD = 8
 MAX_PASSWORD = 1024
 HEX = r"[a-f0-9]{64}"
+ARCHIVE_KEY = r"invoice-watch/(archived|archived-digest|note|reviewed)/" + HEX
+REMINDER_KEY = r"invoice-watch/reminder/" + HEX
 
 
 class BackupPasswordRequired(ValueError):
@@ -43,8 +46,9 @@ def backup_cipher(password, salt):
 def write_backup(target, settings, root, password=None):
     if password is not None and not MIN_PASSWORD <= len(password) <= MAX_PASSWORD:
         raise ValueError(f"Das Passwort muss {MIN_PASSWORD} bis {MAX_PASSWORD} Zeichen lang sein.")
-    keys = [key for key in settings.allKeys() if re.fullmatch(r"invoice-watch/(archived|archived-digest|note|reviewed)/" + HEX, key)]
-    history = {key: settings.value(key, "", str) for key in keys}
+    keys = settings.allKeys()
+    history = {key: settings.value(key, "", str) for key in keys if re.fullmatch(ARCHIVE_KEY, key)}
+    reminders = {key: settings.value(key, "", str) for key in keys if re.fullmatch(REMINDER_KEY, key)}
     entries = {"settings.json": export_package(settings),
                "archive.json": json.dumps(history, ensure_ascii=False).encode("utf-8")}
     total = sum(map(len, entries.values()))
@@ -60,7 +64,7 @@ def write_backup(target, settings, root, password=None):
             raise ValueError("Die Messlisten sind für ein gemeinsames Backup zu groß.")
         entries["plans/" + relative] = data
         plan_times[relative] = path.stat().st_mtime_ns
-    entries["meta.json"] = json.dumps({"plan_times": plan_times,
+    entries["meta.json"] = json.dumps({"plan_times": plan_times, "reminders": reminders,
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
     buffer = io.BytesIO() if password is not None else None
@@ -118,7 +122,7 @@ def read_backup_zip(source):
         groups = validate_groups(json.loads(archive.read("settings.json"))["groups"])
         history = json.loads(archive.read("archive.json"))
         if not isinstance(history, dict) or any(
-                not re.fullmatch(r"invoice-watch/(archived|archived-digest|note|reviewed)/" + HEX, key)
+                not re.fullmatch(ARCHIVE_KEY, key)
                 or not isinstance(value, str) or len(value) > 4096
                 for key, value in history.items()):
             raise ValueError("Ungültige Archivfreigaben oder Belegnotizen.")
@@ -137,6 +141,13 @@ def read_backup_zip(source):
         metadata = json.loads(archive.read("meta.json")) if "meta.json" in names else {}
         if not isinstance(metadata, dict) or not isinstance(metadata.get("plan_times", {}), dict):
             raise ValueError("Ungültige Metadaten im Backup.")
+        reminders = metadata.get("reminders", {})
+        if not isinstance(reminders, dict) or any(not re.fullmatch(REMINDER_KEY, key) or not isinstance(value, str)
+                                                  for key, value in reminders.items()):
+            raise ValueError("Ungültige Wiedervorlagen im Backup.")
+        for value in reminders.values():
+            reminder_date(value)
+        history.update(reminders)
         times = {name: value for name, value in metadata.get("plan_times", {}).items()
                  if name in plans and type(value) is int and value > 0}
         archive_root = metadata.get("archive_root", "")
@@ -231,11 +242,44 @@ def backup_preview(data, settings, root):
     for key, value in data["archive"].items():
         kind = key.split("/")[1]
         label = {"archived": "Archivfreigabe", "archived-digest": "Archivkopie",
-                 "note": "Belegnotiz", "reviewed": "Prüfstatus"}[kind]
+                 "note": "Belegnotiz", "reviewed": "Prüfstatus", "reminder": "Wiedervorlage"}[kind]
         entry = value.partition("|")[2] if kind.startswith("archived") else key.rsplit("/", 1)[-1][:16]
         status = ("Bereits gleich" if settings.value(key, "", str) == value
                   else "Lokaler Eintrag bleibt erhalten") if settings.contains(key) else "Übernehmen"
         rows.append((label, entry, status))
+    return rows
+
+
+def reminder_date(value):
+    day, separator, note = value.partition("|")
+    parsed = date.fromisoformat(day)
+    if not separator or parsed.isoformat() != day or len(note) > 1000:
+        raise ValueError("Ungültige Wiedervorlage.")
+    return parsed, note
+
+
+def backup_check_rows(data):
+    rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
+    rows.extend(("Messliste", name, "Lesbar") for name in data["plans"])
+    labels = {"note": "Belegnotiz", "reviewed": "Prüfstatus", "reminder": "Wiedervorlage"}
+    links = set()
+    for key, value in data["archive"].items():
+        kind = key.split("/")[1]
+        if kind in labels:
+            rows.append((labels[kind], key.rsplit("/", 1)[-1][:16], "Lesbar"))
+        else:
+            links.add(value.partition("|")[2])
+    for name in sorted(links):
+        target = Path(name)
+        if target.drive.startswith(("\\\\", "//")):
+            state = "Netzwerkpfad nicht geprüft"
+        elif not target.is_absolute():
+            state = "Kein gültiger absoluter Pfad"
+        elif target.is_file():
+            state = "Datei vorhanden"
+        else:
+            state = "Datei fehlt oder ist nicht erreichbar"
+        rows.append(("Archivverweis", name or "Ohne Dateipfad", state))
     return rows
 
 

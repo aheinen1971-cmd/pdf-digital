@@ -21,11 +21,11 @@ from threading import Event
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QEventLoop, QItemSelectionModel, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QDate, QEventLoop, QItemSelectionModel, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateEdit, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
     QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
     QHeaderView, QMenu, QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter,
     QSlider, QSpinBox, QTabBar, QTableWidget, QTableWidgetItem, QToolBar, QToolButton,
@@ -37,7 +37,7 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
 
-from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet
+from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet, read_form_values
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
 from invoice_validation import KOSIT_FOLDER, RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
@@ -51,19 +51,20 @@ from assistants import (add_suggested_field, append_scan, clean_hidden, form_can
                         scan_quality, similar_scan, text_changes)
 from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
-from filing import archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches, pdf_files, scan_breaks, scan_ranges
+from filing import (archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches,
+                    pdf_files, scan_breaks, scan_ranges, search_rectangles)
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
-                         app_backup_root, archive_remap, automatic_backup, backup_preview,
-                         read_backup, restore_backup, write_backup)
+                         app_backup_root, archive_remap, automatic_backup, backup_check_rows, backup_preview,
+                         read_backup, reminder_date, restore_backup, write_backup)
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 30, 0)
+VERSION = (1, 31, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -889,6 +890,7 @@ class Window(QMainWindow):
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
+                          ("Formulare nach Excel", self.export_form_batch),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
             ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
         ]
@@ -1447,7 +1449,7 @@ class Window(QMainWindow):
             if self.search_text or self.grid_mm:
                 image = QPixmap(image)
                 painter = QPainter(image)
-                for result in page.search_for(self.search_text) if self.search_text else ():
+                for result in search_rectangles(page, self.search_text) if self.search_text else ():
                     rect = result * page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
                     painter.fillRect(QRect(int(rect.x0), int(rect.y0), int(rect.width), int(rect.height)),
                                      QColor(255, 206, 32, 110))
@@ -1536,7 +1538,8 @@ class Window(QMainWindow):
 
     def work_backup(self):
         action, ok = QInputDialog.getItem(self, "Arbeitsstand sichern", "Aktion",
-                                          ("Backup speichern", "Backup wiederherstellen"), editable=False)
+                                          ("Backup speichern", "Backup wiederherstellen", "Rücksicherung testen"),
+                                          editable=False)
         if not ok:
             return
         settings = self.favorite_settings
@@ -1567,9 +1570,39 @@ class Window(QMainWindow):
                 if not confirmed:
                     return
                 data = read_backup(name, password)
-            self.restore_backup_dialog(data, settings)
+            if action == "Rücksicherung testen":
+                self.backup_check_dialog(data)
+            else:
+                self.restore_backup_dialog(data, settings)
         except Exception as exc:
             self.error(exc)
+
+    def backup_check_dialog(self, data):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Rücksicherung testen")
+        dialog.resize(840, 420)
+        layout = QVBoxLayout(dialog)
+        rows = backup_check_rows(data)
+        notice = QLabel("Backup erfolgreich gelesen. Es wurden keine Daten übernommen. "
+                        "Geprüft werden gespeicherte Archivpfade auf lokalen Laufwerken.")
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        table = QTableWidget(len(rows), 3)
+        table.setHorizontalHeaderLabels(["Gruppe", "Eintrag", "Prüfergebnis"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        table.setColumnWidth(0, 145)
+        table.setColumnWidth(2, 245)
+        for row, values in enumerate(rows):
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, column, item)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.exec()
 
     def backup_password_dialog(self):
         dialog = QDialog(self)
@@ -4442,10 +4475,11 @@ class Window(QMainWindow):
         layout.addWidget(status)
         layout.addWidget(QLabel("Mit Strg oder Umschalt mehrere Belege auswählen."))
         filter = QComboBox()
-        filter.addItems(["Alle", "Neu", "Fehler", "Dubletten", "Archiviert"])
+        filter.addItems(["Alle", "Neu", "Fehler", "Dubletten", "Archiviert", "Wiedervorlage fällig", "Alle Wiedervorlagen"])
         layout.addWidget(filter)
-        table = QTableWidget(0, 6)
-        table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten", "Archiv", "Notiz"])
+        table = QTableWidget(0, 7)
+        table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten",
+                                         "Archiv", "Notiz", "Wiedervorlage"])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -4462,6 +4496,7 @@ class Window(QMainWindow):
         validate = controls.addButton("Prüfdetails", QDialogButtonBox.ButtonRole.ActionRole)
         batch = controls.addButton("Auswahl prüfen", QDialogButtonBox.ButtonRole.ActionRole)
         note = controls.addButton("Notiz", QDialogButtonBox.ButtonRole.ActionRole)
+        reminder = controls.addButton("Wiedervorlage", QDialogButtonBox.ButtonRole.ActionRole)
         reviewed = controls.addButton("Prüfstatus ändern", QDialogButtonBox.ButtonRole.ActionRole)
         archive = controls.addButton("Für Archiv freigeben", QDialogButtonBox.ButtonRole.ActionRole)
         controls.rejected.connect(dialog.reject)
@@ -4471,6 +4506,7 @@ class Window(QMainWindow):
         settler = IntakeSettler(saved_folder) if saved_folder else None
         records, retry, seen = {}, {}, {}
         future = None
+        last_day = date.today()
         timer = QTimer(dialog)
         executor = ThreadPoolExecutor(max_workers=1)
         tools = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
@@ -4501,7 +4537,7 @@ class Window(QMainWindow):
 
         def update_actions():
             count = len(selected_records())
-            for button in (review, validate, note, reviewed):
+            for button in (review, validate, note, reviewed, reminder):
                 button.setEnabled(count == 1)
             batch.setEnabled(count > 0)
             archive.setEnabled(count > 0)
@@ -4519,10 +4555,23 @@ class Window(QMainWindow):
                         seen[key] = source.digest
                 elif seen[key] != source.digest:
                     unread += 1
-            badge.setText(f"Rechnungen: {unread} neu" if unread else "Rechnungen")
+            today = date.today()
+            due = sum(day is not None and day <= today for day, _ in
+                      (get_reminder(digest) for digest in {record.source.digest for record in records.values()}))
+            counts = [label for count, label in ((unread, f"{unread} neu"), (due, f"{due} fällig")) if count]
+            badge.setText("Rechnungen: " + " · ".join(counts) if counts else "Rechnungen")
             badge.setVisible(settler is not None)
 
         badge = self.invoice_badge
+
+        def get_reminder(digest):
+            stored = settings.value("invoice-watch/reminder/" + digest, "", str)
+            try:
+                if stored:
+                    return reminder_date(stored)
+            except ValueError:
+                pass
+            return None, ""
 
         def refresh():
             update_badge()
@@ -4531,6 +4580,7 @@ class Window(QMainWindow):
             exact, possible = duplicate_paths()
             ordered = []
             visible = []
+            today = date.today()
             for path in sorted(records, key=lambda path: path.name.casefold()):
                 record = records[path]
                 source = record.source
@@ -4539,10 +4589,12 @@ class Window(QMainWindow):
                 checked = settings.value("invoice-watch/reviewed/" + source.digest, False, bool)
                 problem = (record.validation and record.validation.status != "passed") or source.problem or (
                     record.check_problem and record.check_problem != "E-Rechnung noch nicht geprüft")
-                flags = (True, not archived and not checked, problem, path in exact or path in possible, archived)
+                day, reminder_note = get_reminder(source.digest)
+                flags = (True, not archived and not checked, problem, path in exact or path in possible, archived,
+                         day is not None and day <= today, day is not None)
                 if flags[filter.currentIndex()]:
                     ordered.append(path)
-                    visible.append((archived, checked, destination))
+                    visible.append((archived, checked, destination, day, reminder_note))
             table.blockSignals(True)
             table.setRowCount(len(ordered))
             for row, path in enumerate(ordered):
@@ -4552,11 +4604,16 @@ class Window(QMainWindow):
                          record.check_problem or source.problem or "–")
                 marks = [label for group, label in ((exact, "Dateiidentisch"), (possible, "Möglicher Doppelbeleg"))
                          if path in group]
-                archived, checked, destination = visible[row]
+                archived, checked, destination, day, reminder_note = visible[row]
                 note_text = settings.value("invoice-watch/note/" + source.digest, "", str)
+                schedule = day.strftime("%d.%m.%Y") if day else ""
+                if day and day <= today:
+                    schedule += " · Überfällig" if day < today else " · Heute fällig"
+                if reminder_note:
+                    schedule += " · " + reminder_note
                 values = (path.name, source.fields[0].value if source.fields[0] else "", check,
                           " · ".join(marks), "Freigegeben und kopiert" if archived else "Gesehen" if checked else "Offen",
-                          note_text)
+                          note_text, schedule)
                 for column, value in enumerate(values):
                     item = QTableWidgetItem(value)
                     item.setToolTip(str(path) if column == 0 else destination if column == 4 and archived else value)
@@ -4588,7 +4645,7 @@ class Window(QMainWindow):
                 tick()
 
         def tick():
-            nonlocal future
+            nonlocal future, last_day
             if settler is None:
                 location.setText("Bitte einen Rechnungsordner wählen.")
                 return
@@ -4602,7 +4659,9 @@ class Window(QMainWindow):
                 return
             now = time.monotonic()
             stable = settler.poll(now)
-            changed = False
+            today = date.today()
+            changed = today != last_day
+            last_day = today
             for path in list(records):
                 if stable.get(path) != records[path].signature:
                     del records[path]
@@ -4677,6 +4736,45 @@ class Window(QMainWindow):
                 return
             key = "invoice-watch/reviewed/" + record.source.digest
             settings.setValue(key, not settings.value(key, False, bool))
+            refresh()
+
+        def edit_reminder():
+            record = selected()
+            if not record:
+                return
+            key = "invoice-watch/reminder/" + record.source.digest
+            day, memo = get_reminder(record.source.digest)
+            editor = QDialog(dialog)
+            editor.setWindowTitle("Wiedervorlage für " + record.source.path.name)
+            form = QFormLayout(editor)
+            enabled = QCheckBox("Wiedervorlage aktiv")
+            enabled.setChecked(True)
+            form.addRow(enabled)
+            calendar = QDateEdit(QDate(day.year, day.month, day.day) if day else QDate.currentDate())
+            calendar.setDisplayFormat("dd.MM.yyyy")
+            calendar.setMinimumDate(QDate(1, 1, 1))
+            calendar.setCalendarPopup(True)
+            message = QLineEdit(memo)
+            message.setMaxLength(1000)
+            form.addRow("Termin", calendar)
+            form.addRow("Notiz", message)
+            enabled.toggled.connect(calendar.setEnabled)
+            enabled.toggled.connect(message.setEnabled)
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+            buttons.button(QDialogButtonBox.StandardButton.Save).setText("Speichern")
+            buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+            buttons.accepted.connect(editor.accept)
+            buttons.rejected.connect(editor.reject)
+            form.addRow(buttons)
+            if editor.exec() != QDialog.DialogCode.Accepted:
+                return
+            if enabled.isChecked():
+                settings.setValue(key, calendar.date().toPython().isoformat() + "|" + message.text().strip())
+            else:
+                settings.remove(key)
+            settings.sync()
+            if settings.status() != QSettings.Status.NoError:
+                self.error("Die Wiedervorlage konnte nicht dauerhaft gespeichert werden.")
             refresh()
 
         def check_selection():
@@ -4779,6 +4877,7 @@ class Window(QMainWindow):
         table.itemSelectionChanged.connect(update_actions)
         archive.clicked.connect(approve)
         note.clicked.connect(edit_note)
+        reminder.clicked.connect(edit_reminder)
         reviewed.clicked.connect(toggle_review)
         filter.currentIndexChanged.connect(refresh)
         dialog.finished.connect(finish)
@@ -5054,6 +5153,67 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+
+    def export_form_batch(self):
+        names, _ = QFileDialog.getOpenFileNames(self, "Ausgefüllte PDF-Formulare auswählen", "", "PDF (*.pdf)")
+        if not names:
+            return
+        paths = list(dict.fromkeys(Path(name).resolve() for name in names))
+        if len(paths) > 1000:
+            self.error("Bitte höchstens 1.000 PDFs auf einmal auswählen.")
+            return
+
+        def inspect(path):
+            try:
+                fields = read_form_values(path)
+                return fields, "" if fields else "Keine exportierbaren Formularfelder"
+            except (OSError, RuntimeError, ValueError) as exc:
+                return {}, str(exc)
+
+        outcomes = self.inspect_pdfs(paths, "Formularfelder werden gelesen …", inspect)
+        if len(outcomes) != len(paths):
+            return
+        columns = sorted({name for _, (fields, _) in outcomes for name in fields}, key=lambda name: (name.casefold(), name))
+        if len(columns) > 1000 or len(outcomes) * (len(columns) + 2) > 100000:
+            self.error("Zu viele Formularfelder für die Vorschau. Bitte weniger PDFs auswählen.")
+            return
+        header = ["PDF-Datei", "Hinweis", *columns]
+        rows = [(str(path), issue or (f"{len(columns) - len(fields)} Feld(er) fehlen" if len(fields) != len(columns) else ""),
+                 *(fields.get(name) for name in columns)) for path, (fields, issue) in outcomes]
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Formular-Export prüfen")
+        dialog.resize(920, 500)
+        layout = QVBoxLayout(dialog)
+        notice = QLabel(f"{len(rows)} von {len(paths)} PDF-Dateien eingelesen. „Fehlt“ bedeutet, dass das Feld in "
+                        "dieser Datei anders heißt oder nicht existiert. Die Werkbank liest den gespeicherten "
+                        "Stand. Passwort- und Signaturfelder werden ausgelassen.")
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        table = QTableWidget(len(rows), len(header))
+        table.setHorizontalHeaderLabels(header)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setColumnWidth(0, 290)
+        table.setColumnWidth(1, 200)
+        for row, values in enumerate(rows):
+            for column, value in enumerate(values):
+                display = "Fehlt" if value is None else Path(value).name if column == 0 else value
+                item = QTableWidgetItem(display)
+                item.setToolTip(value if value is not None else "Dieses Feld ist in der PDF nicht vorhanden.")
+                if value is None:
+                    item.setForeground(QColor("#854720"))
+                table.setItem(row, column, item)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        save = buttons.addButton("Als Excel speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        save.setEnabled(bool(columns))
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            name, _ = QFileDialog.getSaveFileName(self, "Formulardaten speichern", "Formulardaten.xlsx", "Excel (*.xlsx)")
+            if name:
+                self.save_workbook(name, lambda path: export_linked_sheet(
+                    rows, path, "Formulardaten", header, [45, 35, *([24] * len(columns))]))
 
     def flatten_form_copy(self):
         session = self.standards_source()
@@ -6609,10 +6769,13 @@ class Window(QMainWindow):
         layout.addWidget(QLabel(stats))
         layout.addWidget(QLabel("Durchsucht wurde vorhandener Text. Bildseiten ohne OCR liefern keine Treffer."))
         rows = QListWidget()
+        rows.setWordWrap(True)
         layout.addWidget(rows)
         for path, page, excerpt, *approximation in hits:
             possible = f"Möglicher Treffer ({approximation[0]}) · " if approximation and approximation[0] else ""
-            rows.addItem(f"{possible}{path.relative_to(folder)} · Seite {page + 1} · {excerpt}")
+            item = QListWidgetItem(f"{possible}{path.relative_to(folder)} · Seite {page + 1}\n{excerpt}")
+            item.setToolTip(excerpt)
+            rows.addItem(item)
         rows.setCurrentRow(0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         jump = buttons.addButton("Fundstelle öffnen", QDialogButtonBox.ButtonRole.AcceptRole)
@@ -6630,9 +6793,19 @@ class Window(QMainWindow):
             self.tabs.setCurrentIndex(existing)
         elif not self.open_path(str(path)):
             return
+        if not 0 <= page < len(self.current.doc):
+            self.statusBar().showMessage("Die PDF wurde seit der Suche geändert. Bitte erneut suchen.", 8000)
+            return
         self.search_text = approximation[0] if approximation and approximation[0] else query.strip()
         self.thumbs.setCurrentRow(page)
         self.go_page(page)
+        target = self.current.doc[page]
+        boxes = search_rectangles(target, self.search_text)
+        if boxes:
+            box = boxes[0] * target.rotation_matrix
+            self.scroll.ensureVisible(round(box.x0 * self.scale), round(box.y0 * self.scale), 25, 65)
+        else:
+            self.statusBar().showMessage("Die Fundstelle ist im aktuellen Dokumentstand nicht mehr auffindbar.", 8000)
 
     def folder_search_options(self, folder):
         dialog = QDialog(self)
@@ -7100,8 +7273,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Räume und Gewerke in der Messliste, getrennte "
-                         "Gruppensummen in Excel und der Info-Bereich direkt hinter Formular.")
+                         "Neu in dieser Version: Rücksicherungstest, markierte Fundstellen, "
+                         "Wiedervorlagen für Rechnungen und Formularfelder nach Excel.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

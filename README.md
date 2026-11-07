@@ -1,11 +1,11 @@
-# PDF Werkbank 1.30.0 für Windows
+# PDF Werkbank 1.31.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.30.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.31.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.30.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.31.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -48,6 +48,10 @@ Beim manuellen Speichern lässt sich das Backup mit einem Passwort schützen.
 Die Werkbank fragt es beim Öffnen ab. Ein vergessenes Passwort lässt sich
 nicht zurücksetzen. Ältere Sicherungen und die lokalen Sicherungen vor
 Updates lassen sich weiterhin ohne Passwort öffnen.
+**Rücksicherung testen** prüft die Lesbarkeit und listet die enthaltenen
+Gruppen, Messlisten und Belegnotizen auf. Die Werkbank prüft außerdem
+gespeicherte lokale Archivpfade auf fehlende Dateien. Der Test übernimmt
+keine Einstellungen und schreibt keine Messlisten.
 
 ## Pläne messen
 
@@ -153,6 +157,9 @@ der Messliste. Excel enthält auch die Stückzahlen.
   Mehrere Belege lassen sich mit Strg oder Umschalt auswählen und prüfen.
   In der Sammelfreigabe sind Fehler und mögliche Dubletten zunächst
   abgewählt. Bereits archivierte Belege und belegte Ziele sind gesperrt.
+  **Wiedervorlage** hinterlegt einen Termin und eine Notiz zu einem Beleg.
+  Ein Filter zeigt heute fällige und überfällige Einträge. Die Hinweise
+  erscheinen im Rechnungsordner und im Zähler der geöffneten Werkbank.
 - **Archiv & Zugang → Dubletten prüfen** vergleicht PDF- und XML-Dateien
   im gewählten Ordner. Dateiidentische Kopien und mögliche Doppelbelege
   mit übereinstimmenden Rechnungsdaten stehen getrennt in einer Vorschau.
@@ -161,6 +168,10 @@ der Messliste. Excel enthält auch die Stückzahlen.
 - **Formular → Pflichtfelder prüfen** zeigt leere, als Pflichtfeld
   gekennzeichnete Felder an und springt zum ausgewählten Feld. Die
   feste Formularkopie setzt voraus, dass diese Felder ausgefüllt sind.
+- **Formular → Formulare nach Excel** liest die gespeicherten Feldwerte
+  aus mehreren PDFs. Die Vorschau unterscheidet leere und fehlende Felder.
+  Excel erhält eine Zeile pro PDF und eine Spalte pro Feldname.
+  Passwort- und Signaturfelder werden ausgelassen.
 
 ## Favoriten
 
@@ -233,7 +244,9 @@ bleiben beim Neustart erhalten.
   gelöscht werden.
   Bei aktivierter OCR-Fehlertoleranz erscheinen typische Verwechslungen
   in Nummern, etwa 4718 und 47I8, als mögliche Treffer hinter exakten
-  Treffern. Die Funktion arbeitet mit und ohne Suchindex.
+  Treffern. Der Textausschnitt markiert das gefundene Wort. Beim Öffnen
+  springt die Werkbank zur Fundstelle und hebt sie auf der Seite hervor.
+  Die Funktion arbeitet mit und ohne Suchindex.
 - **Formular** erstellt und füllt Textfelder, Kontrollkästchen und Dropdowns.
   „Felder vorschlagen“ sucht nach Kästchen und Eingabelinien in PDF-Seiten
   und in klaren Scans. Vorschläge lassen sich einzeln prüfen und auswählen.

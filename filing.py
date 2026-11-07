@@ -69,6 +69,28 @@ def normalized(value):
     return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
 
+def search_rectangles(page, term):
+    matches = page.search_for(term)
+    if matches:
+        return matches
+    needle = normalized(term)
+    if not needle:
+        return []
+    words = [(pdf.Rect(*word[:4]), normalized(word[4])) for word in page.get_text("words", sort=True)]
+    spans, parts = [], []
+    offset = 0
+    for box, word in words:
+        if word:
+            spans.append((offset, offset + len(word), box))
+            parts.append(word)
+            offset += len(word) + 1
+    text = " ".join(parts)
+    found = re.search(re.escape(needle), text)
+    if found is None:
+        return []
+    return [box for start, end, box in spans if start < found.end() and end > found.start()]
+
+
 def archive_target(root, inbox, filename, group):
     invalid = r'[<>:"/\\|?*\x00-\x1f]'
     filename, group = filename.strip(), group.strip()
@@ -123,7 +145,11 @@ class SearchMatches:
             start, word, results = match.start(), match[0], self.possible
         else:
             return False
-        excerpt = text[max(0, start - 42):start + len(word) + 60]
+        left, end = max(0, start - 42), start + len(word)
+        right = min(len(text), end + 60)
+        excerpt = ("…" if left else "") + text[left:start] + "⟦" + text[start:end] + "⟧" + text[end:right]
+        if right < len(text):
+            excerpt += "…"
         hit = (path, page, excerpt)
         results.append((*hit, word if results is self.possible else None) if self.fuzzy else hit)
         return len(self.exact) >= self.limit
