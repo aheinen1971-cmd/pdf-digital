@@ -3,7 +3,8 @@ import hashlib
 import json
 import math
 import os
-from dataclasses import dataclass, field
+from collections import Counter
+from dataclasses import dataclass, field, replace
 
 import pymupdf as pdf
 
@@ -12,7 +13,7 @@ from update_worker import digest_file
 
 
 METRES_PER_POINT = 0.0254 / 72
-MEASURE_MODES = ("Kalibrieren", "Strecke messen", "Fläche messen")
+MEASURE_MODES = ("Kalibrieren", "Strecke messen", "Fläche messen", "Aussparung messen", "Symbole zählen")
 MAX_VERTICES = 300
 EPSILON = 1e-8
 
@@ -65,10 +66,15 @@ def polygon_area(points):
                 continue
             if intersect(point, following, points[other], points[(other + 1) % count]):
                 raise ValueError("Die Umrisslinien berühren oder kreuzen sich. Bitte die Eckpunkte am Rand entlang setzen.")
-    area = abs(math.fsum(cross(points[0], points[index], points[index + 1]) for index in range(1, count - 1))) / 2
+    area = ring_area(points)
     if area <= EPSILON:
         raise ValueError("Die Eckpunkte umschließen keine Fläche.")
     return area
+
+
+def ring_area(points):
+    return abs(math.fsum(cross(points[0], points[index], points[index + 1])
+                         for index in range(1, len(points) - 1))) / 2
 
 
 def format_measure(value, unit):
@@ -85,9 +91,13 @@ class Measurement:
     amount: float
     area: bool = False
     name: str = ""
+    cutouts: tuple = ()
+
+    def measured_area(self):
+        return self.amount - math.fsum(ring_area(ring) for ring in self.cutouts)
 
     def label(self, scale):
-        return (format_measure(self.amount * scale ** 2, "m²") if self.area
+        return (format_measure(self.measured_area() * scale ** 2, "m²") if self.area
                 else format_measure(self.amount * scale, "m"))
 
 
@@ -96,10 +106,17 @@ class Measurement:
         return f"{self.name} – {value}" if self.name else value
 
 
+@dataclass(frozen=True)
+class CountedSymbol:
+    point: pdf.Point
+    category: str
+
+
 @dataclass
 class PlanMeasurements:
     scale: float = 0
     marks: list = field(default_factory=list)
+    symbols: list = field(default_factory=list)
 
 
 MAX_PLAN_BYTES = 4 * 1024 * 1024
@@ -112,7 +129,7 @@ def plan_page_key(page):
 def plan_entries(doc, measurements):
     for page in doc:
         plan = measurements.get(plan_page_key(page))
-        if plan and plan.scale:
+        if plan and (plan.scale or plan.symbols):
             yield page.number, plan
 
 
@@ -148,12 +165,25 @@ def encode_plans(doc, plans):
     pages = []
     for index, plan in plan_entries(doc, plans):
         marks = [{"name": mark.name, "area": mark.area,
-                  "points": [[point.x, point.y] for point in mark.points]} for mark in plan.marks]
-        pages.append({"page": index, "scale": plan.scale, "marks": marks})
+                  "points": [[point.x, point.y] for point in mark.points],
+                  "cutouts": [[[point.x, point.y] for point in ring] for ring in mark.cutouts]}
+                 for mark in plan.marks]
+        symbols = [[symbol.category, symbol.point.x, symbol.point.y] for symbol in plan.symbols]
+        pages.append({"page": index, "scale": plan.scale, "marks": marks, "symbols": symbols})
     data = json.dumps({"version": 1, "pages": pages}, ensure_ascii=False).encode("utf-8")
     if len(data) > MAX_PLAN_BYTES:
         raise ValueError("Die Messliste ist zu groß.")
     return data
+
+
+def checked_vertex(point, bounds):
+    if (not isinstance(point, list) or len(point) != 2 or any(
+            type(value) not in (int, float) or not -1e7 <= value <= 1e7 for value in point)):
+        raise ValueError("Ungültige Koordinaten in der Messliste.")
+    vertex = pdf.Point(point)
+    if not bounds.contains(vertex):
+        raise ValueError("Ein Messpunkt liegt außerhalb der PDF-Seite.")
+    return vertex
 
 
 def decode_plans(doc, data):
@@ -166,7 +196,7 @@ def decode_plans(doc, data):
             raise ValueError("Ungültiger Seiteneintrag in der Messliste.")
         index, scale, marks = entry.get("page"), entry.get("scale"), entry.get("marks")
         if (type(index) is not int or not 0 <= index < len(doc) or type(scale) not in (int, float)
-                or not 0 < scale <= 1e15 or not isinstance(marks, list)):
+                or not 0 <= scale <= 1e15 or not isinstance(marks, list) or (marks and not scale)):
             raise ValueError("Ungültige Seite oder ungültiger Maßstab in der Messliste.")
         page = doc[index]
         key = plan_page_key(page)
@@ -182,16 +212,27 @@ def decode_plans(doc, data):
                     or type(area) is not bool or not isinstance(points, list)
                     or not (3 <= len(points) <= MAX_VERTICES if area else len(points) == 2)):
                 raise ValueError("Ungültiger Name oder Umriss in der Messliste.")
-            if any(not isinstance(point, list) or len(point) != 2 or any(
-                    type(value) not in (int, float) or not -1e7 <= value <= 1e7 for value in point) for point in points):
-                raise ValueError("Ungültige Koordinaten in der Messliste.")
-            vertices = tuple(pdf.Point(point) for point in points)
-            if any(not bounds.contains(point) for point in vertices):
-                raise ValueError("Ein Messpunkt liegt außerhalb der PDF-Seite.")
+            vertices = tuple(checked_vertex(point, bounds) for point in points)
             amount = polygon_area(vertices) if area else distance(*vertices)
             if amount <= EPSILON:
                 raise ValueError("Die Messung hat keine Ausdehnung.")
-            plan.marks.append(Measurement(vertices, amount, area, name))
+            mark = Measurement(vertices, amount, area, name)
+            cutouts = entry_mark.get("cutouts", [])
+            if not isinstance(cutouts, list) or len(cutouts) > 100:
+                raise ValueError("Ungültige Aussparungen in der Messliste.")
+            for ring in cutouts:
+                if not isinstance(ring, list) or not 3 <= len(ring) <= MAX_VERTICES:
+                    raise ValueError("Ungültige Aussparung in der Messliste.")
+                mark = add_cutout(mark, tuple(checked_vertex(point, bounds) for point in ring))
+            plan.marks.append(mark)
+        symbols = entry.get("symbols", [])
+        if not isinstance(symbols, list):
+            raise ValueError("Ungültige Symbole in der Messliste.")
+        for symbol in symbols:
+            if (not isinstance(symbol, list) or len(symbol) != 3 or not isinstance(symbol[0], str)
+                    or not 0 < len(symbol[0]) <= 40 or any(ord(char) < 32 for char in symbol[0])):
+                raise ValueError("Ungültiges Symbol in der Messliste.")
+            plan.symbols.append(CountedSymbol(checked_vertex(symbol[1:], bounds), symbol[0]))
         plans[key] = plan
     return plans
 
@@ -206,7 +247,7 @@ def draw_plan_copy(source, measurements, font_path):
     output = pdf.open(stream=source.tobytes(), filetype="pdf")
     try:
         for index, plan in plan_entries(source, measurements):
-            if not plan.marks:
+            if not plan.marks and not plan.symbols:
                 continue
             page = output[index]
             used = {entry[4] for entry in page.get_fonts()}
@@ -218,18 +259,22 @@ def draw_plan_copy(source, measurements, font_path):
                       page.get_text("blocks", flags=pdf.TEXTFLAGS_BLOCKS & ~pdf.TEXT_PRESERVE_IMAGES)]
             for mark in plan.marks:
                 shape = page.new_shape()
-                shape.draw_polyline(mark.points)
-                shape.finish(color=color, width=1.25, closePath=mark.area,
+                for ring in (mark.points, *mark.cutouts):
+                    shape.draw_polyline((*ring, ring[0]) if mark.area else ring)
+                shape.finish(color=color, width=1.25, closePath=False, even_odd=mark.area,
                              fill=(0.10, 0.55, 0.78) if mark.area else None, fill_opacity=0.18)
                 for point in mark.points:
                     shape.draw_circle(point, 2.2)
                     shape.finish(color=color, fill=(1, 1, 1), width=0.8)
                 shape.commit()
-            for mark in plan.marks:
-                label = mark.caption(plan.scale)
+            captions = [(mark.points, mark.caption(plan.scale)) for mark in plan.marks]
+            for symbol, number in numbered_symbols(plan.symbols):
+                page.draw_circle(symbol.point, 3, color=color, fill=(1, 1, 1), width=0.9)
+                captions.append(((symbol.point,), f"{symbol.category} {number}"))
+            for points, label in captions:
                 if any(not font.has_glyph(ord(char)) for char in label):
                     raise ValueError("Ein Messname enthält Zeichen, die in der PDF-Schrift fehlen.")
-                visible = [point * page.rotation_matrix for point in mark.points]
+                visible = [point * page.rotation_matrix for point in points]
                 center_x = (min(point.x for point in visible) + max(point.x for point in visible)) / 2
                 center_y = (min(point.y for point in visible) + max(point.y for point in visible)) / 2
                 width = font.text_length(label, fontsize=1)
@@ -333,15 +378,69 @@ def decode_project(doc, data, digest):
 
 def measurement_rows(doc, measurements):
     rows = []
-    lengths, areas = [], []
+    totals = {name: [] for name in ("Umfänge", "Innenkanten", "Strecken", "Flächen")}
+    symbols = Counter()
     for index, plan in plan_entries(doc, measurements):
         for mark in plan.marks:
-            unit, values = ("m²", areas) if mark.area else ("m", lengths)
-            value = mark.amount * (plan.scale ** 2 if mark.area else plan.scale)
-            values.append(value)
-            rows.append((index + 1, mark.name, value, unit))
-    if lengths:
-        rows.append((None, "Summe Strecken", math.fsum(lengths), "m"))
-    if areas:
-        rows.append((None, "Summe Flächen", math.fsum(areas), "m²"))
+            if mark.area:
+                value = mark.measured_area() * plan.scale ** 2
+                totals["Flächen"].append(value)
+                rows.append((index + 1, mark.name, value, "m²"))
+                outer = polygon_perimeter(mark.points) * plan.scale
+                totals["Umfänge"].append(outer)
+                rows.append((index + 1, (mark.name + " · " if mark.name else "") + "Umfang", outer, "m"))
+                if mark.cutouts:
+                    inner = math.fsum(polygon_perimeter(ring) for ring in mark.cutouts) * plan.scale
+                    totals["Innenkanten"].append(inner)
+                    rows.append((index + 1, (mark.name + " · " if mark.name else "") + "Innenkanten", inner, "m"))
+            else:
+                value = mark.amount * plan.scale
+                totals["Strecken"].append(value)
+                rows.append((index + 1, mark.name, value, "m"))
+        counts = Counter(symbol.category for symbol in plan.symbols)
+        symbols.update(counts)
+        rows.extend((index + 1, category, count, "Stk.") for category, count in counts.items())
+    rows.extend((None, "Summe " + category, count, "Stk.") for category, count in symbols.items())
+    rows.extend((None, "Summe " + label, math.fsum(values), "m²" if label == "Flächen" else "m")
+                for label, values in totals.items() if values)
     return rows
+
+
+def polygon_perimeter(points):
+    return math.fsum(distance(point, points[index - 1]) for index, point in enumerate(points))
+
+
+def contains_point(ring, point):
+    inside = False
+    for index, end in enumerate(ring):
+        start = ring[index - 1]
+        if (start.y > point.y) != (end.y > point.y):
+            x = start.x + (end.x - start.x) * (point.y - start.y) / (end.y - start.y)
+            inside ^= point.x < x
+    return inside
+
+
+def rings_cross(first, second):
+    return any(intersect(point, first[i - 1], other, second[j - 1])
+               for i, point in enumerate(first) for j, other in enumerate(second))
+
+
+def add_cutout(mark, ring):
+    if not mark.area:
+        raise ValueError("Bitte zuerst eine Fläche messen.")
+    if len(mark.cutouts) >= 100:
+        raise ValueError("Pro Fläche sind höchstens 100 Aussparungen möglich.")
+    polygon_area(ring)
+    if not contains_point(mark.points, ring[0]) or rings_cross(mark.points, ring):
+        raise ValueError("Die Aussparung muss vollständig innerhalb der Fläche liegen.")
+    for other in mark.cutouts:
+        if contains_point(other, ring[0]) or contains_point(ring, other[0]) or rings_cross(other, ring):
+            raise ValueError("Aussparungen dürfen sich nicht berühren oder überlappen.")
+    return replace(mark, cutouts=(*mark.cutouts, ring))
+
+
+def numbered_symbols(symbols):
+    counts = Counter()
+    for symbol in symbols:
+        counts[symbol.category] += 1
+        yield symbol, counts[symbol.category]

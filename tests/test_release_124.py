@@ -77,8 +77,8 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as temporary:
         assert sheet.find(".//{*}f") is None
         cells = {cell.get("r"): cell for cell in sheet.findall(".//{*}c")}
         assert cells["B2"].findtext(".//{*}t") == "=1+1"
-        assert cells["C4"].get("t") == "n" and math.isclose(float(cells["C4"].findtext("{*}v")), 10)
-        assert cells["C5"].get("t") == "n" and math.isclose(float(cells["C5"].findtext("{*}v")), 60)
+        assert cells["C6"].get("t") == "n" and math.isclose(float(cells["C6"].findtext("{*}v")), 10)
+        assert cells["C7"].get("t") == "n" and math.isclose(float(cells["C7"].findtext("{*}v")), 60)
 
     project = root / "Plan.messprojekt"
     with patch.object(QFileDialog, "getSaveFileName", return_value=(str(project), "")):

@@ -21,7 +21,7 @@ from xml.etree import ElementTree
 
 import pymupdf as pdf
 from PySide6.QtCore import QEventLoop, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap, QPolygonF, QTransform
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
@@ -55,9 +55,10 @@ from archive_run import ArchiveRun
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
-                          alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry)
+                          alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry,
+                          CountedSymbol, add_cutout, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 24, 0)
+VERSION = (1, 25, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -78,6 +79,33 @@ QScrollArea { background: #dce5ef; border: 0; }
 QSplitter::handle { background: #cfdbe9; width: 3px; }
 QStatusBar { background: #f4f7fb; color: #36516d; }
 """
+
+
+def plan_difference(first, second):
+    first = first.convertToFormat(QImage.Format.Format_Grayscale8)
+    second = second.convertToFormat(QImage.Format.Format_Grayscale8)
+    width, height = first.width(), first.height()
+    left, right = first.constBits(), second.constBits()
+    result = bytearray(width * height * 3)
+
+    def nearby(data, stride, x, y):
+        offset = y * stride + x
+        return min(data[offset], data[offset - (x > 0)], data[offset + (x + 1 < width)],
+                   data[offset - (stride if y > 0 else 0)], data[offset + (stride if y + 1 < height else 0)])
+
+    a, b = first.bytesPerLine(), second.bytesPerLine()
+    for y in range(height):
+        for x in range(width):
+            old, new = left[y * a + x], right[y * b + x]
+            shade = 155 + min(old, new) * 100 // 255
+            color = (shade, shade, shade)
+            if new - old > 55 and nearby(right, b, x, y) - old > 55:
+                color = (194, 32, 47)
+            elif old - new > 55 and nearby(left, a, x, y) - new > 55:
+                color = (0, 112, 67)
+            index = (y * width + x) * 3
+            result[index], result[index + 1], result[index + 2] = color
+    return QImage(bytes(result), width, height, width * 3, QImage.Format.Format_RGB888).copy()
 
 
 def pixmap(page, scale, annotations=True):
@@ -757,7 +785,7 @@ class Canvas(QLabel):
                 self.window.clear_measure_draft()
                 self.update()
                 return
-            if self.window.mode == "Fläche messen" and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if self.window.mode in ("Fläche messen", "Aussparung messen") and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
                 self.window.finish_area()
                 return
         super().keyPressEvent(event)
@@ -769,6 +797,7 @@ class Window(QMainWindow):
         self.sessions = []
         self.measure_points = []
         self.measure_assist = "Automatisch"
+        self.symbol_category = ""
         self.measure_cursor = None
         self.measure_snap_hit = False
         self.measure_hover = None
@@ -830,7 +859,8 @@ class Window(QMainWindow):
                         ("Fläche messen", lambda: self.start_measure("Fläche messen")),
                         ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement),
                         ("Messliste", self.measurement_list), ("PDF mit Maßen", self.export_measurements),
-                        ("Messoptionen", self.measurement_options), ("Pläne überlagern", self.plan_overlay)]),
+                        ("Messoptionen", self.measurement_options), ("Pläne überlagern", self.plan_overlay),
+                        ("Aufmaß", self.takeoff_tools)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
@@ -906,6 +936,11 @@ class Window(QMainWindow):
         self.splitter.splitterMoved.connect(self.schedule_thumbnails)
         self.status = QLabel("Bereit")
         self.statusBar().addWidget(self.status, 1)
+        self.invoice_badge = QPushButton("Rechnungen")
+        self.invoice_badge.setToolTip("Überwachten Rechnungseingang öffnen")
+        self.invoice_badge.clicked.connect(lambda: self.invoice_folder())
+        self.statusBar().addPermanentWidget(self.invoice_badge)
+        self.invoice_badge.hide()
         for label, callback in [("‹", lambda: self.turn(-1)), ("›", lambda: self.turn(1)),
                                 ("−", lambda: self.change_zoom(-0.2)), ("+", lambda: self.change_zoom(0.2))]:
             button = QPushButton(label)
@@ -1487,6 +1522,33 @@ class Window(QMainWindow):
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
+    def takeoff_tools(self):
+        if not self.current:
+            return
+        choice, ok = QInputDialog.getItem(self, "Aufmaß", "Werkzeug", ("Aussparung messen", "Symbole zählen"), editable=False)
+        if not ok:
+            return
+        if choice == "Symbole zählen":
+            name, ok = QInputDialog.getText(self, "Symbole zählen", "Kategorie, z. B. Steckdose", text=self.symbol_category)
+            category = " ".join(name.split())[:40]
+            if not ok or not category:
+                return
+            known = (symbol.category for _, plan in plan_entries(self.current.doc, self.current.plan_measurements)
+                     for symbol in plan.symbols if symbol.category.casefold() == category.casefold())
+            self.symbol_category = next(known, category)
+        self.start_measure(choice)
+
+    @staticmethod
+    def last_area(plan):
+        return next((index for index in range(len(plan.marks) - 1, -1, -1) if plan.marks[index].area), None) if plan else None
+
+    def area_edges(self, mark, scale):
+        outer = format_measure(polygon_perimeter(mark.points) * scale, "m")
+        inner = (format_measure(sum(polygon_perimeter(ring) for ring in mark.cutouts) * scale, "m")
+                 if mark.cutouts else "")
+        return outer, inner
+
+
     def measurement_options(self):
         options = ("Automatisch", "Fangpunkte", "Lupe", "Aus")
         selected, ok = QInputDialog.getItem(self, "Messoptionen", "Beim Messen verwenden",
@@ -1552,7 +1614,7 @@ class Window(QMainWindow):
         session = self.current
         rows = measurement_rows(session.doc, session.plan_measurements)
         if not rows:
-            QMessageBox.information(self, "Messliste", "Bitte zuerst eine Strecke oder Fläche messen.")
+            QMessageBox.information(self, "Messliste", "Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen.")
             return
         name, _ = QFileDialog.getSaveFileName(self, "Messliste als Excel speichern",
                                                str(session.path.with_suffix(".xlsx")), "Excel (*.xlsx)")
@@ -1642,11 +1704,14 @@ class Window(QMainWindow):
         blend.setValue(50)
         blend.setToolTip("Links erster Plan, rechts zweiter Plan")
         layout.addWidget(blend)
+        changes = QCheckBox("Änderungen markieren (Rot: entfernt · Grün: neu)")
+        layout.addWidget(changes)
         area = QScrollArea()
         area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(area, 1)
         anchors = [[], []]
         images = []
+        differences = {}
 
         class OverlayCanvas(QLabel):
             def mousePressEvent(self, event):
@@ -1656,6 +1721,7 @@ class Window(QMainWindow):
                     if len(anchors[side]) == 2:
                         anchors[side].clear()
                     anchors[side].append(point)
+                    differences.clear()
                     refresh()
 
         image = OverlayCanvas()
@@ -1684,9 +1750,15 @@ class Window(QMainWindow):
                             overlay.drawPixmap(0, 0, images[1])
                         finally:
                             overlay.end()
-                        painter.setOpacity(blend.value() / 100)
-                        painter.drawPixmap(0, 0, aligned)
-                        info.setText("Ausgerichtete Überlagerung. Der Regler blendet zwischen den Fassungen um.")
+                        if changes.isChecked():
+                            if "result" not in differences:
+                                differences["result"] = QPixmap.fromImage(plan_difference(images[0].toImage(), aligned.toImage()))
+                            painter.drawPixmap(0, 0, differences["result"])
+                            info.setText("Farbige Unterschiede der ausgerichteten Seiten. Kleine Abweichungen der Ausrichtung können mit erscheinen.")
+                        else:
+                            painter.setOpacity(blend.value() / 100)
+                            painter.drawPixmap(0, 0, aligned)
+                            info.setText("Ausgerichtete Überlagerung. Der Regler blendet zwischen den Fassungen um.")
                     else:
                         info.setText("Bitte zuerst je zwei Referenzpunkte setzen.")
                 else:
@@ -1701,9 +1773,12 @@ class Window(QMainWindow):
                 painter.end()
             image.setPixmap(result)
             image.resize(result.size())
-            blend.setEnabled(side == 2 and all(len(points) == 2 for points in anchors))
+            aligned_ready = side == 2 and all(len(points) == 2 for points in anchors)
+            changes.setEnabled(aligned_ready)
+            blend.setEnabled(aligned_ready and not changes.isChecked())
 
         def pages_changed():
+            differences.clear()
             anchors[0].clear()
             anchors[1].clear()
             pages = (fixed[first.value() - 1], moving[second.value() - 1])
@@ -1715,6 +1790,7 @@ class Window(QMainWindow):
         second.valueChanged.connect(pages_changed)
         mode.currentIndexChanged.connect(refresh)
         blend.valueChanged.connect(refresh)
+        changes.toggled.connect(refresh)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
         buttons.rejected.connect(dialog.reject)
@@ -1770,20 +1846,28 @@ class Window(QMainWindow):
                       "lokal für diese PDF-Fassung.")
         info.setWordWrap(True)
         layout.addWidget(info)
-        rows = QTableWidget(0, 3)
-        rows.setHorizontalHeaderLabels(["Seite", "Name", "Messwert"])
+        rows = QTableWidget(0, 5)
+        rows.setHorizontalHeaderLabels(["Seite", "Name", "Messwert", "Umfang", "Innenkanten"])
         rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         entries = [(index, plan, number) for index, plan in plan_entries(session.doc, session.plan_measurements)
                    for number in range(len(plan.marks))]
         rows.setRowCount(len(entries))
         for row, (index, plan, number) in enumerate(entries):
             mark = plan.marks[number]
-            for column, value in enumerate((str(index + 1), mark.name, mark.label(plan.scale))):
+            outer, inner = self.area_edges(mark, plan.scale) if mark.area else ("", "")
+            for column, value in enumerate((str(index + 1), mark.name, mark.label(plan.scale), outer, inner)):
                 item = QTableWidgetItem(value)
                 if column != 1:
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 rows.setItem(row, column, item)
         layout.addWidget(rows)
+        counts = Counter(symbol.category for _, plan in plan_entries(session.doc, session.plan_measurements)
+                         for symbol in plan.symbols)
+        if counts:
+            summary = QLabel("Stückzahlen · " + " · ".join(f"{name}: {count}" for name, count in counts.items()))
+            summary.setTextFormat(Qt.TextFormat.PlainText)
+            summary.setWordWrap(True)
+            layout.addWidget(summary)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
         save = buttons.addButton("Messliste speichern", QDialogButtonBox.ButtonRole.ActionRole)
@@ -1817,15 +1901,15 @@ class Window(QMainWindow):
         jump.clicked.connect(go)
         if entries:
             rows.setCurrentCell(0, 1)
-        dialog.resize(660, 430)
+        dialog.resize(840, 450)
         dialog.exec()
 
     def export_measurements(self):
         session = self.current
         if not session:
             return
-        if not any(plan.marks for _, plan in plan_entries(session.doc, session.plan_measurements)):
-            QMessageBox.information(self, "PDF mit Maßen", "Bitte zuerst eine Strecke oder Fläche messen.")
+        if not any(plan.marks or plan.symbols for _, plan in plan_entries(session.doc, session.plan_measurements)):
+            QMessageBox.information(self, "PDF mit Maßen", "Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen.")
             return
         try:
             if session.password:
@@ -1884,7 +1968,10 @@ class Window(QMainWindow):
         if not self.current:
             return
         plan = self.current_plan()
-        if mode != "Kalibrieren" and (not plan or not plan.scale):
+        if mode == "Aussparung messen" and self.last_area(plan) is None:
+            QMessageBox.information(self, "Aussparung", "Bitte zuerst die Außenfläche messen.")
+            return
+        if mode not in ("Kalibrieren", "Symbole zählen") and (not plan or not plan.scale):
             QMessageBox.information(self, "Maßstab fehlt",
                                     "Bitte zuerst den Maßstab dieser Seite eingeben oder eine bekannte Strecke kalibrieren.")
             return
@@ -1892,7 +1979,9 @@ class Window(QMainWindow):
         self.canvas.setFocus()
         hints = {"Kalibrieren": "Zwei Endpunkte einer bekannten Strecke anklicken.",
                  "Strecke messen": "Anfang und Ende der Strecke anklicken.",
-                 "Fläche messen": "Eckpunkte der Reihe nach anklicken und mit Eingabe oder „Fläche abschließen“ bestätigen."}
+                 "Fläche messen": "Eckpunkte der Reihe nach anklicken und mit Eingabe oder „Fläche abschließen“ bestätigen.",
+                 "Aussparung messen": "Umriss innerhalb der zuletzt gemessenen Fläche anklicken und mit Eingabe abschließen.",
+                 "Symbole zählen": f"Kategorie {self.symbol_category}. Jedes Symbol einmal anklicken."}
         self.statusBar().showMessage(hints[mode] + " Esc verwirft die angefangene Messung.", 15000)
 
     def measure_position(self, screen, hover=False):
@@ -1915,6 +2004,17 @@ class Window(QMainWindow):
         point = self.measure_position(screen)
         if point is None:
             return
+        if self.mode == "Symbole zählen":
+            plan = self.current_plan(create=True)
+            if any(symbol.category == self.symbol_category and distance(symbol.point, point) * self.scale < 4
+                   for symbol in plan.symbols):
+                self.statusBar().showMessage("Dieses Symbol wurde bereits markiert.", 4500)
+                return
+            plan.symbols.append(CountedSymbol(point, self.symbol_category))
+            count = sum(symbol.category == self.symbol_category for symbol in plan.symbols)
+            self.statusBar().showMessage(f"{self.symbol_category}: {count} Stk. auf dieser Seite.", 7000)
+            self.canvas.update()
+            return
         if self.mode != "Kalibrieren" and not getattr(self.current_plan(), "scale", 0):
             self.start_measure(self.mode)
             return
@@ -1927,7 +2027,7 @@ class Window(QMainWindow):
         self.measure_points.append(point)
         self.measure_hover = None
         self.canvas.update()
-        if self.mode == "Fläche messen" or len(self.measure_points) < 2:
+        if self.mode in ("Fläche messen", "Aussparung messen") or len(self.measure_points) < 2:
             return
         points = tuple(self.measure_points)
         self.clear_measure_draft()
@@ -1946,14 +2046,27 @@ class Window(QMainWindow):
     def add_measurement(self, mark):
         plan = self.current_plan()
         plan.marks.append(mark)
-        self.statusBar().showMessage(mark.label(plan.scale), 12000)
+        value = mark.label(plan.scale)
+        if mark.area:
+            value += " · Umfang: " + self.area_edges(mark, plan.scale)[0]
+        self.statusBar().showMessage(value, 12000)
 
     def finish_area(self):
-        if not self.current or self.mode != "Fläche messen":
+        if not self.current or self.mode not in ("Fläche messen", "Aussparung messen"):
             return
         try:
             points = tuple(self.measure_points)
-            self.add_measurement(Measurement(points, polygon_area(points), area=True))
+            if self.mode == "Aussparung messen":
+                plan = self.current_plan()
+                index = self.last_area(plan)
+                if index is None:
+                    raise ValueError("Bitte zuerst eine Außenfläche auf dieser Seite messen.")
+                mark = add_cutout(plan.marks[index], points)
+                plan.marks[index] = mark
+                outer, inner = self.area_edges(mark, plan.scale)
+                self.statusBar().showMessage(f"Netto: {mark.label(plan.scale)} · Umfang: {outer} · Innenkanten: {inner}", 12000)
+            else:
+                self.add_measurement(Measurement(points, polygon_area(points), area=True))
         except ValueError as exc:
             self.statusBar().showMessage(str(exc) + " Esc verwirft den Umriss.", 12000)
             return
@@ -1963,8 +2076,14 @@ class Window(QMainWindow):
     def remove_measurement(self):
         if self.measure_points:
             self.clear_measure_draft()
-        elif (plan := self.current_plan()) and plan.marks:
-            plan.marks.pop()
+        elif (plan := self.current_plan()):
+            if self.mode == "Symbole zählen" and plan.symbols:
+                plan.symbols.pop()
+            elif self.mode == "Aussparung messen" and (index := self.last_area(plan)) is not None:
+                mark = plan.marks[index]
+                plan.marks[index] = replace(mark, cutouts=mark.cutouts[:-1])
+            elif plan.marks:
+                plan.marks.pop()
         self.canvas.update()
 
     def paint_measurements(self, painter):
@@ -1973,13 +2092,14 @@ class Window(QMainWindow):
             return
         plan = self.current_plan() if session.plan_measurements else None
         marks = plan.marks if plan else ()
-        if not marks and not self.measure_points and self.measure_cursor is None:
+        symbols = plan.symbols if plan else ()
+        if not marks and not symbols and not self.measure_points and self.measure_cursor is None:
             return
         page = session.doc[session.page]
         transform = page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        def draw(points, area=False, label="", pending=False):
+        def draw(points, area=False, label="", pending=False, cutouts=()):
             rotated = [point * transform for point in points]
             screen = QPolygonF([QPointF(point.x, point.y) for point in rotated])
             if not screen:
@@ -1988,7 +2108,15 @@ class Window(QMainWindow):
             painter.setPen(QPen(accent, 2, Qt.PenStyle.DashLine if pending else Qt.PenStyle.SolidLine))
             painter.setBrush(QColor(15, 126, 183, 45) if area else Qt.BrushStyle.NoBrush)
             if area:
-                painter.drawPolygon(screen)
+                area_path = QPainterPath()
+                area_path.setFillRule(Qt.FillRule.OddEvenFill)
+                area_path.addPolygon(screen)
+                area_path.closeSubpath()
+                for ring in cutouts:
+                    vertices = [point * transform for point in ring]
+                    area_path.addPolygon(QPolygonF([QPointF(point.x, point.y) for point in vertices]))
+                    area_path.closeSubpath()
+                painter.drawPath(area_path)
             elif len(screen) > 1:
                 painter.drawPolyline(screen)
             painter.setBrush(QColor("white"))
@@ -2008,7 +2136,9 @@ class Window(QMainWindow):
                 painter.drawText(box, Qt.AlignmentFlag.AlignCenter, label)
 
         for mark in marks:
-            draw(mark.points, mark.area, mark.caption(plan.scale))
+            draw(mark.points, mark.area, mark.caption(plan.scale), cutouts=mark.cutouts)
+        for symbol, number in numbered_symbols(symbols):
+            draw((symbol.point,), label=f"{symbol.category} {number}")
         if self.measure_points:
             points = [*self.measure_points]
             if self.measure_hover is not None:
@@ -3857,14 +3987,24 @@ class Window(QMainWindow):
         dialog.exec()
 
 
-    def invoice_folder(self):
+    def invoice_folder(self, show=True):
         previous = getattr(self, "_invoice_folder_window", None)
         if previous is not None:
-            previous.raise_()
-            previous.activateWindow()
+            if show:
+                previous.show()
+                previous.raise_()
+                previous.activateWindow()
             return
         settings = self.favorite_settings
-        dialog = QDialog(self)
+        class InvoiceFolderDialog(QDialog):
+            def reject(self):
+                self.hide()
+
+            def closeEvent(self, event):
+                self.hide()
+                event.ignore()
+
+        dialog = InvoiceFolderDialog(self)
         self._invoice_folder_window = dialog
         dialog.setWindowTitle("Überwachter Rechnungsordner")
         layout = QVBoxLayout(dialog)
@@ -3872,7 +4012,7 @@ class Window(QMainWindow):
         location.setTextFormat(Qt.TextFormat.PlainText)
         location.setWordWrap(True)
         layout.addWidget(location)
-        status = QLabel("Die Werkbank prüft neue PDF- und XML-Dateien, solange dieses Fenster geöffnet ist.")
+        status = QLabel("Die Werkbank überwacht den gewählten Ordner auch bei geschlossenem Rechnungsfenster.")
         layout.addWidget(status)
         table = QTableWidget(0, 5)
         table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten", "Archiv"])
@@ -3895,7 +4035,7 @@ class Window(QMainWindow):
 
         saved_folder = settings.value("invoice-watch/folder", "", str)
         settler = IntakeSettler(saved_folder) if saved_folder else None
-        records, retry = {}, {}
+        records, retry, seen = {}, {}, {}
         future = None
         timer = QTimer(dialog)
         executor = ThreadPoolExecutor(max_workers=1)
@@ -3906,7 +4046,26 @@ class Window(QMainWindow):
             item = table.item(table.currentRow(), 0)
             return records.get(item.data(Qt.ItemDataRole.UserRole)) if item else None
 
+        def update_badge():
+            unread = 0
+            for record in records.values():
+                source = record.source
+                key = archive_setting_key(source.path).replace("/archived/", "/seen/")
+                if key not in seen:
+                    seen[key] = settings.value(key, "", str)
+                if dialog.isVisible():
+                    if seen[key] != source.digest:
+                        settings.setValue(key, source.digest)
+                        seen[key] = source.digest
+                elif seen[key] != source.digest:
+                    unread += 1
+            badge.setText(f"Rechnungen: {unread} neu" if unread else "Rechnungen")
+            badge.setVisible(settler is not None)
+
+        badge = self.invoice_badge
+
         def refresh():
+            update_badge()
             current = selected()
             exact, possible = duplicate_groups([record.source for record in records.values()])
             exact = {source.path for group in exact for source in group}
@@ -3996,6 +4155,7 @@ class Window(QMainWindow):
                     future = path, stable[path], job
             if changed:
                 refresh()
+            update_badge()
             status.setText(f"{len(records)} Beleg(e) im Eingang · "
                            f"{max(0, len(settler.observed) - len(records))} warten auf Kopierende oder Prüfung")
 
@@ -4056,7 +4216,9 @@ class Window(QMainWindow):
         refresh()
         tick()
         dialog.resize(970, 530)
-        dialog.show()
+        if show:
+            dialog.show()
+            update_badge()
 
 
     def invoice_review(self, names=None):
@@ -6088,7 +6250,7 @@ class Window(QMainWindow):
             self.recovery = None
         watch = getattr(self, "_invoice_folder_window", None)
         if watch is not None:
-            watch.reject()
+            watch.done(QDialog.DialogCode.Rejected)
         event.accept()
 
     def booklet_dialog(self):
@@ -6518,6 +6680,8 @@ def main():
                 window.open_path(path)
 
     QTimer.singleShot(0, load_initial_documents)
+    if settings.value("invoice-watch/folder", "", str):
+        QTimer.singleShot(0, lambda: window.invoice_folder(show=False))
     QTimer.singleShot(1200, window.release_check.check)
     return app.exec()
 

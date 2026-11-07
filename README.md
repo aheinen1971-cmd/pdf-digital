@@ -1,11 +1,11 @@
-# PDF Werkbank 1.24.0 für Windows
+# PDF Werkbank 1.25.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.24.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.25.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.24.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.25.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -59,7 +59,11 @@ als Excel mit getrennten Strecken- und Flächensummen ausgeben.
 Eine .messprojekt-Datei enthält Namen, Messungen und Maßstäbe und lässt
 sich auf einem anderen PC zur bytegleichen PDF-Fassung öffnen.
 Mit **Pläne überlagern** richtest du zwei Seiten über je zwei
-entsprechende Punkte aus und blendest mit dem Regler zwischen ihnen um.
+entsprechende Punkte aus und blendest zwischen ihnen um. Die farbige
+Änderungsansicht zeigt entfernte Bereiche rot und neue grün.
+**Aufmaß** zieht Aussparungen von der zuletzt gemessenen Fläche ab
+und zählt Symbole je Kategorie. Außenumfang und Innenkanten stehen in
+der Messliste. Excel enthält auch die Stückzahlen.
 
 ## Bilder und Scanner
 
@@ -126,7 +130,8 @@ entsprechende Punkte aus und blendest mit dem Regler zwischen ihnen um.
   Schaltflächen ändern. Gespeicherte Abläufe zeigen die geplanten Schritte.
 
 - **Bilder & Scan → Rechnungsordner** überwacht den gewählten Ordner,
-  solange das Fenster geöffnet ist. Die Liste zeigt Prüfergebnisse und
+  solange PDF Werkbank läuft. Ein Zähler meldet neue Belege auch bei
+  geschlossenem Rechnungsfenster. Die Liste zeigt Prüfergebnisse und
   mögliche Dubletten im Eingang. Die Archivfreigabe schreibt eine
   unveränderte Kopie in einen anderen Ordner; vorhandene Ziele bleiben erhalten.
 - **Archiv & Zugang → Dubletten prüfen** vergleicht PDF- und XML-Dateien

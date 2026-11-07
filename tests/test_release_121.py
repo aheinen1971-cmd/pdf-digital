@@ -124,14 +124,15 @@ with TemporaryDirectory() as directory:
         else:
             raise AssertionError("Der überwachte Ordner wurde als Archiv akzeptiert.")
         dialog.reject()
-        assert window._invoice_folder_window is None
+        assert window._invoice_folder_window is dialog and not dialog.isVisible()
         window.invoice_folder()
         dialog = window._invoice_folder_window
         table = dialog.findChild(QTableWidget)
         until(lambda: table.rowCount() == 2)
         index = next(row for row in range(table.rowCount()) if table.item(row, 0).text() == first.name)
         assert "Freigegeben" in table.item(index, 4).text()
-        dialog.reject()
+        dialog.done(0)
+        assert window._invoice_folder_window is None
     settings.remove(archive_setting_key(first))
     settings.remove("invoice-watch/folder")
     settings.remove("invoice-watch/archive")
