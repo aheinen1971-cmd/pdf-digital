@@ -1,11 +1,11 @@
-# PDF Werkbank 1.6.0 für Windows
+# PDF Werkbank 1.7.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.6.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.7.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.6.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.7.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -59,6 +59,13 @@ vorhandene passende Modelldatei wird verwendet.
   auslesbarer Text, Kommentare, Formularfelder, Metadaten, Lesezeichen
   und Anlagennamen. Bildinhalte ohne Textebene und der Inhalt eingebetteter
   Dateien sind außerhalb dieser Prüfung.
+- **Werkzeuge → Versandcheck** zeigt Texttreffer vor dem Schwärzen in der
+  Seitenvorschau. Auf Wunsch entfernt die Funktion Dokumenteigenschaften,
+  XML-Metadaten und Dateianhänge aus der Kopie. Die Abschlussprüfung zeigt
+  verbleibende Texttreffer und Bildseiten zur Sichtprüfung.
+- **Werkzeuge → PDF-Versionen vergleichen** markiert Textänderungen und
+  sichtbare Unterschiede. „Nächste Änderung“ springt zur nächsten
+  betroffenen Seite. Der Bericht lässt sich als Textdatei speichern.
 - **Datei → Samsung-Profil** wählt einen unterstützten Samsung-Drucker
   mit A4 und Duplex an der langen Kante. Die Duplex-Vorschau zeigt
   Vorder- und Rückseite pro Blatt. Bei ungerader Seitenanzahl wird die
@@ -68,10 +75,14 @@ vorhandene passende Modelldatei wird verwendet.
 
 - **Bilder & Scan → Mehrseitig scannen** sammelt Seiten in einer Liste.
   Miniaturen lassen sich verschieben und entfernen. Die PDF kann beim
-  Speichern auf Deutsch und Englisch durchsuchbar gemacht werden.
+  Speichern auf Deutsch und Englisch durchsuchbar gemacht werden. Der
+  Assistent merkt sich A4 und Texterkennung, meldet verdächtige Leer- oder
+  Doppelseiten und bietet die Korrektur erkannter Schräglage pro Seite an.
 - **Bearbeiten** bietet Textformatierung, Absatzkorrektur im bestehenden
   Textrahmen und frei platzierten mehrzeiligen Text mit Standardschriften.
 - **Formular** erstellt und füllt Textfelder, Kontrollkästchen und Dropdowns.
+  „Felder vorschlagen“ sucht nach Kästchen und Eingabelinien in PDF-Seiten
+  und in klaren Scans. Vorschläge lassen sich einzeln prüfen und auswählen.
 - **Dokument** verwaltet Lesezeichen und fügt Seitenlinks, HTTPS-Links,
   Seitenzahlen und wiederverwendbare Textstempel ein.
 - **Export & Schutz** exportiert auslesbaren Text nach Word und erkannte

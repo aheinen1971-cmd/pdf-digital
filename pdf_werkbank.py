@@ -33,8 +33,10 @@ from update_worker import prepared_update
 from office_export import export_word, export_excel
 from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import crop_page, edit_image, image_at, scan_command, scanned_document
+from assistants import (add_suggested_field, append_scan, clean_hidden, form_candidates, redaction_candidates,
+                        scan_quality, similar_scan, text_changes)
 
-VERSION = (1, 6, 0)
+VERSION = (1, 7, 0)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -251,6 +253,10 @@ class CompareDialog(QDialog):
             panels.addWidget(panel)
         layout.addWidget(panels, 1)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        next_change = buttons.addButton("Nächste Änderung", QDialogButtonBox.ButtonRole.ActionRole)
+        report = buttons.addButton("Änderungsbericht speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        next_change.clicked.connect(self.next_change)
+        report.clicked.connect(self.save_report)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
         self.pages.currentIndexChanged.connect(self.render_pair)
@@ -260,11 +266,58 @@ class CompareDialog(QDialog):
         else:
             self.render_pair(0)
 
+    def next_change(self):
+        current = self.pages.currentIndex()
+        for offset in range(1, len(self.pairs) + 1):
+            index = (current + offset) % len(self.pairs)
+            if self.pairs[index][2] != "equal":
+                self.pages.setCurrentIndex(index)
+                return
+
+    def save_report(self):
+        target, _ = QFileDialog.getSaveFileName(self, "Änderungsbericht speichern", "Änderungsbericht.txt",
+                                                "Textdateien (*.txt)")
+        if not target:
+            return
+        lines = ["PDF-Vergleich", "Links: bisherige Fassung. Rechts: neue Fassung.", ""]
+        for index, (a, b, tag) in enumerate(self.pairs):
+            if tag == "equal":
+                continue
+            lines.append(self.pages.itemText(index))
+            changes = list(text_changes(self.docs[0][a] if a is not None else None,
+                                        self.docs[1][b] if b is not None else None))
+            if not changes:
+                lines.append("  Seitenbild, Format oder Position prüfen.")
+            for _, old, new in changes:
+                for prefix, words in (("−", old), ("+", new)):
+                    if words:
+                        lines.append(f"  {prefix} " + " ".join(word[4] for word in words))
+        try:
+            path = Path(target)
+            if path.suffix.lower() != ".txt":
+                raise ValueError("Bitte einen Dateinamen mit der Endung .txt wählen.")
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "Bericht konnte nicht gespeichert werden", str(exc))
+
     def render_pair(self, index):
         a, b, _ = self.pairs[index]
         left = self.docs[0][a] if a is not None else None
         right = self.docs[1][b] if b is not None else None
         images, changed = compare_images(left, right)
+        changes = list(text_changes(left, right))
+        scale = 660 / max(max(page.rect.width, page.rect.height) for page in (left, right) if page is not None)
+        for side, (page, image) in enumerate(zip((left, right), images)):
+            if page is None or not changes:
+                continue
+            painter = QPainter(image)
+            color = QColor(200, 35, 25, 135) if side == 0 else QColor(10, 135, 65, 135)
+            for change in changes:
+                for word in change[side + 1]:
+                    box = pdf.Rect(word[:4]) * page.rotation_matrix
+                    painter.fillRect(QRect(round(box.x0 * scale), round(box.y0 * scale),
+                                           round(box.width * scale), round(box.height * scale)), color)
+            painter.end()
         if left is None or right is None:
             status = "Seite hinzugefügt" if left is None else "Seite entfernt"
         elif changed:
@@ -275,7 +328,7 @@ class CompareDialog(QDialog):
             status = "Unterschied in der Textebene"
         else:
             status = "Keine sichtbaren Unterschiede in der Vorschau"
-        self.result.setText(status)
+        self.result.setText(f"{status} · {len(changes)} geänderte Textstellen")
         for label, area, image in zip(self.images, self.areas, images):
             if image is None:
                 label.setText("Keine entsprechende Seite")
@@ -625,7 +678,8 @@ class Window(QMainWindow):
                         ("Löschen", lambda: self.edit_page("delete")), ("PDF anhängen", self.append)]),
             ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Text einfügen", lambda: self.set_mode("Text einfügen")), ("Text formatieren", lambda: self.set_mode("Textformat")), ("Absatz bearbeiten", lambda: self.set_mode("Absatz")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True))]),
             ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
-                           ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send), ("Schwärzung prüfen", self.verify_redaction)]),
+                           ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send),
+                           ("Versandcheck", self.dispatch_check), ("Schwärzung prüfen", self.verify_redaction)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
                               ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen"))]),
@@ -634,7 +688,8 @@ class Window(QMainWindow):
             ("Export & Schutz", [("Word", self.export_office), ("Excel", lambda: self.export_office(True)),
                                  ("Passwortschutz", self.protect_copy), ("Stapelverarbeitung", self.batch_process)]),
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
-            ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
+            ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
+                          ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
         ]
         for name, _ in self.groups:
             self.tools.addTab(name)
@@ -1049,9 +1104,16 @@ class Window(QMainWindow):
     def scan_stack(self):
         with tempfile.TemporaryDirectory() as folder, pdf.open() as document:
             dialog = QDialog(self)
-            dialog.setWindowTitle("Mehrseitig scannen")
+            dialog.setWindowTitle("Scanassistent")
             layout = QVBoxLayout(dialog)
             layout.addWidget(QLabel("Lege eine Seite auf und klicke auf „Seite scannen“. Ziehe die Miniaturen zum Sortieren."))
+            settings = QSettings("PDF Werkbank", "PDF Werkbank")
+            a4 = QCheckBox("Samsung-Profil · Seiten auf A4 einpassen")
+            a4.setChecked(settings.value("scan/a4", False, type=bool))
+            layout.addWidget(a4)
+            hint = QLabel("Bei „Schief“ kannst du das Kästchen für die Korrektur aktivieren. Prüfe leere und ähnliche Seiten in der Vorschau.")
+            hint.setWordWrap(True)
+            layout.addWidget(hint)
             pages = QListWidget()
             pages.setIconSize(QSize(95, 125))
             pages.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
@@ -1064,7 +1126,7 @@ class Window(QMainWindow):
             row.addWidget(remove)
             layout.addLayout(row)
             ocr = QCheckBox("Scan-PDF durchsuchbar machen (Deutsch und Englisch)")
-            ocr.setChecked(True)
+            ocr.setChecked(settings.value("scan/ocr", True, type=bool))
             layout.addWidget(ocr)
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
             save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
@@ -1073,6 +1135,7 @@ class Window(QMainWindow):
             buttons.accepted.connect(dialog.accept)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
+            fingerprints = []
 
             def capture():
                 try:
@@ -1084,9 +1147,18 @@ class Window(QMainWindow):
                         document.insert_pdf(source)
                     index = len(document) - 1
                     page = document[index]
+                    blank, angle, fingerprint = scan_quality(page)
+                    notes = [note for note in ("Möglicherweise leer" if blank else "",
+                                               "Mögliches Duplikat" if any(similar_scan(fingerprint, old)
+                                                                            for old in fingerprints) else "",
+                                               f"Schief ({angle:+d}°)" if angle else "") if note]
+                    fingerprints.append(fingerprint)
                     item = QListWidgetItem(QIcon(pixmap(page, min(95 / page.rect.width, 125 / page.rect.height))),
-                                           f"Scan {index + 1}")
+                                           " · ".join([f"Scan {index + 1}", *notes]))
                     item.setData(Qt.ItemDataRole.UserRole, index)
+                    item.setData(Qt.ItemDataRole.UserRole + 1, angle)
+                    if angle:
+                        item.setCheckState(Qt.CheckState.Unchecked)
                     pages.addItem(item)
                     pages.setCurrentItem(item)
                     save_button.setEnabled(True)
@@ -1104,17 +1176,22 @@ class Window(QMainWindow):
             dialog.resize(620, 575)
             if dialog.exec() != QDialog.DialogCode.Accepted or not pages.count():
                 return
+            settings.setValue("scan/a4", a4.isChecked())
+            settings.setValue("scan/ocr", ocr.isChecked())
             try:
-                order = [pages.item(index).data(Qt.ItemDataRole.UserRole) for index in range(pages.count())]
-                document.select(order)
-                if ocr.isChecked():
-                    count, failures = self.send_ocr(document, range(len(document)), "deu+eng")
-                    if count is None:
-                        return
-                    if failures:
-                        QMessageBox.information(self, "Texterkennung", "Ohne neue Textebene: Seite " +
-                                                ", ".join(map(str, failures)))
-                self.save_scanned_document(document)
+                with pdf.open() as result:
+                    for index in range(pages.count()):
+                        item = pages.item(index)
+                        angle = item.data(Qt.ItemDataRole.UserRole + 1) if item.checkState() == Qt.CheckState.Checked else 0
+                        append_scan(result, document[item.data(Qt.ItemDataRole.UserRole)], a4.isChecked(), angle)
+                    if ocr.isChecked():
+                        count, failures = self.send_ocr(result, range(len(result)), "deu+eng")
+                        if count is None:
+                            return
+                        if failures:
+                            QMessageBox.information(self, "Texterkennung", "Ohne neue Textebene: Seite " +
+                                                    ", ".join(map(str, failures)))
+                    self.save_scanned_document(result)
             except Exception as exc:
                 self.error(exc)
 
@@ -1267,6 +1344,92 @@ class Window(QMainWindow):
             settings.setValue("stamp_presets", [value, *entries][:20])
         return True
 
+
+    def review_candidates(self, title, doc, candidates, description, options=()):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.resize(860, 700)
+        layout = QVBoxLayout(dialog)
+        explanation = QLabel(description)
+        explanation.setWordWrap(True)
+        layout.addWidget(explanation)
+        split = QSplitter()
+        rows = QListWidget()
+        split.addWidget(rows)
+        area = QScrollArea()
+        area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image = QLabel()
+        area.setWidget(image)
+        split.addWidget(area)
+        split.setStretchFactor(1, 2)
+        layout.addWidget(split, 1)
+        for index, rect, label in candidates:
+            item = QListWidgetItem(f"Seite {index + 1} · {label}")
+            item.setCheckState(Qt.CheckState.Unchecked)
+            rows.addItem(item)
+        checkboxes = []
+        for label in options:
+            checkbox = QCheckBox(label)
+            layout.addWidget(checkbox)
+            checkboxes.append(checkbox)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Auswahl übernehmen")
+        select_all = buttons.addButton("Alle markieren", QDialogButtonBox.ButtonRole.ActionRole)
+        def mark_all():
+            for row in range(rows.count()):
+                rows.item(row).setCheckState(Qt.CheckState.Checked)
+        select_all.clicked.connect(mark_all)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def preview(row):
+            if row < 0:
+                return
+            index, rect, _ = candidates[row]
+            page = doc[index]
+            scale = 460 / max(page.rect.width, page.rect.height)
+            drawing = pixmap(page, scale)
+            box = rect * page.rotation_matrix
+            painter = QPainter(drawing)
+            painter.fillRect(QRect(round(box.x0 * scale), round(box.y0 * scale), max(2, round(box.width * scale)),
+                                   max(2, round(box.height * scale))), QColor(255, 135, 20, 150))
+            painter.end()
+            image.setPixmap(drawing)
+            image.resize(drawing.size())
+
+        rows.currentRowChanged.connect(preview)
+        rows.setCurrentRow(0)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        return ([candidate for i, candidate in enumerate(candidates)
+                 if rows.item(i).checkState() == Qt.CheckState.Checked],
+                [option.isChecked() for option in checkboxes])
+
+    def suggest_fields(self):
+        session = self.current
+        if not session:
+            return
+        try:
+            candidates = [(page.number, rect, kind) for page in session.doc
+                          for kind, rect in form_candidates(page)]
+            if not candidates:
+                QMessageBox.information(self, "Formular-Assistent", "Keine passenden Feldumrisse gefunden.")
+                return
+            review = self.review_candidates("Formular-Assistent", session.doc, candidates,
+                                            "Prüfe Kästchen und Linien in der Vorschau und markiere die gewünschten Felder.")
+            if not review or not review[0]:
+                return
+            session.checkpoint()
+            try:
+                for index, rect, kind in review[0]:
+                    add_suggested_field(session.doc[index], kind, rect)
+            except Exception:
+                session.undo()
+                raise
+            self.changed()
+        except Exception as exc:
+            self.error(exc)
 
     def create_field(self, page, rect):
         if rect.width < 15 or rect.height < 9:
@@ -1798,6 +1961,62 @@ class Window(QMainWindow):
         dialog.resize(660, 720)
         show_page(0)
         return dialog.exec() == QDialog.DialogCode.Accepted
+
+    def dispatch_check(self):
+        session = self.current
+        if not session:
+            return
+        if session.doc.needs_pass:
+            self.error("Der Versandcheck benötigt eine PDF ohne Passwortschutz.")
+            return
+        text, ok = QInputDialog.getMultiLineText(self, "Versandcheck", "Ein Suchbegriff pro Zeile. Leer lassen, um nur versteckte Inhalte zu entfernen.")
+        if not ok:
+            return
+        terms = list(dict.fromkeys(line.strip() for line in text.splitlines() if line.strip()))
+        try:
+            with pdf.open(stream=session.doc.tobytes(), filetype="pdf") as copy:
+                candidates = list(redaction_candidates(copy, terms))
+                review = self.review_candidates("Versandcheck", copy, candidates,
+                                                f"{len(candidates)} Textbereiche gefunden. Markiere die Bereiche, die dauerhaft geschwärzt werden sollen.",
+                                                ("Dokumenteigenschaften und XML-Metadaten entfernen",
+                                                 "Eingebettete Dateien und Dateianhänge entfernen"))
+                if not review or not (review[0] or any(review[1])):
+                    return
+                target = self.output_path(" - geprüft", "Geprüfte Versandkopie speichern")
+                if target is None:
+                    return
+                by_page = {}
+                for index, rect, _ in review[0]:
+                    by_page.setdefault(index, []).append(rect)
+                for index, rectangles in by_page.items():
+                    page = copy[index]
+                    check_pending_redactions(page)
+                    for rect in rectangles:
+                        page.add_redact_annot(rect, fill=(0, 0, 0), cross_out=False)
+                    page.apply_redactions(images=pdf.PDF_REDACT_IMAGE_PIXELS,
+                                          graphics=pdf.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+                clean_hidden(copy, *review[1])
+                with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                    candidate = Path(folder) / "geprüft.pdf"
+                    save_copy(copy, candidate)
+                    with pdf.open(candidate) as saved:
+                        findings = redaction_findings(saved, terms)
+                        image_pages = [str(page.number + 1) for page in saved if page.get_image_info()]
+                    os.replace(candidate, target)
+            report = QMessageBox(self)
+            report.setWindowTitle("Versandcheck abgeschlossen")
+            report.setText(f"{target.name}\n{len(review[0])} Bereiche geschwärzt. "
+                           f"{len(findings)} von {len(terms)} Suchbegriffen noch in prüfbaren Inhalten gefunden.")
+            report.setInformativeText("Bildpixel, Vektorschrift ohne Textebene, Skripte und Inhalte verbleibender Anlagen wurden "
+                                      "nicht durchsucht. Die Prüfung ersetzt die Sichtprüfung der Versandkopie nicht.")
+            details = [f"{term}\n" + "\n".join(locations) for term, locations in findings.items()]
+            if image_pages:
+                details.append("Seiten mit Bildern zur Sichtprüfung: " + ", ".join(image_pages))
+            if details:
+                report.setDetailedText("\n\n".join(details))
+            report.exec()
+        except Exception as exc:
+            self.error(exc)
 
     def verify_redaction(self):
         folder = str(self.current.path.parent) if self.current else ""
