@@ -1,11 +1,11 @@
-# PDF Werkbank 1.15.0 für Windows
+# PDF Werkbank 1.16.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.15.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.16.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.15.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.16.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -68,6 +68,9 @@ vorhandene passende Modelldatei wird verwendet.
   bearbeitbarem Ziel in einer Tabelle. Ein Klick auf **Auswahl archivieren**
   startet OCR und PDF/A-Prüfung für die markierten Entwürfe. Ein Entwurf
   wird erst nach dem Speichern seiner geprüften Kopie entfernt.
+  Mit **Pausieren** kann der Lauf unterbrochen werden. **Archivlauf
+  fortsetzen** nutzt den lokal gespeicherten Stand und überspringt
+  fertige Kopien. Geänderte Entwürfe müssen erneut freigegeben werden.
 
 ## Favoriten
 
@@ -138,9 +141,19 @@ bleiben beim Neustart erhalten.
   nur neue oder geänderte PDFs ein. Filter greifen auf Dateiname,
   Unterordner und Änderungsdatum. Der Index kann für den gewählten Ordner
   gelöscht werden.
+  Bei aktivierter OCR-Fehlertoleranz erscheinen typische Verwechslungen
+  in Nummern, etwa 4718 und 47I8, als mögliche Treffer hinter exakten
+  Treffern. Die Funktion arbeitet mit und ohne Suchindex.
 - **Formular** erstellt und füllt Textfelder, Kontrollkästchen und Dropdowns.
   „Felder vorschlagen“ sucht nach Kästchen und Eingabelinien in PDF-Seiten
   und in klaren Scans. Vorschläge lassen sich einzeln prüfen und auswählen.
+  **Feste Formularkopie** zeigt die ausgefüllten Felder in einer Vorschau
+  und speichert ihre sichtbaren Werte als festen Seiteninhalt.
+
+**Datei → Einstellungen übertragen** exportiert Favoriten, gespeicherte
+Abläufe, Kopf- und Fußzeilen sowie A4- und OCR-Optionen als JSON-Paket.
+Beim Import werden nur die ausgewählten Gruppen ersetzt. PDFs, der
+Suchindex, Arbeitsmappen und gespeicherte Ordnerpfade sind davon getrennt.
 - **Dokument** verwaltet Lesezeichen und fügt Seitenlinks, HTTPS-Links,
   Seitenzahlen und wiederverwendbare Textstempel ein.
 - **Kopf- und Fußzeilen** bietet lokale Vorlagen, Seitenauswahl,

@@ -56,7 +56,7 @@ try:
         window = Window()
         window.error = lambda message: (_ for _ in ()).throw(AssertionError(message))
         with patch.object(QFileDialog, "getExistingDirectory", return_value=str(library)), patch.object(
-                window, "folder_search_options", return_value=("3088", True, None, ("", "", 0))), patch.object(
+                window, "folder_search_options", return_value=("3088", True, None, ("", "", 0), False)), patch.object(
                 QDialog, "exec", return_value=QDialog.DialogCode.Accepted):
             window.search_folder()
         assert window.current.path == match and window.current.page == 1

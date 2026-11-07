@@ -59,7 +59,7 @@ try:
             table.item(2, 0).setCheckState(Qt.CheckState.Unchecked)
             return QDialog.DialogCode.Accepted
 
-        with patch.object(QDialog, "exec", review), patch.object(window, "archive_batch", side_effect=jobs.extend):
+        with patch.object(QDialog, "exec", review), patch.object(window, "start_archive_run", side_effect=jobs.extend):
             window.review_archive_batch([first, second, third], str(archive))
         assert len(jobs) == 2 and jobs[0] == (first, archive / "Geprüft" / "Eigener Name.pdf")
         assert jobs[1][0] == second

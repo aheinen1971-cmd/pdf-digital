@@ -95,16 +95,53 @@ def pdf_files(folder, recursive=True):
                 yield path
 
 
-def folder_matches(folder, query, recursive, tick, limit=1000, filters=("", "", 0)):
-    needle = normalized(query)
-    if not needle:
-        raise ValueError("Bitte einen Suchbegriff eingeben.")
-    results = []
+class SearchMatches:
+    def __init__(self, query, fuzzy, limit):
+        self.needle = normalized(query)
+        if not self.needle:
+            raise ValueError("Bitte einen Suchbegriff eingeben.")
+        self.limit = limit
+        self.fuzzy = fuzzy
+        self.exact, self.possible = [], []
+        groups = ("0o", "1il|", "2z", "5s", "8b")
+        choices = {char: "[" + re.escape(group) + "]" for group in groups for char in group}
+        self.pattern = None
+        if fuzzy and 3 <= len(self.needle) <= 96 and any(char.isdecimal() for char in self.needle):
+            terms = "".join(choices.get(char, re.escape(char)) for char in self.needle)
+            self.pattern = re.compile(r"(?<!\w)" + terms + r"(?!\w)")
+
+    def add(self, path, page, text):
+        start = text.find(self.needle)
+        if start >= 0:
+            word = self.needle
+            results = self.exact
+        elif self.pattern and len(self.possible) < self.limit:
+            match = next((m for m in self.pattern.finditer(text)
+                          if 1 <= sum(a != b for a, b in zip(self.needle, m[0])) <= 2), None)
+            if match is None:
+                return False
+            start, word, results = match.start(), match[0], self.possible
+        else:
+            return False
+        excerpt = text[max(0, start - 42):start + len(word) + 60]
+        hit = (path, page, excerpt)
+        results.append((*hit, word if results is self.possible else None) if self.fuzzy else hit)
+        return len(self.exact) >= self.limit
+
+    def results(self, skipped, scanned, status=""):
+        combined = self.exact + self.possible
+        if len(combined) >= self.limit and not status:
+            status = "Treffergrenze erreicht"
+        return combined[:self.limit], skipped, scanned, status
+
+
+def folder_matches(folder, query, recursive, tick, limit=1000, filters=("", "", 0), fuzzy=False):
+    matches = SearchMatches(query, fuzzy, limit)
     skipped = 0
     scanned = 0
     for path in pdf_files(folder, recursive):
         if not tick(path):
-            return results, skipped, scanned, "abgebrochen"
+            return matches.results(skipped, scanned, "abgebrochen")
         try:
             if not matches_filters(path.relative_to(folder), path.stat().st_mtime_ns, filters):
                 continue
@@ -115,17 +152,13 @@ def folder_matches(folder, query, recursive, tick, limit=1000, filters=("", "", 
                 scanned += 1
                 for page in doc:
                     if not tick(path):
-                        return results, skipped, scanned, "abgebrochen"
+                        return matches.results(skipped, scanned, "abgebrochen")
                     text = normalized(page.get_text(sort=True))
-                    hit = text.find(needle)
-                    if hit >= 0:
-                        excerpt = text[max(0, hit - 42):hit + len(needle) + 60]
-                        results.append((path, page.number, excerpt))
-                        if len(results) >= limit:
-                            return results, skipped, scanned, "Treffergrenze erreicht"
+                    if matches.add(path, page.number, text):
+                        return matches.results(skipped, scanned)
         except (OSError, RuntimeError, ValueError):
             skipped += 1
-    return results, skipped, scanned, ""
+    return matches.results(skipped, scanned)
 
 
 def matches_filters(relative, modified, filters):
@@ -173,10 +206,8 @@ def file_signature(path):
     return metadata.st_mtime_ns, metadata.st_size, str(metadata.st_ino)
 
 
-def indexed_matches(database, folder, query, recursive, tick, limit=1000, filters=("", "", 0)):
-    needle = normalized(query)
-    if not needle:
-        raise ValueError("Bitte einen Suchbegriff eingeben.")
+def indexed_matches(database, folder, query, recursive, tick, limit=1000, filters=("", "", 0), fuzzy=False):
+    matches = SearchMatches(query, fuzzy, limit)
     scope = search_scope(folder, recursive)
     updated = 0
     present = set()
@@ -224,16 +255,16 @@ def indexed_matches(database, folder, query, recursive, tick, limit=1000, filter
         with db:
             db.executemany("DELETE FROM documents WHERE scope = ? AND path = ?",
                            ((scope, path) for path in existing.keys() - present))
-        results = []
         query_rows = db.execute("""
-            SELECT p.path, p.number, substr(p.text, max(1, instr(p.text, ?) - 42), length(?) + 102), d.modified
+            SELECT p.path, p.number, p.text, d.modified
             FROM pages p JOIN documents d USING(scope, path)
-            WHERE p.scope = ? AND d.valid = 1 AND instr(p.text, ?) > 0
+            WHERE p.scope = ? AND d.valid = 1 AND (? OR instr(p.text, ?) > 0)
             ORDER BY p.path, p.number
-        """, (needle, needle, scope, needle))
-        for path, page, excerpt, modified in query_rows:
+        """, (scope, matches.pattern is not None, matches.needle))
+        for count, (path, page, text, modified) in enumerate(query_rows):
+            if count % 64 == 0 and not tick(folder / path):
+                return matches.results(skipped, updated, "abgebrochen")
             if path in present and matches_filters(Path(path), modified, filters):
-                results.append((folder / path, page, excerpt))
-                if len(results) >= limit:
-                    return results, skipped, updated, "Treffergrenze erreicht"
-        return results, skipped, updated, ""
+                if matches.add(folder / path, page, text):
+                    break
+        return matches.results(skipped, updated)

@@ -17,7 +17,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QMimeData, QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QLockFile, QMimeData, QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
@@ -31,20 +31,22 @@ from PySide6.QtWidgets import (
 from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 
 from online_updates import ReleaseCheck
-from update_worker import failed_update, prepared_update
+from update_worker import digest_file, failed_update, prepared_update
 
 from office_export import export_word, export_word_layout, export_excel
 from pdf_standards import accessibility_blocks, export_accessible, export_archive, export_vector_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
-from page_tools import (booklet_sheets, crop_page, edit_image, feeder_pages, image_at, impose_booklet,
+from page_tools import (booklet_sheets, crop_page, edit_image, feeder_pages, fixed_form, image_at, impose_booklet,
                         ocr_lines, replace_ocr_layer, scan_command, scanned_document, twain_command)
 from assistants import (add_suggested_field, append_scan, clean_hidden, form_candidates, redaction_candidates,
                         scan_quality, similar_scan, text_changes)
 from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
 from filing import archive_target, clear_index, filename_hint, folder_matches, indexed_matches, scan_breaks, scan_ranges
+from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
+from archive_run import ArchiveRun
 
-VERSION = (1, 15, 0)
+VERSION = (1, 16, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -747,6 +749,7 @@ class Window(QMainWindow):
         self.tools.setExpanding(False)
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
+                       ("Einstellungen übertragen", self.transfer_preferences),
                        ("Broschürendruck", self.booklet_dialog),
                        ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
                        ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
@@ -786,6 +789,7 @@ class Window(QMainWindow):
                                 ("Lesereihenfolge & Bildbeschreibungen", self.accessible_copy)]),
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
+                          ("Feste Formularkopie", self.flatten_form_copy),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
         ]
         for name, _ in self.groups:
@@ -876,7 +880,7 @@ class Window(QMainWindow):
         }
         self.favorite_settings = QSettings("PDF Werkbank", "PDF Werkbank")
         self.profile_commands()
-        defaults = ["scan", "quick-scan", "folder", "duplex"]
+        defaults = DEFAULT_FAVORITES
         saved = self.favorite_settings.value("toolbar/favorites", defaults)
         if not isinstance(saved, list):
             saved = defaults
@@ -931,6 +935,57 @@ class Window(QMainWindow):
             action = self.favorite_toolbar.addAction(label)
             action.triggered.connect(lambda _=False, run=callback: run())
             self.favorite_actions.append(action)
+
+    def transfer_preferences(self):
+        action, ok = QInputDialog.getItem(self, "Einstellungen übertragen", "Aktion",
+                                          ["Einstellungen exportieren", "Einstellungen importieren"], editable=False)
+        if not ok:
+            return
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        try:
+            if action == "Einstellungen exportieren":
+                path, _ = QFileDialog.getSaveFileName(self, action, "PDF-Werkbank-Einstellungen.json",
+                                                      "Einstellungspaket (*.json)")
+                if path:
+                    target = Path(path if path.lower().endswith(".json") else path + ".json")
+                    atomic_write(target, export_package(settings))
+                    self.statusBar().showMessage("Einstellungspaket gespeichert.", 6500)
+                return
+            path, _ = QFileDialog.getOpenFileName(self, action, "", "Einstellungspaket (*.json)")
+            if not path:
+                return
+            groups = read_package(Path(path))
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Einstellungsgruppen übernehmen")
+            layout = QVBoxLayout(dialog)
+            layout.addWidget(QLabel("Ausgewählte Gruppen ersetzen deine derzeitigen Einstellungen dieser Gruppe."))
+            choices = {}
+            for key, label in GROUPS.items():
+                if key in groups:
+                    choices[key] = QCheckBox(label)
+                    choices[key].setChecked(True)
+                    layout.addWidget(choices[key])
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+            buttons.accepted.connect(dialog.accept)
+            buttons.rejected.connect(dialog.reject)
+            layout.addWidget(buttons)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+            selected = {key: groups[key] for key, check in choices.items() if check.isChecked()}
+            if not selected:
+                return
+            import_groups(settings, selected)
+            if settings.status() != QSettings.Status.NoError:
+                raise OSError("Die Einstellungen konnten nicht gespeichert werden.")
+            self.favorite_settings.sync()
+            self.profile_commands()
+            keys = self.favorite_settings.value("toolbar/favorites", DEFAULT_FAVORITES)
+            self.favorite_keys = [key for key in keys if key in self.favorite_commands]
+            self.populate_favorite_menu()
+            self.refresh_favorites()
+            self.statusBar().showMessage("Ausgewählte Einstellungsgruppen übernommen.", 6500)
+        except (OSError, ValueError, TypeError) as exc:
+            self.error(exc)
 
     @staticmethod
     def read_batch_profiles(settings):
@@ -1872,6 +1927,13 @@ class Window(QMainWindow):
         discard = buttons.addButton("Entwurf löschen", QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(buttons)
         buttons.rejected.connect(dialog.reject)
+        run_buttons = QHBoxLayout()
+        resume = QPushButton("Archivlauf fortsetzen")
+        forget = QPushButton("Gespeicherten Lauf verwerfen")
+        run_buttons.addWidget(resume)
+        run_buttons.addWidget(forget)
+        run_buttons.addStretch()
+        layout.addLayout(run_buttons)
         drafts = []
 
         def refresh():
@@ -1881,7 +1943,10 @@ class Window(QMainWindow):
                 rows.addItem(f"{path.name[:10]} · Scan {len(drafts) - index}")
             rows.setCurrentRow(0)
             archive.setEnabled(bool(drafts))
-            batch.setEnabled(bool(drafts))
+            pending = ArchiveRun(folder).path.is_file()
+            batch.setEnabled(bool(drafts) and not pending)
+            resume.setEnabled(pending)
+            forget.setEnabled(pending)
             correct.setEnabled(bool(drafts))
             split.setEnabled(bool(drafts))
             discard.setEnabled(bool(drafts))
@@ -1964,6 +2029,8 @@ class Window(QMainWindow):
         choose.clicked.connect(select_base)
         archive.clicked.connect(archive_draft)
         batch.clicked.connect(lambda: (self.review_archive_batch(drafts, base.text()), refresh()))
+        resume.clicked.connect(lambda: (self.manage_archive_run(folder), refresh()))
+        forget.clicked.connect(lambda: (self.manage_archive_run(folder, discard=True), refresh()))
         correct.clicked.connect(correct_selected)
         split.clicked.connect(split_selected)
         discard.clicked.connect(discard_draft)
@@ -2061,18 +2128,46 @@ class Window(QMainWindow):
                 self.error(exc)
                 continue
             QSettings("PDF Werkbank", "PDF Werkbank").setValue("scan/archive-folder", str(root))
-            self.archive_batch(jobs)
+            self.start_archive_run(jobs)
             return
 
-    def archive_batch(self, jobs):
+    def start_archive_run(self, jobs):
+        if jobs:
+            self.manage_archive_run(jobs[0][0].parent, jobs=jobs)
+
+    def manage_archive_run(self, folder, jobs=None, discard=False):
+        run = ArchiveRun(folder)
+        lock = QLockFile(str(run.inbox / ".archivlauf.lock"))
+        lock.setStaleLockTime(0)
+        if not lock.tryLock(0):
+            self.error("Der Archivlauf ist in einem anderen Fenster geöffnet.")
+            return
+        try:
+            if discard:
+                if QMessageBox.question(self, "Archivlauf verwerfen",
+                                        "Den gespeicherten Ablauf verwerfen? Die verbliebenen Entwürfe bleiben erhalten."
+                                        ) == QMessageBox.StandardButton.Yes:
+                    run.path.unlink(missing_ok=True)
+                return
+            if jobs is not None:
+                run.begin(jobs)
+            else:
+                run.load()
+            self.archive_batch([run.paths(job) for job in run.jobs], run)
+        except Exception as exc:
+            self.error(exc)
+        finally:
+            lock.unlock()
+
+    def archive_batch(self, jobs, journal=None):
         tools = self.standard_tools()
         if tools is None:
             return
-        progress = QProgressDialog("Archivkopien werden erstellt …", "Abbrechen", 0, len(jobs),
+        progress = QProgressDialog("Archivkopien werden erstellt …", "Pausieren" if journal else "Abbrechen", 0, len(jobs),
                                    QApplication.activeModalWidget() or self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
-        saved, failures, notes = 0, [], []
+        saved, skipped, failures, notes = 0, 0, [], []
         cancelled = False
         try:
             for index, (draft, target) in enumerate(jobs):
@@ -2083,6 +2178,23 @@ class Window(QMainWindow):
                     cancelled = True
                     break
                 try:
+                    record = journal.jobs[index] if journal else None
+                    if record and record["done"]:
+                        skipped += 1
+                        continue
+                    if record and target.resolve() != target:
+                        raise ValueError("Der freigegebene Zielpfad hat sich geändert.")
+                    if record and record["sha256"] and target.is_file() and digest_file(target) == record["sha256"]:
+                        if draft.exists():
+                            if not journal.matches_source(record):
+                                raise ValueError("Der Entwurf wurde nach der Freigabe geändert.")
+                            draft.unlink()
+                        record["done"] = True
+                        journal.write()
+                        skipped += 1
+                        continue
+                    if record and not journal.matches_source(record):
+                        raise ValueError("Der Entwurf wurde nach der Freigabe geändert.")
                     if target.exists() or any(target.resolve() == session.path.resolve() for session in self.sessions):
                         raise ValueError("Die Zieldatei ist bereits vorhanden oder geöffnet.")
                     target.parent.mkdir(exist_ok=True)
@@ -2095,19 +2207,33 @@ class Window(QMainWindow):
                         if summary is None or progress.wasCanceled():
                             cancelled = True
                             break
+                        if record:
+                            if not journal.matches_source(record):
+                                raise ValueError("Der Entwurf wurde während der Prüfung geändert.")
+                            record["sha256"] = digest_file(candidate)
+                            journal.write()
                         candidate.rename(target)
                     saved += 1
                     if "Ohne Suchtext" in summary:
                         notes.append(f"{target.name}. {summary}")
+                    if record and draft.exists() and not journal.matches_source(record):
+                        raise ValueError("Die Kopie wurde gespeichert, der inzwischen geänderte Entwurf bleibt erhalten.")
                     draft.unlink(missing_ok=True)
+                    if record:
+                        record["done"] = True
+                        journal.write()
                 except Exception as exc:
                     failures.append(f"{target.name}. {exc}")
         finally:
             progress.close()
+        if journal and all(job["done"] for job in journal.jobs):
+            journal.path.unlink(missing_ok=True)
         report = QMessageBox(self)
         report.setWindowTitle("Archivierung abgeschlossen")
         report.setText(f"{saved} geprüfte Archivkopien gespeichert. {len(failures)} Fehler."
-                       + (" Der Lauf wurde abgebrochen." if cancelled else ""))
+                       + (f" {skipped} bereits fertig." if skipped else "")
+                       + (" Der Lauf wurde unterbrochen." if cancelled and journal else
+                          " Der Lauf wurde abgebrochen." if cancelled else ""))
         if failures or notes:
             report.setInformativeText("Die Details zeigen Fehler und Seiten ohne Suchtext.")
             report.setDetailedText("\n\n".join(failures + notes))
@@ -2709,6 +2835,24 @@ class Window(QMainWindow):
         return ([candidate for i, candidate in enumerate(candidates)
                  if rows.item(i).checkState() == Qt.CheckState.Checked],
                 [option.isChecked() for option in checkboxes])
+
+    def flatten_form_copy(self):
+        session = self.standards_source()
+        if not session:
+            return
+        try:
+            copy, filled, empty = fixed_form(session.doc)
+            with copy:
+                summary = (f"{filled} ausgefüllte und {empty} leere Felder. "
+                           "Prüfe die sichtbaren Werte vor dem Speichern. Die Kopie enthält feste Seiteninhalte.")
+                if not self.preview_send(copy, summary, "Feste Formularkopie prüfen"):
+                    return
+                target = self.output_path(" - ausgefüllt", "Feste Formularkopie speichern")
+                if target:
+                    save_copy(copy, target)
+                    self.statusBar().showMessage(f"Feste Formularkopie gespeichert: {target.name}", 7500)
+        except Exception as exc:
+            self.error(exc)
 
     def suggest_fields(self):
         session = self.current
@@ -4204,7 +4348,7 @@ class Window(QMainWindow):
         options = self.folder_search_options(Path(folder))
         if options is None:
             return
-        query, recursive, database, filters = options
+        query, recursive, database, filters, fuzzy = options
         settings.setValue("search/folder", folder)
         progress = QProgressDialog("PDF-Dateien werden durchsucht …", "Abbrechen", 0, 0, self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
@@ -4218,9 +4362,11 @@ class Window(QMainWindow):
 
         try:
             if database:
-                hits, skipped, scanned, state = indexed_matches(database, Path(folder), query, recursive, tick, filters=filters)
+                hits, skipped, scanned, state = indexed_matches(database, Path(folder), query, recursive, tick,
+                                                                  filters=filters, fuzzy=fuzzy)
             else:
-                hits, skipped, scanned, state = folder_matches(Path(folder), query, recursive, tick, filters=filters)
+                hits, skipped, scanned, state = folder_matches(Path(folder), query, recursive, tick,
+                                                                 filters=filters, fuzzy=fuzzy)
         except Exception as exc:
             self.error(exc)
             return
@@ -4238,8 +4384,9 @@ class Window(QMainWindow):
         layout.addWidget(QLabel("Durchsucht wurde vorhandener Text. Bildseiten ohne OCR liefern keine Treffer."))
         rows = QListWidget()
         layout.addWidget(rows)
-        for path, page, excerpt in hits:
-            rows.addItem(f"{path.relative_to(folder)} · Seite {page + 1} · {excerpt}")
+        for path, page, excerpt, *approximation in hits:
+            possible = f"Möglicher Treffer ({approximation[0]}) · " if approximation and approximation[0] else ""
+            rows.addItem(f"{possible}{path.relative_to(folder)} · Seite {page + 1} · {excerpt}")
         rows.setCurrentRow(0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         jump = buttons.addButton("Fundstelle öffnen", QDialogButtonBox.ButtonRole.AcceptRole)
@@ -4250,14 +4397,14 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
         if dialog.exec() != QDialog.DialogCode.Accepted or rows.currentRow() < 0:
             return
-        path, page, _ = hits[rows.currentRow()]
+        path, page, _, *approximation = hits[rows.currentRow()]
         existing = next((index for index, session in enumerate(self.sessions)
                          if session.path.resolve() == path.resolve()), None)
         if existing is not None:
             self.tabs.setCurrentIndex(existing)
         elif not self.open_path(str(path)):
             return
-        self.search_text = query.strip()
+        self.search_text = approximation[0] if approximation and approximation[0] else query.strip()
         self.thumbs.setCurrentRow(page)
         self.go_page(page)
 
@@ -4274,6 +4421,8 @@ class Window(QMainWindow):
         recursive.setChecked(True)
         indexed = QCheckBox("Lokalen Suchindex verwenden")
         indexed.setChecked(True)
+        fuzzy = QCheckBox("Typische OCR-Verwechslungen in Nummern berücksichtigen")
+        fuzzy.setChecked(True)
         notice = QLabel("Der Index speichert auslesbaren PDF-Text lokal auf diesem PC. "
                         "Für vertrauliche Ordner kannst du ohne Index suchen.")
         notice.setWordWrap(True)
@@ -4281,7 +4430,7 @@ class Window(QMainWindow):
         for label, field in (("Suchtext", query), ("Dateiname enthält", name),
                              ("Unterordner enthält", directory), ("Geändert seit", since)):
             form.addRow(label, field)
-        for widget in (recursive, indexed, notice):
+        for widget in (recursive, indexed, fuzzy, notice):
             form.addRow(widget)
         database = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Suchindex" / "ordner-v1.sqlite"
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -4306,7 +4455,7 @@ class Window(QMainWindow):
                     raise ValueError("Bitte einen Suchtext eingeben.")
                 cutoff = datetime.strptime(since.text().strip(), "%d.%m.%Y").timestamp() if since.text().strip() else 0
                 return (query.text().strip(), recursive.isChecked(), database if indexed.isChecked() else None,
-                        (name.text().strip(), directory.text().strip(), round(cutoff * 1_000_000_000)))
+                        (name.text().strip(), directory.text().strip(), round(cutoff * 1_000_000_000)), fuzzy.isChecked())
             except ValueError:
                 notice.setText("Bitte einen Suchtext und ein Datum im Format TT.MM.JJJJ eingeben oder das Datum leer lassen.")
 

@@ -96,6 +96,73 @@ def replace_ocr_layer(page, values):
         raise ValueError("Die OCR-Korrektur hat das sichtbare Seitenbild verändert und wurde verworfen.")
 
 
+def fixed_form(source):
+    if source.needs_pass or source.get_sigflags() > 0:
+        raise ValueError("Bitte eine ungeschützte PDF ohne digitale Signatur auswählen.")
+    copy = pdf.open(stream=source.tobytes(), filetype="pdf")
+    try:
+        if copy.xref_get_key(copy.pdf_catalog(), "AcroForm/XFA")[0] != "null":
+            raise ValueError("Dieses dynamische XFA-Formular wird nicht unterstützt.")
+        pages, filled, empty = {}, 0, 0
+        for page in copy:
+            fields = list(page.widgets())
+            if not fields:
+                continue
+            for field in fields:
+                kind = field.field_type
+                if kind == pdf.PDF_WIDGET_TYPE_SIGNATURE:
+                    raise ValueError("Eine feste Kopie von Signaturfeldern wird nicht unterstützt.")
+                value = field.field_value
+                if kind != pdf.PDF_WIDGET_TYPE_BUTTON:
+                    if value is None or value == "" or value == "Off":
+                        empty += 1
+                    else:
+                        filled += 1
+                if kind in (pdf.PDF_WIDGET_TYPE_TEXT, pdf.PDF_WIDGET_TYPE_COMBOBOX, pdf.PDF_WIDGET_TYPE_LISTBOX):
+                    field.update()
+                appearance, _ = copy.xref_get_key(field.xref, "AP/N")
+                if appearance == "null" and value not in (None, "", "Off"):
+                    raise ValueError(f"Das Feld „{field.field_name}“ hat keine prüfbare sichtbare Darstellung.")
+            scale = min(1.3, 1800 / max(page.rect.width, page.rect.height))
+            matrix = pdf.Matrix(scale, scale)
+            pages[page.number] = (matrix, copy[page.number].get_pixmap(matrix=matrix).digest)
+            del field, fields
+        if not pages:
+            raise ValueError("Die PDF enthält keine ausfüllbaren Formularfelder.")
+        del page
+        copy.bake(annots=False, widgets=True)
+        if any(any(page.widgets()) for page in copy):
+            raise ValueError("Ein Formularfeld konnte nicht in die Seite übernommen werden.")
+        if copy.xref_get_key(copy.pdf_catalog(), "AcroForm/Fields")[1] not in ("null", "[]"):
+            raise ValueError("Der Formularfeldbaum konnte nicht entfernt werden.")
+        for number, (matrix, original) in pages.items():
+            if copy[number].get_pixmap(matrix=matrix).digest != original:
+                raise ValueError(f"Die sichtbaren Formularwerte auf Seite {number + 1} konnten nicht eindeutig geprüft werden.")
+        embed_checkbox_font(copy, pages)
+        return copy, filled, empty
+    except Exception:
+        copy.close()
+        raise
+
+
+def embed_checkbox_font(doc, pages):
+    fonts = {font[0] for number in pages for font in doc[number].get_fonts(full=True)
+             if font[3] == "ZapfDingbats" and doc.xref_get_key(font[0], "FontDescriptor")[0] == "null"}
+    if not fonts:
+        return
+    # PDF viewers may lack the standard Dingbats font used by checkboxes.
+    stream = doc.get_new_xref()
+    doc.update_object(stream, "<< /Subtype /Type1C >>")
+    doc.update_stream(stream, pdf.Font("zadb").buffer)
+    descriptor = doc.get_new_xref()
+    doc.update_object(descriptor, "<< /Type /FontDescriptor /FontName /ZapfDingbats /Flags 4 "
+                      "/FontBBox [-1 -144 981 819] /ItalicAngle 0 /Ascent 819 /Descent -144 "
+                      f"/CapHeight 819 /StemV 80 /FontFile3 {stream} 0 R >>")
+    for xref in fonts:
+        doc.xref_set_key(xref, "Encoding", "null")
+        doc.xref_set_key(xref, "FontDescriptor", f"{descriptor} 0 R")
+
+
 NUMBER = rb"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)"
 IMAGE = re.compile(rb"(?<!\S)q\s+(" + NUMBER + rb"(?:\s+" + NUMBER
                    + rb"){5})\s+cm\s+/([^\s/<>\[\](){}%]+)\s+Do\s+Q(?=\s|$)")
