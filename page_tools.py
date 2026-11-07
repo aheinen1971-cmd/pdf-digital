@@ -96,7 +96,7 @@ def edit_image(page, selected, offset=None, replacement=None):
         raise ValueError("Die Bildänderung konnte nicht eindeutig geprüft werden.")
 
 
-def scan_command(path, device_id=""):
+def scan_command(path, device_id="", feeder=0):
     script = r"""
 $ErrorActionPreference = 'Stop'
 try {
@@ -113,6 +113,51 @@ try {
         exit 4
     }
     $device = $scanners[0].Connect()
+    if ($env:PDF_WERKBANK_FEEDER -ne '0') {
+        function Get-Property($owner, [int]$number) {
+            $owner.Properties | Where-Object {$_.PropertyID -eq $number} | Select-Object -First 1
+        }
+        $item = $null
+        foreach ($candidate in $device.Items) {
+            $category = Get-Property $candidate 4125
+            if ($category -and [string]$category.Value -match 'fe131934-f84c-42ad-8da4-6129cddd7288') {
+                $item = $candidate
+                break
+            }
+        }
+        $owner = $item
+        if ($null -eq $item) {
+            $caps = Get-Property $device 3086
+            $select = Get-Property $device 3088
+            if (!$caps -or -not ([int]$caps.Value -band 1) -or !$select -or $select.IsReadOnly) { exit 5 }
+            $select.Value = 1
+            $owner = $device
+            $item = $device.Items.Item(1)
+        }
+        $pages = Get-Property $owner 3096
+        if (!$pages -or ($pages.IsReadOnly -and [int]$pages.Value -ne 1)) { exit 5 }
+        if (!$pages.IsReadOnly) { $pages.Value = 1 }
+        $partialDir = Join-Path $env:PDF_WERKBANK_SCAN_FILE 'unvollstaendig'
+        [IO.Directory]::CreateDirectory($partialDir) | Out-Null
+        for ($index = 1; $index -le [int]$env:PDF_WERKBANK_FEEDER; $index++) {
+            try {
+                $image = $item.Transfer('{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}')
+            } catch {
+                if (($_.Exception.HResult -eq -2145320957) -or ($_.Exception.InnerException -and
+                     $_.Exception.InnerException.HResult -eq -2145320957)) {
+                    if ($index -eq 1) { exit 6 }
+                    exit 0
+                }
+                throw
+            }
+            if ($null -eq $image) { exit 2 }
+            $name = '{0:0000}-{1}-{2}' -f $index,[int]$image.HorizontalResolution,[int]$image.VerticalResolution
+            $partial = Join-Path $partialDir ($name + '.png')
+            $image.SaveFile($partial)
+            [IO.File]::Move($partial, (Join-Path $env:PDF_WERKBANK_SCAN_FILE ($name + '.png')))
+        }
+        exit 0
+    }
     $image = $device.Items.Item(1).Transfer('{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}')
     if ($null -eq $image) { exit 2 }
 
@@ -128,7 +173,22 @@ try {
     shell = Path(os.environ["SystemRoot"]) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
     command = [str(shell), "-NoLogo", "-NoProfile", "-Sta", "-EncodedCommand",
                base64.b64encode(script.encode("utf-16-le")).decode("ascii")]
-    return command, dict(os.environ, PDF_WERKBANK_SCAN_FILE=str(path), PDF_WERKBANK_SCAN_ID=device_id)
+    return command, dict(os.environ, PDF_WERKBANK_SCAN_FILE=str(path), PDF_WERKBANK_SCAN_ID=device_id,
+                         PDF_WERKBANK_FEEDER=str(feeder))
+
+
+def twain_command(executable, output=None, device=None, feeder=True):
+    if output is None:
+        return [str(executable), "--listdevices", "--driver", "twain"]
+    return [str(executable), "--output", str(output), "--noprofile", "--driver", "twain", "--device", device,
+            "--source", "feeder" if feeder else "glass", "--dpi", "300", "--pagesize", "a4"]
+
+
+def feeder_pages(folder):
+    for path in sorted(folder.glob("*.png")):
+        match = re.fullmatch(r"\d{4}-(\d+)-(\d+)\.png", path.name)
+        if match:
+            yield path, tuple(map(int, match.groups()))
 
 
 def scanned_document(path, dpi):

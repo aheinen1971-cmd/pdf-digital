@@ -1,11 +1,11 @@
-# PDF Werkbank 1.9.0 für Windows
+# PDF Werkbank 1.10.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.9.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.10.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.9.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.10.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -48,6 +48,16 @@ vorhandene passende Modelldatei wird verwendet.
   Sind mehrere Scanner verfügbar, fragt die App nach dem Gerät.
   Pro Aufruf kann ein Scan als PDF gespeichert werden. Windows muss den
   Scanner mit einem passenden WIA-Treiber erkennen.
+- Im Scanassistenten liest **Blatteinzug** bis zur gewählten Obergrenze
+  oder bis zum leeren Einzug ein. Das Gerät muss einen über WIA
+  steuerbaren Einzug haben. **TWAIN** verwendet alternativ die separat
+  erhältliche [NAPS2-Konsole](https://www.naps2.com/doc/command-line)
+  und einen TWAIN-Treiber. Dort lassen sich Einzug oder Glas auswählen.
+- **Scan-Posteingang** bewahrt Scan-Entwürfe lokal auf. Erkannter Text
+  liefert einen Vorschlag für Dateiname und Unterordner. Das Datum stammt
+  aus dem Text oder vom Eingang des Scans. Nach erfolgreicher PDF/A-Prüfung
+  und bestätigter Vorschau wird das Archiv gespeichert und der Entwurf
+  aus dem Posteingang entfernt.
 
 ## Versand, Schwärzungsprüfung und Druckprofile
 
@@ -80,6 +90,18 @@ vorhandene passende Modelldatei wird verwendet.
   Doppelseiten und bietet die Korrektur erkannter Schräglage pro Seite an.
 - **Bearbeiten** bietet Textformatierung, Absatzkorrektur im bestehenden
   Textrahmen und frei platzierten mehrzeiligen Text mit Standardschriften.
+  Für neuen Text und Absatzkorrekturen lassen sich Position und Rahmengröße
+  in Millimetern angeben. **Ansicht → Hilfsraster** unterstützt das
+  Ausrichten neuer Texte und verschobener Bilder. **Bild positionieren**
+  stellt die Abstände zur sichtbaren Seitenkante direkt ein.
+- **Seiten → Seiten zwischen PDFs** zeigt zwei PDFs nebeneinander.
+  Seiten lassen sich ziehen, kopieren und verschieben. Links zu Seiten,
+  die beim Transfer nicht mitkommen, können entfallen. Zum gemeinsamen
+  Rückgängigmachen einer Verschiebung beide PDFs geöffnet lassen.
+- **Start → Ordner durchsuchen** sucht in vorhandenen Textebenen, optional
+  auch in Unterordnern. Die Trefferliste öffnet die Fundseite. Gesperrte
+  oder beschädigte Dateien werden übersprungen. Es wird kein Suchindex
+  angelegt.
 - **Formular** erstellt und füllt Textfelder, Kontrollkästchen und Dropdowns.
   „Felder vorschlagen“ sucht nach Kästchen und Eingabelinien in PDF-Seiten
   und in klaren Scans. Vorschläge lassen sich einzeln prüfen und auswählen.
