@@ -77,8 +77,8 @@ def audit_pdf(path, tools):
 @dataclass(frozen=True)
 class InvoiceField:
     value: str
-    page: int
-    rect: pdf.Rect
+    page: int | None
+    rect: pdf.Rect | None
 
 
 INVOICE_LABELS = (
@@ -199,3 +199,71 @@ $shortcut.Save()
                    WERKBANK_SHORTCUT_EXE=str(launcher), WERKBANK_SHORTCUT_ARGUMENT=argument)
         subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
                        env=env, check=True, timeout=30, creationflags=subprocess.CREATE_NO_WINDOW)
+
+
+INVOICE_XML_LIMIT = 8 * 1024 * 1024
+INVOICE_ATTACHMENTS = {"factur-x.xml", "zugferd-invoice.xml", "zugferd.xml", "xrechnung.xml"}
+UBL_COMMON = "urn:oasis:names:specification:ubl:schema:xsd:Common"
+UBL_TYPES = ("Invoice", "CreditNote")
+CII = "urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
+RAM = "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+UDT = "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"
+
+
+def structured_invoice(data):
+    if len(data) > INVOICE_XML_LIMIT or b"<!DOCTYPE" in data.replace(b"\x00", b"").upper():
+        raise ValueError("Die Rechnungs-XML ist zu groß oder enthält eine Dokumenttyp-Deklaration.")
+    root = ElementTree.fromstring(data)
+    ubl = {f"{{urn:oasis:names:specification:ubl:schema:xsd:{name}-2}}{name}" for name in UBL_TYPES}
+    if root.tag in ubl:
+        namespaces = {"cbc": UBL_COMMON + "BasicComponents-2", "cac": UBL_COMMON + "AggregateComponents-2"}
+        number = root.findtext("cbc:ID", "", namespaces)
+        raw_date = root.findtext("cbc:IssueDate", "", namespaces)
+        amount = root.find("cac:LegalMonetaryTotal/cbc:PayableAmount", namespaces)
+        currency = root.findtext("cbc:DocumentCurrencyCode", "", namespaces)
+        syntax = "UBL"
+    elif root.tag == f"{{{CII}}}CrossIndustryInvoice":
+        namespaces = {"rsm": CII, "ram": RAM, "udt": UDT}
+        number = root.findtext("rsm:ExchangedDocument/ram:ID", "", namespaces)
+        raw_date = root.findtext("rsm:ExchangedDocument/ram:IssueDateTime/udt:DateTimeString", "", namespaces)
+        raw_date = raw_date.strip()
+        if re.fullmatch(r"[0-9]{8}", raw_date):
+            raw_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}"
+        settlement = "rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeSettlement/"
+        amount = root.find(settlement + "ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:DuePayableAmount",
+                           namespaces)
+        currency = root.findtext(settlement + "ram:InvoiceCurrencyCode", "", namespaces)
+        syntax = "CII"
+    else:
+        raise ValueError("Unbekannte Rechnungs-XML. Erwartet werden UBL oder UN/CEFACT CII.")
+    number = number.strip()
+    raw_date = raw_date.strip()
+    date = invoice_value(1, raw_date) if re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", raw_date) else ""
+    value = (amount.text or "").strip() if amount is not None else ""
+    currency = (amount.get("currencyID") or currency).strip() if amount is not None else ""
+    if not number or not date or not re.fullmatch(r"[+-]?[0-9]+(?:\.[0-9]+)?", value) or not re.fullmatch(r"[A-Z]{3}", currency):
+        raise ValueError("In der Rechnungs-XML fehlen gültige Nummer, Datum, Zahlbetrag oder Währung.")
+    return tuple(InvoiceField(text, None, None) for text in (number, date, value.replace(".", ",") + " " + currency)), syntax
+
+
+def read_invoice(path, tessdata):
+    if path.suffix.lower() == ".xml":
+        with path.open("rb") as stream:
+            fields, syntax = structured_invoice(stream.read(INVOICE_XML_LIMIT + 1))
+        return fields, "XML · " + syntax
+    with pdf.open(path) as doc:
+        if doc.is_pdf and not doc.needs_pass:
+            attachments = [index for index, name in enumerate(doc.embfile_names())
+                           if name.casefold() in INVOICE_ATTACHMENTS or
+                           Path(doc.embfile_info(index).get("filename", "")).name.casefold() in INVOICE_ATTACHMENTS]
+            if len(attachments) > 1:
+                raise ValueError("Mehrere eingebettete Rechnungs-XMLs gefunden.")
+            if attachments:
+                index = attachments[0]
+                if doc.embfile_info(index).get("size", 0) > INVOICE_XML_LIMIT:
+                    raise ValueError("Die eingebettete Rechnungs-XML ist zu groß.")
+                fields, syntax = structured_invoice(doc.embfile_get(index))
+                if syntax != "CII":
+                    raise ValueError("Für eingebettete ZUGFeRD-Daten wird CII erwartet.")
+                return fields, "PDF + XML · CII"
+    return invoice_fields(path, tessdata), ""

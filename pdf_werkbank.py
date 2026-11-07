@@ -33,8 +33,8 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import digest_file, failed_update, prepared_update
 
-from office_export import export_word, export_word_layout, export_excel, export_invoices
-from intake import EXPLORER_COMMANDS, audit_pdf, explorer_paths, install_explorer_commands, invoice_fields, merge_pdfs
+from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet
+from intake import EXPLORER_COMMANDS, audit_pdf, explorer_paths, install_explorer_commands, merge_pdfs, read_invoice
 from pdf_standards import accessibility_blocks, export_accessible, export_archive, export_vector_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import (booklet_sheets, crop_page, edit_image, feeder_pages, fixed_form, image_at, impose_booklet,
@@ -47,7 +47,7 @@ from filing import archive_target, clear_index, filename_hint, folder_matches, i
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
 
-VERSION = (1, 17, 0)
+VERSION = (1, 18, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -774,7 +774,7 @@ class Window(QMainWindow):
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
-                              ("Scan-Posteingang", self.scan_inbox), ("Rechnungsdaten aus Scans", self.invoice_review), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
+                              ("Scan-Posteingang", self.scan_inbox), ("Rechnungseingang", self.invoice_review), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
                               ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen")),
                               ("Bild positionieren", lambda: self.set_mode("Bild positionieren"))]),
             ("Dokument", [("Lesezeichen", self.bookmarks), ("Link einfügen", lambda: self.set_mode("Link")),
@@ -2884,10 +2884,94 @@ class Window(QMainWindow):
                         return
                 self.open_path(path, page=index)
 
+        filters = QComboBox()
+        filters.addItems(["Alle Dateien", "Nur Auffälligkeiten", "Seiten ohne Suchtext"])
+        layout.addWidget(filters)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+
+        def filter_results(index):
+            for row, (_, result) in enumerate(results):
+                issue = result.opening != "Lesbar" or result.archive != "Bestanden" or result.missing_text
+                table.setRowHidden(row, bool((index == 1 and not issue) or (index == 2 and not result.missing_text)))
+            table.clearSelection()
+
+        def report():
+            name, _ = QFileDialog.getSaveFileName(dialog, "Archivbericht speichern", "Archivbericht.xlsx", "Excel (*.xlsx)")
+            if not name:
+                return
+            rows = [(str(path.resolve()), result.opening, result.profile.upper(), result.archive,
+                     ", ".join(map(str, result.missing_text)), result.details)
+                    for row, (path, result) in enumerate(results) if not table.isRowHidden(row)]
+            self.save_workbook(name, lambda target: export_linked_sheet(
+                rows, target, "Archiv-Check", ("Datei", "Öffnen", "PDF/A-Profil", "Normprüfung", "Seiten ohne Suchtext",
+                                               "Details"), (65, 24, 18, 25, 28, 85), 1))
+
+        def repair():
+            selected = {results[index.row()][0]: results[index.row()][1] for index in table.selectionModel().selectedRows()
+                        if not table.isRowHidden(index.row()) and results[index.row()][1].missing_text}
+            if not selected:
+                QMessageBox.information(dialog, "Suchtext ergänzen", "Bitte Dateien mit Seiten ohne Suchtext auswählen.")
+                return
+            if not tools:
+                QMessageBox.information(dialog, "Suchtext ergänzen", "Für geprüfte Kopien wird veraPDF benötigt.")
+                return
+            destination = QFileDialog.getExistingDirectory(dialog, "Zielordner für geprüfte Archivkopien")
+            if not destination:
+                return
+            plan = self.batch_preview(list(selected), Path(destination), (), selected)
+            if not plan:
+                return
+            targets = dict(plan)
+            done = self.inspect_pdfs(targets, "Archivkopien werden erstellt …",
+                                     lambda source: self.repair_archive_copy(source, targets[source], tools))
+            result = QMessageBox(dialog)
+            result.setWindowTitle("Archivkopien")
+            result.setText(f"{sum(saved for _, (saved, _) in done)} von {len(plan)} geprüften Kopien gespeichert.")
+            result.setDetailedText("\n".join(f"{path.name}: {message}" for path, (_, message) in done))
+            result.exec()
+
+        filters.currentIndexChanged.connect(filter_results)
+
         table.cellDoubleClicked.connect(open_result)
         layout.addWidget(table)
+        actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        actions.addButton("Sichtbare Ergebnisse als Excel", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(report)
+        actions.addButton("Auswahl: Suchtext ergänzen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(repair)
+        actions.rejected.connect(dialog.reject)
+        layout.addWidget(actions)
         dialog.resize(1000, 520)
         dialog.exec()
+
+    def save_workbook(self, name, export):
+        try:
+            target = Path(name)
+            if target.suffix.lower() != ".xlsx":
+                raise ValueError("Bitte eine Datei mit der Endung .xlsx wählen.")
+            with tempfile.TemporaryDirectory(dir=target.parent) as temp:
+                candidate = Path(temp) / target.name
+                export(candidate)
+                os.replace(candidate, target)
+            self.statusBar().showMessage(f"Excel-Liste gespeichert: {target.name}", 7500)
+            return True
+        except Exception as exc:
+            self.error(exc)
+            return False
+
+    def repair_archive_copy(self, path, target, tools):
+        try:
+            with pdf.open(path) as source, tempfile.TemporaryDirectory(dir=target.parent) as temp:
+                if source.needs_pass or source.get_sigflags() > 0:
+                    raise ValueError("Passwortgeschützte oder digital signierte PDF.")
+                candidate = Path(temp) / "Archiv.pdf"
+                summary = self.build_archive(source, candidate, True, tools)
+                if not summary:
+                    return False, "Abgebrochen."
+                candidate.rename(target)
+            return True, summary
+        except Exception as exc:
+            return False, str(exc)
+
 
     def inspect_pdfs(self, paths, title, inspect):
         progress = QProgressDialog(title, "Abbrechen", 0, len(paths), self)
@@ -2907,33 +2991,34 @@ class Window(QMainWindow):
         return results
 
     def invoice_review(self):
-        names, _ = QFileDialog.getOpenFileNames(self, "Rechnungs-PDFs auswählen", "", "PDF-Dateien (*.pdf)")
+        names, _ = QFileDialog.getOpenFileNames(self, "Rechnungen auswählen", "", "PDF und XML (*.pdf *.xml)")
         if not names:
             return
 
         def read(path):
             try:
-                return invoice_fields(path, Path(__file__).with_name("tessdata")), ""
+                fields, origin = read_invoice(path, Path(__file__).with_name("tessdata"))
+                return fields, origin, ""
             except Exception as exc:
-                return (None, None, None), str(exc)
+                return (None, None, None), "", str(exc)
 
         results = self.inspect_pdfs([Path(name) for name in names], "Rechnungen werden gelesen …", read)
         if not results:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Rechnungsdaten aus Scans")
+        dialog.setWindowTitle("Rechnungseingang")
         layout = QVBoxLayout(dialog)
         info = QLabel("Vorschläge prüfen und in der Tabelle korrigieren. Die Vorschau markiert die Fundstelle. "
-                      "Geprüft werden die ersten drei Seiten und die letzte Seite je Datei.")
+                      "Bei OCR werden die ersten drei Seiten und die letzte Seite ausgewertet. XML-Werte stammen aus der Quelldatei.")
         info.setWordWrap(True)
         layout.addWidget(info)
         split = QSplitter(Qt.Orientation.Vertical)
         table = QTableWidget(len(results), 5)
-        table.setHorizontalHeaderLabels(["Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quell-PDF", "Hinweis"])
+        table.setHorizontalHeaderLabels(["Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quelldatei", "Hinweis"])
         table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-        for row, (path, (fields, failure)) in enumerate(results):
+        for row, (path, (fields, origin, failure)) in enumerate(results):
             for column, value in enumerate([*(field.value if field else "" for field in fields),
-                                            path.name, failure or ("Vorschläge prüfen" if any(fields) else "Keine eindeutige Fundstelle")]):
+                                            path.name, failure or origin or ("Vorschläge prüfen" if any(fields) else "Keine eindeutige Fundstelle")]):
                 item = QTableWidgetItem(value)
                 if column >= 3:
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -2943,6 +3028,7 @@ class Window(QMainWindow):
         area = QScrollArea()
         area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         image = QLabel()
+        image.setTextFormat(Qt.TextFormat.PlainText)
         area.setWidget(image)
         split.addWidget(area)
         split.setStretchFactor(1, 2)
@@ -2951,14 +3037,18 @@ class Window(QMainWindow):
         def preview(row, column, *_):
             if row < 0:
                 return
-            path, (fields, failure) = results[row]
+            path, (fields, origin, failure) = results[row]
             field = fields[column] if 0 <= column < 3 else None
+            if path.suffix.lower() == ".xml":
+                image.setText(failure or "\n".join([origin, path.name, *(field.value for field in fields if field)]))
+                image.adjustSize()
+                return
             try:
                 with pdf.open(path) as doc:
-                    page = doc[field.page if field else 0]
+                    page = doc[field.page if field and field.page is not None else 0]
                     scale = 520 / max(page.rect.width, page.rect.height)
                     drawing = pixmap(page, scale)
-                    if field:
+                    if field and field.rect is not None:
                         box = field.rect * page.rotation_matrix
                         painter = QPainter(drawing)
                         painter.fillRect(QRect(round(box.x0 * scale), round(box.y0 * scale),
@@ -2976,28 +3066,13 @@ class Window(QMainWindow):
                                                     "Rechnungen.xlsx", "Excel (*.xlsx)")
             if not target:
                 return
-            target = Path(target)
-            if target.suffix.lower() != ".xlsx":
-                QMessageBox.warning(dialog, "Rechnungsliste", "Bitte eine Datei mit der Endung .xlsx wählen.")
-                return
             rows = []
-            for row, (path, (fields, _)) in enumerate(results):
+            for row, (path, (fields, origin, _)) in enumerate(results):
                 values = [table.item(row, column).text().strip() for column in range(3)]
-                pages = [str(field.page + 1) if field and value else "–" for field, value in zip(fields, values)]
-                rows.append((*values, str(path), " / ".join(pages)))
-            try:
-                fd, temporary = tempfile.mkstemp(suffix=".xlsx", dir=target.parent)
-                os.close(fd)
-                try:
-                    export_invoices(rows, temporary)
-                    os.replace(temporary, target)
-                finally:
-                    Path(temporary).unlink(missing_ok=True)
-            except Exception as exc:
-                self.error(exc)
-                return
-            dialog.accept()
-            self.statusBar().showMessage(f"Rechnungsliste gespeichert: {target.name}", 7500)
+                pages = [str(field.page + 1) if field and field.page is not None and value else "–" for field, value in zip(fields, values)]
+                rows.append((*values, str(path), origin or " / ".join(pages)))
+            if self.save_workbook(target, lambda path: export_invoices(rows, path)):
+                dialog.accept()
 
         table.currentCellChanged.connect(preview)
         table.setCurrentCell(0, 0)
@@ -3057,6 +3132,83 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    def batch_preview(self, paths, target, steps=None, audit_results=None):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Stapelvorschau")
+        layout = QVBoxLayout(dialog)
+        labels = {"ocr": "OCR", "rotate": "90° nach rechts drehen", "compress": "Komprimieren"}
+        operation = (" → ".join(labels[step] for step in ("ocr", "rotate", "compress") if step in steps)
+                     if steps is not None else "PDFs zusammenführen")
+        if audit_results is not None:
+            operation = "Fehlenden Suchtext ergänzen → PDF/A-Kopie erzeugen → mit veraPDF prüfen"
+        layout.addWidget(QLabel(operation))
+        destination = QLabel()
+        destination.setTextFormat(Qt.TextFormat.PlainText)
+        destination.setText(str(target))
+        destination.setWordWrap(True)
+        layout.addWidget(destination)
+        rows = QListWidget()
+        rows.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        rows.setDefaultDropAction(Qt.DropAction.MoveAction)
+        layout.addWidget(rows)
+        targets = ([target] * len(paths) if steps is None else
+                   [target / f"{path.stem} - Stapel.pdf" for path in paths])
+        if audit_results is not None:
+            targets = [target / f"{path.stem} - OCR Archiv.pdf" for path in paths]
+        keys = Counter(os.path.normcase(str(path.resolve())) for path in targets)
+        sources = {path.resolve() for path in paths}
+        for path, output in zip(paths, targets):
+            issue = ""
+            try:
+                with pdf.open(path) as doc:
+                    if not doc.is_pdf or doc.needs_pass or not len(doc):
+                        raise ValueError("Keine lesbare PDF ohne Passwort.")
+                    if (steps is None or audit_results is not None) and doc.get_sigflags() > 0:
+                        raise ValueError("Digital signierte PDF.")
+                    count = len(doc)
+            except Exception as exc:
+                count, issue = 0, str(exc)
+            if output.exists() or output.resolve() in sources:
+                issue = "Zieldatei existiert bereits."
+            if steps is not None and keys[os.path.normcase(str(output.resolve()))] > 1:
+                issue = "Mehrere Quellen ergeben denselben Zielnamen."
+            detail = f" · Ohne Suchtext: {', '.join(map(str, audit_results[path].missing_text))}" if audit_results else ""
+            item = QListWidgetItem(f"{path.name} · {count} Seite(n){detail}\n→ {output.name}" +
+                                   (f" · Übersprungen: {issue}" if issue and steps is not None else f" · {issue}" if issue else ""))
+            item.setToolTip(f"{path}\n{output}" + (f"\n{issue}" if issue else ""))
+            item.setData(Qt.ItemDataRole.UserRole, (str(path), str(output), issue))
+            if issue:
+                item.setForeground(QColor("#a53c12"))
+            rows.addItem(item)
+        movement = QHBoxLayout()
+
+        def move(delta):
+            current = rows.currentRow()
+            if current >= 0 and 0 <= current + delta < rows.count():
+                rows.insertItem(current + delta, rows.takeItem(current))
+                rows.setCurrentRow(current + delta)
+
+        for label, delta in (("Nach oben", -1), ("Nach unten", 1)):
+            button = QPushButton(label)
+            button.clicked.connect(lambda checked=False, offset=delta: move(offset))
+            movement.addWidget(button)
+        movement.addStretch()
+        layout.addLayout(movement)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        start = buttons.addButton("Verarbeitung starten", QDialogButtonBox.ButtonRole.AcceptRole)
+        valid = sum(not rows.item(index).data(Qt.ItemDataRole.UserRole)[2] for index in range(rows.count()))
+        start.setEnabled(valid >= 2 and valid == len(paths) if steps is None else valid > 0)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        rows.setCurrentRow(0)
+        dialog.resize(770, 480)
+        if dialog.exec() != QDialog.DialogCode.Accepted or not start.isEnabled():
+            return []
+        return [(Path(path), Path(output)) for index in range(rows.count())
+                for path, output, issue in (rows.item(index).data(Qt.ItemDataRole.UserRole),) if not issue]
+
+
     def explorer_action(self, command, arguments):
         try:
             paths = explorer_paths(arguments)
@@ -3073,17 +3225,24 @@ class Window(QMainWindow):
                 if ok:
                     self.run_batch(paths, profiles[name])
                 return
-            with pdf.open() as output:
-                merge_pdfs(paths, output)
-                target, _ = QFileDialog.getSaveFileName(self, "Zusammengeführte PDF speichern",
-                                                        str(paths[0].parent / "Zusammengeführt.pdf"), "PDF (*.pdf)")
-                if not target:
-                    return
-                target = Path(target).resolve()
-                if target.suffix.lower() != ".pdf" or target in paths or any(
-                        target == session.path.resolve() for session in self.sessions):
-                    raise ValueError("Bitte eine andere PDF-Datei als Ziel wählen.")
-                save_copy(output, target)
+            if len(paths) < 2:
+                raise ValueError("Bitte mindestens zwei PDFs auswählen.")
+            name, _ = QFileDialog.getSaveFileName(self, "Zusammengeführte PDF speichern",
+                                                 str(paths[0].parent / "Zusammengeführt.pdf"), "PDF (*.pdf)")
+            if not name:
+                return
+            target = Path(name).resolve()
+            if target.suffix.lower() != ".pdf" or target in paths or any(
+                    target == session.path.resolve() for session in self.sessions):
+                raise ValueError("Bitte eine andere PDF-Datei als Ziel wählen.")
+            plan = self.batch_preview(paths, target)
+            if not plan:
+                return
+            with pdf.open() as output, tempfile.TemporaryDirectory(dir=target.parent) as temp:
+                merge_pdfs([source for source, _ in plan], output)
+                candidate = Path(temp) / "Kopie.pdf"
+                save_copy(output, candidate)
+                candidate.rename(target)
             self.open_path(str(target))
         except Exception as exc:
             self.error(exc)
@@ -3717,18 +3876,19 @@ class Window(QMainWindow):
         folder = QFileDialog.getExistingDirectory(self, "Zielordner für die Kopien auswählen")
         if not folder:
             return
-        progress = QProgressDialog("PDFs werden bearbeitet …", "Abbrechen", 0, len(paths), self)
+        plan = self.batch_preview(list(dict.fromkeys(Path(path).resolve() for path in paths)), Path(folder), steps)
+        if not plan:
+            return
+        progress = QProgressDialog("PDFs werden bearbeitet …", "Abbrechen", 0, len(plan), self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         count, failures = 0, []
         try:
-            for index, name in enumerate(paths):
+            for index, (path, target) in enumerate(plan):
                 progress.setValue(index)
                 QApplication.processEvents()
                 if progress.wasCanceled():
                     break
-                path = Path(name)
-                target = Path(folder) / f"{path.stem} - Stapel.pdf"
                 if target.exists():
                     failures.append(f"{path.name}: Zieldatei existiert bereits.")
                     continue

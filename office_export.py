@@ -229,29 +229,36 @@ def export_excel(doc, path):
 
 
 def export_invoices(rows, path):
+    export_linked_sheet(rows, path, "Rechnungen",
+                        ("Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quelldatei", "Fundseiten (Nr. / Datum / Betrag)"),
+                        (24, 18, 22, 65, 42), 4)
+
+
+def export_linked_sheet(rows, path, title, header, widths, source_column):
     namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     workbook = Element("workbook", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
-    SubElement(SubElement(workbook, "sheets"), "sheet", {"name": "Rechnungen", "sheetId": "1", "r:id": "rId1"})
+    SubElement(SubElement(workbook, "sheets"), "sheet", {"name": title, "sheetId": "1", "r:id": "rId1"})
     links = Element("Relationships", xmlns=REL_NS)
     SubElement(links, "Relationship", Id="rId1", Target="worksheets/sheet1.xml", Type=OFFICE_NS + "/worksheet")
     sheet = Element("worksheet", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
     columns = SubElement(sheet, "cols")
-    for index, width in enumerate((24, 18, 22, 65, 42), 1):
+    for index, width in enumerate(widths, 1):
         SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
     data = SubElement(sheet, "sheetData")
-    hyperlinks = SubElement(sheet, "hyperlinks")
+    hyperlinks = None
     sources = Element("Relationships", xmlns=REL_NS)
-    header = ("Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quell-PDF", "Fundseiten (Nr. / Datum / Betrag)")
     all_rows = [header, *rows]
     for index, values in enumerate(all_rows, 1):
         row = SubElement(data, "row", r=str(index))
         for column, value in enumerate(values, 1):
             cell = SubElement(row, "c", r=f"{column_name(column)}{index}", t="inlineStr")
             SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
-        if index > 1:
+        if index > 1 and values[source_column - 1]:
+            if hyperlinks is None:
+                hyperlinks = SubElement(sheet, "hyperlinks")
             key = f"rId{index}"
-            SubElement(hyperlinks, "hyperlink", {"ref": f"D{index}", "r:id": key})
-            SubElement(sources, "Relationship", Id=key, Target=Path(values[3]).resolve().as_uri(),
+            SubElement(hyperlinks, "hyperlink", {"ref": f"{column_name(source_column)}{index}", "r:id": key})
+            SubElement(sources, "Relationship", Id=key, Target=Path(values[source_column - 1]).resolve().as_uri(),
                        TargetMode="External", Type=OFFICE_NS + "/hyperlink")
     name = "xl/workbook.xml"
     package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",

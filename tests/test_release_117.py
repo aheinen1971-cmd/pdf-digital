@@ -111,7 +111,8 @@ with TemporaryDirectory() as directory:
 
     assert explorer_paths([source, source, ambiguous]) == [source, ambiguous]
     merged = root / "Zusammen.pdf"
-    with patch.object(QFileDialog, "getSaveFileName", return_value=(str(merged), "")):
+    with patch.object(QFileDialog, "getSaveFileName", return_value=(str(merged), "")), patch.object(
+            QDialog, "exec", return_value=QDialog.DialogCode.Accepted):
         window.explorer_action("--explorer-merge", [str(ambiguous), str(source)])
     with pdf.open(merged) as doc:
         assert len(doc) == 3 and "13" in doc[0].get_text() and "RE-0017" in doc[1].get_text()

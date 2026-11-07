@@ -143,7 +143,8 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as folder:
     with patch.object(QFileDialog, "getOpenFileNames", return_value=([str(source), str(locked)], "PDF")), patch.object(
             QFileDialog, "getExistingDirectory", return_value=str(batch_dir)), patch.object(
             QInputDialog, "getItem", return_value=("Alle Seiten nach rechts drehen", True)), patch.object(
-            QMessageBox, "exec", return_value=0):
+            QMessageBox, "exec", return_value=0), patch.object(
+            QDialog, "exec", return_value=QDialog.DialogCode.Accepted):
         window.batch_process()
         with pdf.open(batch_dir / "Original - Stapel.pdf") as result:
             assert all(page.rotation == 90 for page in result)

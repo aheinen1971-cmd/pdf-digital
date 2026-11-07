@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.17.0";
+    private const string Version = "1.18.0";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
@@ -308,7 +308,8 @@ internal static class Launcher
                                               "Bitte benenne diesen Ordner um und starte erneut:\n" + root);
                     Directory.CreateDirectory(staging);
                     int installedPackages = ReuseRuntime(parent, staging, progress, cancellation);
-                    DownloadPackages(staging, installedPackages, progress, cancellation).GetAwaiter().GetResult();
+                    string cache = Path.Combine(parent, ".setup-cache-" + Version);
+                    DownloadPackages(staging, cache, installedPackages, progress, cancellation).GetAwaiter().GetResult();
                     cancellation.ThrowIfCancellationRequested();
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
@@ -405,70 +406,113 @@ internal static class Launcher
     }
 
 
-    private static async Task DownloadPackages(string staging, int installedPackages, IProgress<string> progress, CancellationToken cancellation)
+    private static async Task DownloadPackages(string staging, string cache, int installedPackages,
+                                               IProgress<string> progress, CancellationToken cancellation)
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         string app = Path.Combine(staging, "app");
         string runtime = Path.Combine(staging, "python");
         Directory.CreateDirectory(app);
+        Directory.CreateDirectory(cache);
         using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
         using (var reader = new StreamReader(Resource("DEPENDENCIES.tsv"), Encoding.UTF8))
         {
-            foreach (string line in PackageRows(reader.ReadToEnd()).Skip(installedPackages))
+            string[] packages = PackageRows(reader.ReadToEnd());
+            for (int index = installedPackages; index < packages.Length; index++)
             {
-                string[] fields = line.Split('\t');
+                cancellation.ThrowIfCancellationRequested();
+                string[] fields = packages[index].Split('\t');
                 string description = fields[0], kind = fields[1], name = fields[2], expected = fields[3], url = fields[4];
-                progress.Report("Lade " + description + " …");
-                string download = Path.Combine(staging, "download.tmp");
-                using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellation))
+                string label = String.Format("Paket {0}/{1}: {2}", index + 1, packages.Length, description);
+                string verified = Path.Combine(cache, expected.ToLowerInvariant() + ".pkg");
+                if (File.Exists(verified) && !PackageMatches(verified, expected))
+                    File.Delete(verified);
+                if (!File.Exists(verified))
                 {
-                    response.EnsureSuccessStatusCode();
-                    using (Stream input = await response.Content.ReadAsStreamAsync())
-                    using (Stream output = File.Create(download))
-                    {
-                        byte[] buffer = new byte[128 * 1024];
-                        while (true)
-                        {
-                            using (var idle = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
-                            {
-                                idle.CancelAfter(TimeSpan.FromSeconds(60));
-                                int count = await input.ReadAsync(buffer, 0, buffer.Length, idle.Token);
-                                if (count == 0)
-                                    break;
-                                await output.WriteAsync(buffer, 0, count, cancellation);
-                            }
-                            if (output.Length > 120000000)
-                                throw new IOException("Die heruntergeladene Datei ist unerwartet groß.");
-                        }
-                    }
-                }
-                using (var hash = SHA256.Create())
-                using (var file = File.OpenRead(download))
-                {
-                    string actual = BitConverter.ToString(hash.ComputeHash(file)).Replace("-", "");
-                    if (!String.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+                    string download = Path.Combine(staging, "download.tmp");
+                    progress.Report(label + "\nDownload startet …");
+                    await DownloadPackage(client, url, download, label, progress, cancellation);
+                    progress.Report(label + "\nPrüfsumme wird kontrolliert …");
+                    if (!PackageMatches(download, expected))
                         throw new IOException("Die Prüfsumme für " + description + " stimmt nicht.");
+                    File.Move(download, verified);
+                    progress.Report(label + "\nGeprüft. Paket wird eingerichtet …");
                 }
+                else
+                    progress.Report(label + "\nGeprüftes Paket aus dem Zwischenspeicher wird verwendet …");
+
                 cancellation.ThrowIfCancellationRequested();
                 if (kind == "python")
-                    ExtractPackage(download, runtime, description);
+                    ExtractPackage(verified, runtime, description);
                 else if (kind == "wheel")
-                    ExtractPackage(download, Path.Combine(runtime, "Lib", "site-packages"), description);
+                    ExtractPackage(verified, Path.Combine(runtime, "Lib", "site-packages"), description);
                 else if (kind == "engine")
-                    ExtractPackage(download, Path.Combine(app, "ki", "runtime"), description);
+                    ExtractPackage(verified, Path.Combine(app, "ki", "runtime"), description);
                 else if (kind == "data")
                 {
                     string data = Path.Combine(app, "tessdata");
                     Directory.CreateDirectory(data);
-                    File.Move(download, Path.Combine(data, name));
+                    File.Copy(verified, Path.Combine(data, name));
                 }
                 else
                     throw new InvalidDataException("Unbekannter Dateityp im Setup.");
-                if (File.Exists(download))
-                    File.Delete(download);
             }
         }
     }
+
+    private static bool PackageMatches(string path, string expected)
+    {
+        using (var hash = SHA256.Create())
+        using (var file = File.OpenRead(path))
+        {
+            string actual = BitConverter.ToString(hash.ComputeHash(file)).Replace("-", "");
+            return String.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private static async Task DownloadPackage(HttpClient client, string url, string path, string label,
+                                               IProgress<string> progress, CancellationToken cancellation)
+    {
+        const long limit = 120000000;
+        const double mib = 1024.0 * 1024;
+        using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellation))
+        {
+            response.EnsureSuccessStatusCode();
+            long? total = response.Content.Headers.ContentLength;
+            if (total > limit)
+                throw new IOException("Die heruntergeladene Datei ist unerwartet groß.");
+            using (Stream input = await response.Content.ReadAsStreamAsync())
+            using (Stream output = File.Create(path))
+            {
+                byte[] buffer = new byte[128 * 1024];
+                long received = 0;
+                var timer = Stopwatch.StartNew();
+                while (true)
+                {
+                    using (var idle = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
+                    {
+                        idle.CancelAfter(TimeSpan.FromSeconds(60));
+                        int count = await input.ReadAsync(buffer, 0, buffer.Length, idle.Token);
+                        if (count == 0)
+                            break;
+                        received += count;
+                        if (received > limit)
+                            throw new IOException("Die heruntergeladene Datei ist unerwartet groß.");
+                        await output.WriteAsync(buffer, 0, count, cancellation);
+                    }
+                    if (timer.ElapsedMilliseconds >= 250)
+                    {
+                        string size = total > 0
+                            ? String.Format("{0:F1} / {1:F1} MiB ({2} %)", received / mib, total.Value / mib, 100 * received / total.Value)
+                            : String.Format("{0:F1} MiB geladen", received / mib);
+                        progress.Report(label + "\n" + size);
+                        timer.Restart();
+                    }
+                }
+            }
+        }
+    }
+
 
     private static void ExtractPackage(string archive, string target, string description)
     {
@@ -519,7 +563,7 @@ internal sealed class SetupWindow : Form
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
-        status.SetBounds(18, 21, 444, 28);
+        status.SetBounds(18, 15, 444, 42);
         status.Text = "Die lokale Einrichtung wird vorbereitet …";
         var bar = new ProgressBar { Style = ProgressBarStyle.Marquee };
         bar.SetBounds(18, 62, 444, 17);

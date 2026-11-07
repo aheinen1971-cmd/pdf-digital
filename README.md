@@ -1,19 +1,21 @@
-# PDF Werkbank 1.17.0 für Windows
+# PDF Werkbank 1.18.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.17.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.18.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
-   Originalquellen und prüft jede Datei mit SHA-256.
+   Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
+   zeigt den Fortschritt pro Paket. Nach einem Abbruch verwendet sie
+   vollständig heruntergeladene und geprüfte Pakete erneut.
 3. PDFs in der App öffnen oder als Dateipfad an die EXE übergeben.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.17.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.18.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -77,16 +79,22 @@ vorhandene passende Modelldatei wird verwendet.
 - **Archiv & Zugang → Archiv-Check für Ordner** prüft gespeicherte PDFs
   mit optionalen Unterordnern. Bei deklarierter PDF/A-Version prüft
   veraPDF das zugehörige Profil. Die Tabelle zeigt auch Seiten ohne
-  extrahierbaren Text, einschließlich Leerseiten.
-- **Bilder & Scan → Rechnungsdaten aus Scans** schlägt Nummer, Datum und
-  Betrag vor. Die erste bis dritte Seite und die letzte Seite werden
-  lokal ausgewertet. Die Vorschau zeigt die Fundstellen, die Werte sind
-  vor dem Excel-Export bearbeitbar. Die Liste verlinkt die lokalen PDFs.
+  extrahierbaren Text, einschließlich Leerseiten. Die sichtbaren
+  Ergebnisse lassen sich als Excel-Bericht speichern. Für ausgewählte
+  Dateien kann die Werkbank Suchtext ergänzen und geprüfte PDF/A-2b-Kopien
+  in einem Zielordner speichern.
+- **Bilder & Scan → Rechnungseingang** nimmt Scan-PDFs, ZUGFeRD-PDFs mit
+  CII-Anlage und XRechnung-Dateien in UBL oder CII auf. Die gemeinsame
+  Tabelle zeigt Nummer, Datum, Zahlbetrag und Quelle. Bei Scans werden
+  die ersten drei und die letzte Seite lokal ausgewertet. Bei XML
+  werden die Daten ausgelesen. Der Import führt keine Normprüfung durch.
 - **Datei → Explorer-Befehle einrichten** legt für den aktuellen Windows-
   Benutzer zwei Befehle unter **Rechtsklick → Senden an** an. Unter Windows
-  11 ist das Menü über **Weitere Optionen anzeigen** erreichbar. Mehrere
-  ausgewählte PDFs lassen sich zusammenführen oder mit einem unter
-  **Export & Schutz → Gespeicherte Abläufe** gespeicherten Ablauf bearbeiten.
+  11 ist das Menü über **Weitere Optionen anzeigen** erreichbar.
+  Die Stapelvorschau zeigt Seitenzahlen, Ziele und Konflikte. Beim
+  Zusammenführen lässt sich die Reihenfolge per Ziehen oder mit den
+  Schaltflächen ändern. Gespeicherte Abläufe zeigen die geplanten Schritte.
+
 - **Formular → Pflichtfelder prüfen** zeigt leere, als Pflichtfeld
   gekennzeichnete Felder an und springt zum ausgewählten Feld. Die
   feste Formularkopie setzt voraus, dass diese Felder ausgefüllt sind.
