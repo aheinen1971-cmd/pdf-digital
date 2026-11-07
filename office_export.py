@@ -68,9 +68,12 @@ def read_form_sheet(path, sheet):
         sheets, strings = workbook_parts(archive)
         shared = [spreadsheet_text(item) for item in workbook_xml(archive, strings).findall("{*}si")] if strings else []
         grid = workbook_xml(archive, sheets[sheet])
-    headers, rows = None, []
+    headers, rows, previous = None, [], 0
     for number, row in enumerate(grid.findall("{*}sheetData/{*}row"), 1):
         line = int(row.get("r", number))
+        if not previous < line <= 1048576:
+            raise ValueError("Ungültige oder doppelte Zeilennummer in der Excel-Datei.")
+        previous = line
         cells, issues = {}, []
         for cell in row.findall("{*}c"):
             address = cell.get("r", "")

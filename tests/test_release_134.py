@@ -107,7 +107,8 @@ with TemporaryDirectory() as folder:
     show.assert_called_once()
     assert read_form_values(target / "fertig.pdf") == {"Kundennr.": "0007", "Anrede": "Frau", "Einwilligung": "Yes"}
     assert read_form_values(target / "Formular-003.pdf") == {"Kundennr.": "0008", "Anrede": "Herr", "Einwilligung": ""}
-    assert sorted(path.name for path in target.iterdir()) == ["Formular-003.pdf", "alt.pdf", "fertig.pdf", "wettlauf.pdf"]
+    assert sorted(path.name for path in target.glob("*.pdf")) == ["Formular-003.pdf", "alt.pdf", "fertig.pdf", "wettlauf.pdf"]
+    assert len(list(target.glob("*.werkbanklauf"))) == 1
     assert existing.read_bytes() == b"bereits vorhanden"
     assert (target / "wettlauf.pdf").read_bytes() == b"parallel erstellt"
     assert "2 von 3" in report[0][0] and "existiert bereits" in report[0][1]

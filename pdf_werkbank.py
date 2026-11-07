@@ -58,6 +58,7 @@ from filing import (archive_target, clear_index, filename_hint, file_signature, 
 from preferences import (DEFAULT_FAVORITES, FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
                          read_package, validate_form_templates)
 from archive_run import ArchiveRun
+from form_run import FormRun
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
                          app_backup_root, archive_remap, automatic_backup, backup_check_rows, backup_preview,
                          read_backup, reminder_date, restore_backup, write_backup)
@@ -67,7 +68,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 35, 0)
+VERSION = (1, 36, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -898,6 +899,7 @@ class Window(QMainWindow):
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
                           ("Formulare aus Excel füllen", self.fill_form_batch),
+                          ("Formularlauf fortsetzen", self.resume_form_fill),
                           ("Excel-Eingabevorlage erstellen", self.create_form_entry),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
             ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
@@ -5580,7 +5582,7 @@ class Window(QMainWindow):
             workbook, _ = QFileDialog.getOpenFileName(self, "Excel-Daten auswählen", "", "Excel (*.xlsx)")
             if not workbook:
                 return
-            workbook = Path(workbook)
+            workbook = Path(workbook).resolve()
             sheets = workbook_sheets(workbook)
             sheet = sheets[0]
             if len(sheets) > 1:
@@ -5595,21 +5597,57 @@ class Window(QMainWindow):
             folder = QFileDialog.getExistingDirectory(self, "Zielordner für die PDF-Kopien", str(source.parent))
             if not folder:
                 return
-            with source.open("rb") as stream:
-                original = stream.read(32 * 1024 * 1024 + 1)
-            if len(original) > 32 * 1024 * 1024:
-                raise ValueError("Die PDF-Vorlage darf bis zu 32 MiB groß sein.")
+            original = self.form_source_bytes(source)
             with pdf.open(stream=original, filetype="pdf") as document:
                 if document.needs_pass or document.is_encrypted or not document.permissions & pdf.PDF_PERM_FORM:
                     raise ValueError("Die PDF-Vorlage ist geschützt oder lässt sich nicht ausfüllen.")
                 if document.get_sigflags() > 0:
                     raise ValueError("Bitte eine PDF-Vorlage ohne digitale Signatur verwenden.")
-                plan = form_row_plan(document, templates[mapping], rows, Path(folder), source)
-            self.review_form_fill(original, plan)
+                target = Path(folder).resolve()
+                plan = form_row_plan(document, templates[mapping], rows, target, source)
+            run = FormRun.begin(target, source, hashlib.sha256(original).hexdigest(), workbook, sheet, templates[mapping])
+            self.favorite_settings.setValue("form-export/run-folder", str(target))
+            self.run_form_fill(run.path, original, plan)
         except Exception as exc:
             self.error(exc)
 
-    def review_form_fill(self, original, plan):
+    def form_source_bytes(self, source):
+        with source.open("rb") as stream:
+            original = stream.read(32 * 1024 * 1024 + 1)
+        if len(original) > 32 * 1024 * 1024:
+            raise ValueError("Die PDF-Vorlage darf bis zu 32 MiB groß sein.")
+        return original
+
+    def resume_form_fill(self):
+        start = self.favorite_settings.value("form-export/run-folder", "", str)
+        name, _ = QFileDialog.getOpenFileName(self, "Gespeicherten Formularlauf öffnen", start,
+                                             "Werkbank-Formularlauf (*.werkbanklauf)")
+        if name:
+            try:
+                self.run_form_fill(Path(name).resolve())
+            except Exception as exc:
+                self.error(exc)
+
+    def run_form_fill(self, journal, original=None, plan=None):
+        lock = QLockFile(str(journal) + ".lock")
+        lock.setStaleLockTime(0)
+        if not lock.tryLock(0):
+            raise ValueError("Dieser Formularlauf ist bereits in einem anderen Fenster geöffnet.")
+        try:
+            run = FormRun.load(journal)
+            if original is None:
+                source = Path(run.data["source"])
+                original = self.form_source_bytes(source)
+                if hashlib.sha256(original).hexdigest() != run.data["source_hash"]:
+                    raise ValueError("Die PDF-Vorlage wurde geändert. Für eine neue Vorlage starte einen neuen Formularlauf.")
+                rows = read_form_sheet(Path(run.data["workbook"]), run.data["sheet"])
+                with pdf.open(stream=original, filetype="pdf") as document:
+                    plan = form_row_plan(document, run.data["columns"], rows, journal.parent, source)
+            self.review_form_fill(original, plan, run, run.reconcile(plan))
+        finally:
+            lock.unlock()
+
+    def review_form_fill(self, original, plan, run, completed):
         def filled(path):
             document = pdf.open(stream=original, filetype="pdf")
             try:
@@ -5630,7 +5668,7 @@ class Window(QMainWindow):
             except (RuntimeError, ValueError) as exc:
                 return str(exc)
 
-        eligible = {path: values for _, _, path, values, issues in plan if not issues}
+        eligible = {path: values for line, _, path, values, issues in plan if not issues and line not in completed}
         results = dict(self.inspect_pdfs(list(eligible), "Formularzeilen werden geprüft …", check)) if eligible else {}
         if len(results) != len(eligible):
             return
@@ -5640,7 +5678,8 @@ class Window(QMainWindow):
         layout = QVBoxLayout(dialog)
         notice = QLabel("Wähle die geprüften Zeilen aus. Mit Doppelklick siehst du die ausgefüllte PDF. "
                         "Die Spalte „Dateiname“ ist optional. Zahlen und Daten werden als gespeicherte Zellwerte "
-                        "gelesen. Für eine bestimmte Schreibweise speichere die Zelle als Text.")
+                        "gelesen. Für eine bestimmte Schreibweise speichere die Zelle als Text. "
+                        f"Laufdatei: {run.path.name}")
         notice.setWordWrap(True)
         layout.addWidget(notice)
         table = QTableWidget(len(plan), 4)
@@ -5649,8 +5688,10 @@ class Window(QMainWindow):
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setColumnWidth(2, 230)
         table.horizontalHeader().setStretchLastSection(True)
+        states = {}
         for index, (line, name, path, _, issues) in enumerate(plan):
-            issue = " · ".join(issues) or results.get(path, "")
+            issue = completed.get(line) or " · ".join(issues) or results.get(path, "")
+            states[line] = issue or "Offen"
             mark = QTableWidgetItem()
             mark.setCheckState(Qt.CheckState.Unchecked if issue else Qt.CheckState.Checked)
             if issue:
@@ -5664,12 +5705,21 @@ class Window(QMainWindow):
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
         preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
+        excel = buttons.addButton("Excel-Bericht speichern", QDialogButtonBox.ButtonRole.ActionRole)
         save = buttons.addButton("Auswahl als PDFs speichern", QDialogButtonBox.ButtonRole.AcceptRole)
         layout.addWidget(buttons)
 
         def selected_paths():
             return [path for index, (_, _, path, _, _) in enumerate(plan)
                     if path in eligible and table.item(index, 0).checkState() == Qt.CheckState.Checked]
+
+        def export_report():
+            name, _ = QFileDialog.getSaveFileName(self, "Excel-Bericht speichern", str(run.path.with_suffix(".xlsx")),
+                                                 "Excel (*.xlsx)")
+            if name:
+                rows = [(line, filename, states[line]) for line, filename, _, _, _ in plan]
+                self.save_workbook(name, lambda path: export_linked_sheet(
+                    rows, path, "Formularlauf", ("Excel-Zeile", "PDF-Dateiname", "Ergebnis"), (16, 38, 65)))
 
         def refresh(*_):
             row = table.currentRow()
@@ -5691,6 +5741,7 @@ class Window(QMainWindow):
         table.currentCellChanged.connect(refresh)
         table.itemChanged.connect(refresh)
         preview.clicked.connect(lambda: show_preview(table.currentRow()))
+        excel.clicked.connect(export_report)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         table.setCurrentCell(0, 1)
@@ -5698,15 +5749,14 @@ class Window(QMainWindow):
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
+        lines = {path: line for line, _, path, _, _ in plan if path in eligible}
+
         def save_new(path):
             try:
                 with filled(path) as document, tempfile.TemporaryDirectory(dir=path.parent) as folder:
                     candidate = Path(folder) / path.name
                     save_copy(document, candidate)
-                    if os.name == "nt":
-                        candidate.rename(path)
-                    else:
-                        os.link(candidate, path)
+                    run.publish(lines[path], path, eligible[path], candidate)
                 return ""
             except FileExistsError:
                 return "Zieldatei existiert bereits."
@@ -5715,13 +5765,20 @@ class Window(QMainWindow):
 
         paths = selected_paths()
         saved = self.inspect_pdfs(paths, "Ausgefüllte PDFs werden gespeichert …", save_new)
+        for path, error in saved:
+            states[lines[path]] = error or "Gespeichert"
         report = QMessageBox(self)
         report.setWindowTitle("Formulare aus Excel")
-        report.setText(f"{sum(not error for _, error in saved)} von {len(paths)} ausgewählten PDF-Kopien gespeichert.")
+        report.setText(f"{sum(not error for _, error in saved)} von {len(paths)} ausgewählten PDF-Kopien gespeichert. "
+                       f"Der Lauf kann mit {run.path.name} fortgesetzt werden.")
         errors = [f"{path.name}: {error}" for path, error in saved if error]
         if errors:
             report.setDetailedText("\n".join(errors))
+        report.addButton(QMessageBox.StandardButton.Close)
+        export_button = report.addButton("Excel-Bericht speichern", QMessageBox.ButtonRole.ActionRole)
         report.exec()
+        if report.clickedButton() is export_button:
+            export_report()
 
     def flatten_form_copy(self):
         session = self.standards_source()
@@ -7787,8 +7844,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Excel-Eingabevorlagen mit Pflichtspalten "
-                         "und Auswahllisten aus PDF-Formularen erstellen.")
+                         "Neu in dieser Version: Formular-Serienläufe fortsetzen, korrigierte "
+                         "Excel-Zeilen erneut prüfen und Ergebnisberichte speichern.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
