@@ -1,56 +1,68 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+import hashlib
+from io import BytesIO
 import json
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from threading import Thread
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+from zipfile import ZipFile
 
-from PySide6.QtCore import QEventLoop, QObject, QTimer
-from PySide6.QtWidgets import QApplication
+import update_worker as updates
 
-import online_updates
-from online_updates import RELEASES, ReleaseCheck, available_release
-
-release = {
-    "tag_name": "v1.10.0",
-    "assets": [{"name": "PDF-Werkbank-1.10.0-Windows.zip", "state": "uploaded"}],
-}
-assert available_release(release, (1, 3, 1)) == ("v1.10.0", RELEASES + "/tag/v1.10.0")
-assert available_release(release, (1, 10, 0)) is None
-assert available_release(dict(release, prerelease=True), (1, 3, 1)) is None
-assert available_release(dict(release, draft=True), (1, 3, 1)) is None
-assert available_release(dict(release, assets=[]), (1, 3, 1)) is None
-assert available_release(dict(release, tag_name="v1.10.0-beta"), (1, 3, 1)) is None
-assert available_release(dict(release, html_url="https://example.com"), (1, 3, 1))[1].startswith(RELEASES)
-
-
-class Host(BaseHTTPRequestHandler):
-    def log_message(self, *args):
-        pass
-
-    def do_GET(self):
-        payload = json.dumps(release).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
+version = "1.10.0"
+name = f"PDF-Werkbank-{version}.exe"
+payload = BytesIO()
+with ZipFile(payload, "w") as archive:
+    archive.writestr(name, b"verified executable")
+    archive.writestr("../outside.txt", b"must not be written")
+data = payload.getvalue()
+checksum = hashlib.sha256(data).hexdigest()
+asset = {"name": f"PDF-Werkbank-{version}-Windows.zip", "state": "uploaded", "size": len(data),
+         "browser_download_url": updates.package_url(version), "digest": "sha256:" + checksum}
+release = {"tag_name": "v" + version, "assets": [asset]}
+assert updates.available_release(release, (1, 4, 1)) == (version, checksum, len(data))
+assert updates.available_release(release, (1, 10, 0)) is None
+assert updates.available_release(dict(release, prerelease=True), (1, 4, 1)) is None
+assert updates.available_release(dict(release, draft=True), (1, 4, 1)) is None
+assert updates.available_release(dict(release, assets=[]), (1, 4, 1)) is None
+assert updates.available_release(dict(release, assets=[dict(asset, browser_download_url="https://example.com")]), (1, 4, 1)) is None
+assert updates.available_release(dict(release, assets=[dict(asset, digest=None)]), (1, 4, 1)) is None
 
 
-app = QApplication([])
-server = ThreadingHTTPServer(("127.0.0.1", 0), Host)
-Thread(target=server.serve_forever, daemon=True).start()
-try:
-    online_updates.LATEST = f"http://127.0.0.1:{server.server_port}/latest"
-    owner = QObject()
-    checker = ReleaseCheck((1, 3, 1), owner)
-    loop = QEventLoop()
-    observed = []
-    checker.finished.connect(lambda *args: (observed.append(args), loop.quit()))
-    timer = QTimer(owner, singleShot=True)
-    timer.timeout.connect(loop.quit)
-    timer.start(4000)
-    checker.check()
-    loop.exec()
-    assert observed == [(("v1.10.0", RELEASES + "/tag/v1.10.0"), True, False)], observed
-finally:
-    server.shutdown()
-    server.server_close()
-print("Versionsvergleich, Release-Filter und automatische HTTP-Prüfung getestet.")
+class FakeOpener:
+    def open(self, request, timeout):
+        assert request.full_url == updates.package_url(version)
+        return BytesIO(data)
 
+
+with TemporaryDirectory() as folder, patch.dict(os.environ, {"LOCALAPPDATA": folder}):
+    runtime = Path(folder) / "PDF Werkbank" / "GitHub" / version
+    invoked = []
+
+    def prepare(args, **kwargs):
+        assert args[1:] == ["--prepare-update"]
+        assert Path(args[0]).read_bytes() == b"verified executable"
+        invoked.append(args)
+        (runtime / "python").mkdir(parents=True)
+        (runtime / "python" / "pythonw.exe").touch()
+        (runtime / f"ready-{version}").touch()
+
+    with patch.object(updates, "build_opener", return_value=FakeOpener()), patch.object(updates.subprocess, "run", side_effect=prepare):
+        try:
+            updates.stage_update(version, "0" * 64, len(data))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Ungültige Prüfsumme wurde akzeptiert.")
+        assert not invoked
+        assert updates.prepared_update((1, 4, 1)) is None
+        assert updates.stage_update(version, checksum, len(data)) == 0
+        assert len(invoked) == 1
+        result = updates.prepared_update((1, 4, 1))
+        assert result and result.name == name
+        assert updates.prepared_update((1, 10, 0)) is None
+        assert not list(Path(folder).rglob("outside.txt"))
+        result.write_bytes(b"changed")
+        assert updates.prepared_update((1, 4, 1)) is None
+print("Automatisches Update: stabile Releases, Paketprüfung, stille Einrichtung und Startmarker getestet.")

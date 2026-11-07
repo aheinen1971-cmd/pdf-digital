@@ -3,12 +3,12 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $csc = Join-Path $env:WINDIR "Microsoft.NET/Framework64/v4.0.30319/csc.exe"
 if (-not (Test-Path -LiteralPath $csc)) { throw "Der Windows-.NET-Framework-Compiler wurde nicht gefunden." }
-if (-not $Output) { $Output = Join-Path $root "dist/PDF-Werkbank-1.4.0.exe" }
+if (-not $Output) { $Output = Join-Path $root "dist/PDF-Werkbank-1.4.1.exe" }
 $Output = [IO.Path]::GetFullPath($Output)
 New-Item -ItemType Directory -Force (Split-Path -Parent $Output) | Out-Null
 $refs = @("System.Drawing.dll","System.Windows.Forms.dll","System.Net.Http.dll",
           "System.IO.Compression.dll","System.IO.Compression.FileSystem.dll")
-$resources = @("pdf_werkbank.py","local_ai.py","online_updates.py","LICENSE","THIRD_PARTY.md","DEPENDENCIES.tsv")
+$resources = @("pdf_werkbank.py","local_ai.py","online_updates.py","update_worker.py","LICENSE","THIRD_PARTY.md","DEPENDENCIES.tsv")
 $arguments = @("/nologo", "/codepage:65001", "/target:winexe", "/platform:x64", "/optimize+", "/out:$Output")
 $arguments += $refs | ForEach-Object { "/reference:$_" }
 $arguments += $resources | ForEach-Object { "/resource:$(Join-Path $root $_),$_" }

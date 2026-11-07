@@ -17,14 +17,18 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.4.0";
+    private const string Version = "1.4.1";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
     private static int Main(string[] args)
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
+        bool prepare = args.Length == 1 && args[0] == "--prepare-update";
+        if (!prepare)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+        }
         try
         {
             string custom = Environment.GetEnvironmentVariable("PDF_WERKBANK_RUNTIME_ROOT");
@@ -32,6 +36,12 @@ internal static class Launcher
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                                Title, "GitHub", Version)
                 : Path.GetFullPath(custom);
+            if (prepare)
+            {
+                if (!Ready(root))
+                    Install(root, new Progress<string>(), CancellationToken.None).GetAwaiter().GetResult();
+                return Ready(root) ? 0 : 1;
+            }
             if (!Ready(root))
             {
                 var answer = MessageBox.Show(
@@ -62,7 +72,8 @@ internal static class Launcher
         }
         catch (Exception error)
         {
-            MessageBox.Show(error.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (!prepare)
+                MessageBox.Show(error.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
     }
@@ -127,6 +138,7 @@ internal static class Launcher
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
                     CopyResource("local_ai.py", Path.Combine(app, "local_ai.py"));
                     CopyResource("online_updates.py", Path.Combine(app, "online_updates.py"));
+                    CopyResource("update_worker.py", Path.Combine(app, "update_worker.py"));
                     CopyResource("LICENSE", Path.Combine(app, "LICENSE"));
                     CopyResource("THIRD_PARTY.md", Path.Combine(app, "THIRD_PARTY.md"));
                     CopyResource("DEPENDENCIES.tsv", Path.Combine(app, "DEPENDENCIES.tsv"));

@@ -3,6 +3,7 @@ import hashlib
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unicodedata
@@ -13,8 +14,8 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QIcon, QImage, QPageSize, QPainter, QPixmap
+from PySide6.QtCore import QPoint, QRect, QSettings, QSize, Qt, QTimer
+from PySide6.QtGui import QAction, QColor, QIcon, QImage, QPageSize, QPainter, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
@@ -26,8 +27,9 @@ from PySide6.QtWidgets import (
 from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 
 from online_updates import ReleaseCheck
+from update_worker import prepared_update
 
-VERSION = (1, 4, 0)
+VERSION = (1, 4, 1)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -529,6 +531,9 @@ class Window(QMainWindow):
         self.setWindowTitle("PDF Werkbank")
         self.release_check = ReleaseCheck(VERSION, self)
         self.release_check.finished.connect(self.show_online_update)
+        self.update_process = None
+        self.update_timer = QTimer(self)
+        self.update_timer.timeout.connect(self.finish_online_update)
         self.resize(1200, 820)
         self.setMinimumSize(820, 500)
         self.setStyleSheet(STYLE)
@@ -1575,22 +1580,47 @@ class Window(QMainWindow):
 
 
     def check_online(self):
-        self.statusBar().showMessage("Suche auf GitHub nach Updates …", 6000)
+        self.statusBar().showMessage("Suche nach Updates …", 6000)
         self.release_check.check(manual=True)
 
     def show_online_update(self, update, success, manual):
+        if prepared_update(VERSION):
+            self.statusBar().showMessage("Ein Update ist bereit und startet beim nächsten Öffnen.", 8000)
+            return
         if not update:
             if manual:
-                message = ("Für diese Version ist kein neuerer Windows-Download verfügbar." if success
-                           else "Die GitHub-Releases konnten nicht geprüft werden. Bitte versuche es später erneut.")
-                QMessageBox.information(self, "PDF Werkbank · Updates", message)
+                message = ("Du hast die aktuelle Version." if success
+                           else "Die Update-Suche war gerade nicht erreichbar. Bitte versuche es später erneut.")
+                self.statusBar().showMessage(message, 8000)
             return
-        tag, url = update
-        result = QMessageBox.question(
-            self, "Neue Version verfügbar", f"PDF Werkbank {tag[1:]} ist verfügbar. GitHub-Release öffnen?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
-        if result == QMessageBox.StandardButton.Yes:
-            QDesktopServices.openUrl(QUrl(url))
+        if self.update_process is not None:
+            self.statusBar().showMessage("Ein Update wird bereits vorbereitet.", 8000)
+            return
+        version, digest, size = update
+        worker = Path(__file__).with_name("update_worker.py")
+        try:
+            self.update_process = subprocess.Popen(
+                [sys.executable, str(worker), version, digest, str(size)],
+                creationflags=subprocess.CREATE_NO_WINDOW)
+        except OSError:
+            self.statusBar().showMessage("Das Update konnte nicht vorbereitet werden.", 8000)
+            return
+        self.statusBar().showMessage(f"Update {version} wird im Hintergrund vorbereitet.", 8000)
+        self.update_timer.start(1000)
+
+    def finish_online_update(self):
+        result = self.update_process.poll()
+        if result is None:
+            return
+        self.update_process = None
+        self.update_timer.stop()
+        if result == 0:
+            message = "Update bereit. Beim nächsten Öffnen startet die neue Version."
+        elif result == 2:
+            message = "Ein anderes Fenster bereitet das Update bereits vor."
+        else:
+            message = "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft."
+        self.statusBar().showMessage(message, 10000)
 
 
     def choose_update_folder(self):
@@ -1628,6 +1658,18 @@ def main():
     folder = settings.value("updates", "", str)
     forwarded = os.environ.pop("PDF_WERKBANK_UPDATE_FORWARDED", "")
     launcher = os.environ.get("PDF_WERKBANK_LAUNCHER")
+    if launcher and not forwarded:
+        update = prepared_update(VERSION)
+        if update:
+            try:
+                child = subprocess.Popen([str(update), *sys.argv[1:]])
+                try:
+                    if child.wait(timeout=3) == 0:
+                        return 0
+                except subprocess.TimeoutExpired:
+                    return 0
+            except OSError:
+                pass
     if folder and not forwarded and (launcher or getattr(sys, "frozen", False)):
         try:
             update = find_update(folder)
@@ -1636,7 +1678,6 @@ def main():
                 env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
                 env["PDF_WERKBANK_UPDATE_FORWARDED"] = "1"
                 import ctypes
-                import subprocess
                 ctypes.windll.kernel32.SetDllDirectoryW(None)
                 subprocess.Popen([str(update), *sys.argv[1:]], env=env, cwd=update.parent)
                 return 0

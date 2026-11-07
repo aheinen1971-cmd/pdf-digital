@@ -5,29 +5,7 @@ import re
 from PySide6.QtCore import QObject, QUrl, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
-REPOSITORY = "aheinen1971-cmd/pdf-werkbank"
-LATEST = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
-RELEASES = f"https://github.com/{REPOSITORY}/releases"
-
-
-def available_release(data, current):
-    if not isinstance(data, dict) or data.get("draft") or data.get("prerelease"):
-        return None
-    tag = data.get("tag_name")
-    match = re.fullmatch(r"v([0-9]{1,6})\.([0-9]{1,6})\.([0-9]{1,6})", tag if isinstance(tag, str) else "")
-    if not match:
-        return None
-    version = tuple(map(int, match.groups()))
-    if version <= current:
-        return None
-    package = f"PDF-Werkbank-{'.'.join(match.groups())}-Windows.zip"
-    assets = data.get("assets")
-    if not isinstance(assets, list):
-        return None
-    if not any(isinstance(asset, dict) and asset.get("name") == package
-               and asset.get("state") == "uploaded" for asset in assets):
-        return None
-    return tag, f"{RELEASES}/tag/{tag}"
+from update_worker import LATEST, available_release
 
 
 class ReleaseCheck(QObject):
@@ -68,4 +46,3 @@ class ReleaseCheck(QObject):
                 success = False
         reply.deleteLater()
         self.finished.emit(update, success, manual)
-

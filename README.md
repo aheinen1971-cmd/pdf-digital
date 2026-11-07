@@ -1,11 +1,11 @@
-# PDF Werkbank 1.4.0 für Windows
+# PDF Werkbank 1.4.1 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.4.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.4.1.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.4.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.4.1`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -51,11 +51,12 @@ vorhandene passende Modelldatei wird verwendet.
 
 ## Updates
 
-PDF Werkbank prüft beim Start im Hintergrund die öffentliche GitHub-Release.
-Mit **Datei → Online-Update suchen** kannst du die Prüfung sofort auslösen.
-Bei einer neueren stabilen Version mit passendem Windows-Paket fragt die
-App, ob sie die Release-Seite öffnen soll. Download und Start der neuen
-Version erfolgen auf deine Entscheidung.
+PDF Werkbank sucht beim Start auf GitHub nach stabilen Releases. Ein
+passendes Windows-Paket wird automatisch heruntergeladen und anhand der
+bei GitHub hinterlegten SHA-256-Prüfsumme geprüft. Die App richtet die
+neue Version im Hintergrund ein. Beim nächsten Start öffnet sich die
+vorbereitete Version. Offene Dokumente bleiben währenddessen geöffnet.
+Über **Datei → Online-Update suchen** kann die Prüfung sofort starten.
 
 ## Aus dem Quellcode bauen
 
