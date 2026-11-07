@@ -161,6 +161,13 @@ try:
             with window.scan_twain(feeder) as stack:
                 assert len(stack) == 2
         assert commands == [twain_command(naps), twain_command(naps, feeder / "TWAIN.pdf", "Test Scanner")]
+        (feeder / "TWAIN.pdf").unlink()
+        with patch.object(window, "acquire_command", side_effect=[(0, b"Test Scanner"), (1, b"0 pages")]), patch.object(
+                QInputDialog, "getItem", side_effect=[("Test Scanner", True), ("Scannerglas", True)]), patch.object(
+                QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes), patch.object(
+                window, "scan_page", return_value="WIA") as fallback:
+            assert window.scan_twain(feeder) == "WIA"
+            fallback.assert_called_once_with(feeder / "WIA.png")
         for session in window.sessions:
             session.changed = False
         while window.sessions:

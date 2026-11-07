@@ -53,6 +53,8 @@ vorhandene passende Modelldatei wird verwendet.
   steuerbaren Einzug haben. **TWAIN** verwendet alternativ die separat
   erhältliche [NAPS2-Konsole](https://www.naps2.com/doc/command-line)
   und einen TWAIN-Treiber. Dort lassen sich Einzug oder Glas auswählen.
+  Liefert TWAIN keine Seite, bietet der Assistent einen erneuten Versuch
+  mit derselben Papierquelle über Windows WIA an.
 - **Scan-Posteingang** bewahrt Scan-Entwürfe lokal auf. Erkannter Text
   liefert einen Vorschlag für Dateiname und Unterordner. Das Datum stammt
   aus dem Text oder vom Eingang des Scans. Nach erfolgreicher PDF/A-Prüfung

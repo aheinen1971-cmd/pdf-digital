@@ -1218,9 +1218,12 @@ class Window(QMainWindow):
             result = self.wait_for_scanner(command, env, label, output, errors)
             if result is None:
                 return None
-            stream = output if result in (0, 4) else errors
-            stream.seek(0)
-            return result, stream.read(12000)
+            output.seek(0)
+            data = output.read(12000)
+            if result not in (0, 4):
+                errors.seek(0)
+                data += b"\n" + errors.read(12000)
+            return result, data
 
     def wait_for_scanner(self, command, env, label, output, errors):
         try:
@@ -1342,7 +1345,15 @@ class Window(QMainWindow):
         if result is None:
             return
         if not target.is_file():
-            raise ValueError("Der TWAIN-Scan hat keine PDF geliefert. Prüfe Papierquelle, Einzug und Treiber.")
+            details = result[1].decode("utf-8-sig", errors="replace").strip()
+            message = "TWAIN hat keine Seite geliefert. Möchtest du dieselbe Papierquelle über Windows WIA versuchen?"
+            if details:
+                message += "\n\n" + details[-600:]
+            if QMessageBox.question(self, "Scanner-Anbindung wechseln", message,
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+            return self.scan_feeder(folder) if source == "Blatteinzug" else self.scan_page(folder / "WIA.png")
         document = pdf.open(target)
         if not document.is_pdf or document.needs_pass or not len(document):
             document.close()
