@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.4.3";
+    private const string Version = "1.5.0";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
@@ -157,6 +157,7 @@ internal static class Launcher
                     CopyResource("online_updates.py", Path.Combine(app, "online_updates.py"));
                     CopyResource("update_worker.py", Path.Combine(app, "update_worker.py"));
                     CopyResource("pdf-werkbank.ico", Path.Combine(app, "pdf-werkbank.ico"));
+                    CopyResource("page_tools.py", Path.Combine(app, "page_tools.py"));
                     CopyResource("LICENSE", Path.Combine(app, "LICENSE"));
                     CopyResource("THIRD_PARTY.md", Path.Combine(app, "THIRD_PARTY.md"));
                     CopyResource("DEPENDENCIES.tsv", Path.Combine(app, "DEPENDENCIES.tsv"));

@@ -1,11 +1,11 @@
-# PDF Werkbank 1.4.3 für Windows
+# PDF Werkbank 1.5.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.4.3.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.5.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.4.3`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.5.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -33,6 +33,20 @@ vorhandene passende Modelldatei wird verwendet.
 - Druckvorschau und Duplexdruck nach den Fähigkeiten des Druckertreibers.
 - Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
   zum jeweiligen Dokument.
+
+## Bilder und Scanner
+
+- **Bilder & Scan → Seite zuschneiden**. Einen Ausschnitt aufziehen.
+  Der Zuschnitt ändert den sichtbaren Bereich. Inhalte außerhalb des
+  Ausschnitts bleiben in der PDF enthalten.
+- **Bild verschieben**. Ein direkt eingebettetes PDF-Bild mit gedrückter
+  Maustaste verschieben. **Bild ersetzen** tauscht das ausgewählte Bild
+  im vorhandenen Rahmen. Das Bild kann dabei gestreckt werden. Komplex
+  verschachtelte Bilder werden abgelehnt. Andere Verwendungen desselben
+  Bildes auf der Seite oder im Dokument bleiben erhalten.
+- **Vom Scanner einlesen**. Öffnet den Windows-Scandialog für WIA-Geräte.
+  Pro Aufruf wird ein Scan als neue PDF gespeichert. Windows muss den
+  Scanner mit einem passenden WIA-Treiber erkennen.
 
 ## Versand, Schwärzungsprüfung und Druckprofile
 

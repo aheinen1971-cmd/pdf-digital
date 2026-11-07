@@ -29,7 +29,9 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import prepared_update
 
-VERSION = (1, 4, 3)
+from page_tools import crop_page, edit_image, image_at, scan_command, scanned_document
+
+VERSION = (1, 5, 0)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -504,7 +506,7 @@ class Canvas(QLabel):
         if event.button() == Qt.MouseButton.LeftButton and self.window.current:
             self.origin = event.position().toPoint()
             self.band.setGeometry(QRect(self.origin, QSize()))
-            if self.window.mode in ("Markieren", "Schwärzen"):
+            if self.window.mode in ("Markieren", "Schwärzen", "Zuschneiden"):
                 self.band.show()
 
     def mouseMoveEvent(self, event):
@@ -513,10 +515,11 @@ class Canvas(QLabel):
 
     def mouseReleaseEvent(self, event):
         if self.origin is not None:
-            rect = QRect(self.origin, event.position().toPoint()).normalized()
+            origin, endpoint = self.origin, event.position().toPoint()
+            rect = QRect(origin, endpoint).normalized()
             self.origin = None
             self.band.hide()
-            self.window.annotate(rect)
+            self.window.annotate(rect, origin, endpoint)
 
 
 class Window(QMainWindow):
@@ -563,6 +566,8 @@ class Window(QMainWindow):
             ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
                            ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send), ("Schwärzung prüfen", self.verify_redaction)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
+            ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
+                              ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen"))]),
             ("Formular", [("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
         ]
         for name, _ in self.groups:
@@ -754,11 +759,14 @@ class Window(QMainWindow):
                  "Notiz": "Auf die gewünschte Position klicken.",
                  "Formular": "Auf ein vorhandenes Formularfeld klicken.",
                  "Text": "Auf einen horizontalen Textabschnitt klicken.",
-                 "Schwärzen": "Einen Bereich aufziehen und die Entfernung bestätigen."}
+                 "Schwärzen": "Einen Bereich aufziehen und die Entfernung bestätigen.",
+                 "Zuschneiden": "Den Bereich aufziehen, der sichtbar bleiben soll.",
+                 "Bild verschieben": "Ein Bild mit gedrückter Maustaste an die neue Position ziehen.",
+                 "Bild ersetzen": "Ein Bild anklicken und die Ersatzdatei wählen."}
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
-    def annotate(self, selection):
+    def annotate(self, selection, origin=None, endpoint=None):
         session = self.current
         if not session:
             return
@@ -773,7 +781,33 @@ class Window(QMainWindow):
                         QMessageBox.information(self, "PDF-Notiz", note.info.get("content") or "Leere Notiz")
                         break
                 return
-            if self.mode == "Text":
+            if self.mode in ("Zuschneiden", "Bild verschieben", "Bild ersetzen"):
+                if self.mode == "Bild verschieben":
+                    if origin is None or endpoint is None or (endpoint - origin).manhattanLength() < 3:
+                        return
+                    transform = pdf.Matrix(1 / self.scale, 1 / self.scale) * page.derotation_matrix
+                    start = pdf.Point(origin.x(), origin.y()) * transform
+                    end = pdf.Point(endpoint.x(), endpoint.y()) * transform
+                    selected = image_at(page, start)
+                elif self.mode == "Bild ersetzen":
+                    selected = image_at(page, point)
+                    path, _ = QFileDialog.getOpenFileName(self, "Ersatzbild auswählen", "",
+                                                         "Bilder (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)")
+                    if not path:
+                        return
+                session.checkpoint()
+                try:
+                    if self.mode == "Zuschneiden":
+                        crop_page(page, rect)
+                    elif self.mode == "Bild verschieben":
+                        edit_image(page, selected, offset=end - start)
+                    else:
+                        edit_image(page, selected, replacement=path)
+                except Exception:
+                    session.undo()
+                    raise
+            elif self.mode == "Text":
+
                 if not self.correct_text(page, point):
                     return
             elif self.mode == "Schwärzen":
@@ -830,6 +864,56 @@ class Window(QMainWindow):
             self.error(exc)
             return
         self.changed()
+
+    def scan_from_device(self):
+        with tempfile.TemporaryDirectory() as folder:
+            scan = Path(folder) / "Scan.png"
+            command, env = scan_command(scan)
+            try:
+                process = subprocess.Popen(command, env=env, creationflags=subprocess.CREATE_NO_WINDOW,
+                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except OSError as exc:
+                self.error(exc)
+                return
+            progress = QProgressDialog("Windows-Scandialog wird geöffnet …", "Abbrechen", 0, 0, self)
+            progress.setWindowTitle("Vom Scanner einlesen")
+            progress.setWindowModality(Qt.WindowModality.WindowModal)
+            progress.setMinimumDuration(0)
+            timer = QTimer(progress, interval=250)
+            timer.timeout.connect(lambda: progress.accept() if process.poll() is not None else None)
+            timer.start()
+            progress.exec()
+            timer.stop()
+            if process.poll() is None:
+                process.terminate()
+                process.communicate()
+                return
+            stdout, _ = process.communicate()
+            if process.returncode == 2:
+                return
+            if process.returncode == 3:
+                self.error("Windows meldet keinen WIA-Scanner. Prüfe den Anschluss und den Scannertreiber.")
+                return
+            if process.returncode != 0 or not scan.is_file():
+                self.error("Der Windows-Scandialog konnte kein Bild einlesen. Prüfe den Scanner und versuche es erneut.")
+                return
+            match = re.search(rb"(\d+),(\d+)", stdout)
+            dpi = tuple(map(int, match.groups())) if match else None
+            target, _ = QFileDialog.getSaveFileName(self, "Scan als PDF speichern",
+                                                  str(Path.home() / "Documents" / "Scan.pdf"), "PDF-Dateien (*.pdf)")
+            if not target:
+                return
+            path = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
+            if any(path.resolve() == session.path.resolve() for session in self.sessions):
+                self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+                return
+            try:
+                with scanned_document(scan, dpi) as document:
+                    save_copy(document, path)
+                self.open_path(str(path))
+            except Exception as exc:
+                self.error(exc)
+
 
     def scan_cleanup(self):
         session = self.current
