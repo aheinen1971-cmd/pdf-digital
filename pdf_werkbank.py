@@ -38,7 +38,8 @@ from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
 
 from office_export import (export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet,
-                           form_fields, map_form_values, read_form_values)
+                           fill_form, form_fields, form_row_plan, map_form_values, read_form_sheet,
+                           read_form_values, workbook_sheets)
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
 from invoice_validation import KOSIT_FOLDER, RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
@@ -66,7 +67,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 33, 0)
+VERSION = (1, 34, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -896,6 +897,7 @@ class Window(QMainWindow):
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
+                          ("Formulare aus Excel füllen", self.fill_form_batch),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
             ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
         ]
@@ -5542,6 +5544,161 @@ class Window(QMainWindow):
         self.form_preview = dialog
         dialog.show()
 
+    def fill_form_batch(self):
+        try:
+            templates = form_templates(self.favorite_settings)
+            if not templates:
+                raise ValueError("Lege zuerst unter „Excel-Formularvorlagen“ eine Feldzuordnung an.")
+            source, _ = QFileDialog.getOpenFileName(self, "PDF-Formularvorlage auswählen", "", "PDF (*.pdf)")
+            if not source:
+                return
+            source = Path(source).resolve()
+            workbook, _ = QFileDialog.getOpenFileName(self, "Excel-Daten auswählen", "", "Excel (*.xlsx)")
+            if not workbook:
+                return
+            workbook = Path(workbook)
+            sheets = workbook_sheets(workbook)
+            sheet = sheets[0]
+            if len(sheets) > 1:
+                sheet, ok = QInputDialog.getItem(self, "Excel-Daten", "Tabellenblatt", sheets, editable=False)
+                if not ok:
+                    return
+            mapping, ok = QInputDialog.getItem(self, "Formulare aus Excel füllen", "Gespeicherte Feldzuordnung",
+                                               sorted(templates, key=str.casefold), editable=False)
+            if not ok:
+                return
+            rows = read_form_sheet(workbook, sheet)
+            folder = QFileDialog.getExistingDirectory(self, "Zielordner für die PDF-Kopien", str(source.parent))
+            if not folder:
+                return
+            with source.open("rb") as stream:
+                original = stream.read(32 * 1024 * 1024 + 1)
+            if len(original) > 32 * 1024 * 1024:
+                raise ValueError("Die PDF-Vorlage darf bis zu 32 MiB groß sein.")
+            with pdf.open(stream=original, filetype="pdf") as document:
+                if document.needs_pass or document.is_encrypted or not document.permissions & pdf.PDF_PERM_FORM:
+                    raise ValueError("Die PDF-Vorlage ist geschützt oder lässt sich nicht ausfüllen.")
+                if document.get_sigflags() > 0:
+                    raise ValueError("Bitte eine PDF-Vorlage ohne digitale Signatur verwenden.")
+                plan = form_row_plan(document, templates[mapping], rows, Path(folder), source)
+            self.review_form_fill(original, plan)
+        except Exception as exc:
+            self.error(exc)
+
+    def review_form_fill(self, original, plan):
+        def filled(path):
+            document = pdf.open(stream=original, filetype="pdf")
+            try:
+                fill_form(document, eligible[path])
+                missing = missing_required_fields(document)
+                if missing:
+                    names = ", ".join(name for _, _, name in missing)
+                    raise ValueError(f"Pflichtfelder in der PDF bleiben leer: {names}")
+                return document
+            except Exception:
+                document.close()
+                raise
+
+        def check(path):
+            try:
+                with filled(path):
+                    return ""
+            except (RuntimeError, ValueError) as exc:
+                return str(exc)
+
+        eligible = {path: values for _, _, path, values, issues in plan if not issues}
+        results = dict(self.inspect_pdfs(list(eligible), "Formularzeilen werden geprüft …", check)) if eligible else {}
+        if len(results) != len(eligible):
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("PDF-Kopien aus Excel prüfen")
+        dialog.resize(850, 480)
+        layout = QVBoxLayout(dialog)
+        notice = QLabel("Wähle die geprüften Zeilen aus. Mit Doppelklick siehst du die ausgefüllte PDF. "
+                        "Die Spalte „Dateiname“ ist optional. Zahlen und Daten werden als gespeicherte Zellwerte "
+                        "gelesen. Für eine bestimmte Schreibweise speichere die Zelle als Text.")
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        table = QTableWidget(len(plan), 4)
+        table.setHorizontalHeaderLabels(["Übernehmen", "Excel-Zeile", "PDF-Dateiname", "Prüfergebnis"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setColumnWidth(2, 230)
+        table.horizontalHeader().setStretchLastSection(True)
+        for index, (line, name, path, _, issues) in enumerate(plan):
+            issue = " · ".join(issues) or results.get(path, "")
+            mark = QTableWidgetItem()
+            mark.setCheckState(Qt.CheckState.Unchecked if issue else Qt.CheckState.Checked)
+            if issue:
+                mark.setFlags(mark.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+                eligible.pop(path, None)
+            table.setItem(index, 0, mark)
+            for column, value in enumerate((str(line), name, issue or "Bereit"), 1):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(index, column, item)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton("Auswahl als PDFs speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        layout.addWidget(buttons)
+
+        def selected_paths():
+            return [path for index, (_, _, path, _, _) in enumerate(plan)
+                    if path in eligible and table.item(index, 0).checkState() == Qt.CheckState.Checked]
+
+        def refresh(*_):
+            row = table.currentRow()
+            preview.setEnabled(row >= 0 and plan[row][2] in eligible)
+            save.setEnabled(bool(selected_paths()))
+
+        def show_preview(row, *_):
+            if row >= 0:
+                _, _, path, _, _ = plan[row]
+                if path in eligible:
+                    try:
+                        with filled(path) as document:
+                            self.preview_send(document, "Ausgefüllte Kopie zur Kontrolle.", "PDF-Kopie ansehen",
+                                              review_only=True)
+                    except Exception as exc:
+                        self.error(exc)
+
+        table.cellDoubleClicked.connect(show_preview)
+        table.currentCellChanged.connect(refresh)
+        table.itemChanged.connect(refresh)
+        preview.clicked.connect(lambda: show_preview(table.currentRow()))
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        table.setCurrentCell(0, 1)
+        refresh()
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        def save_new(path):
+            try:
+                with filled(path) as document, tempfile.TemporaryDirectory(dir=path.parent) as folder:
+                    candidate = Path(folder) / path.name
+                    save_copy(document, candidate)
+                    if os.name == "nt":
+                        candidate.rename(path)
+                    else:
+                        os.link(candidate, path)
+                return ""
+            except FileExistsError:
+                return "Zieldatei existiert bereits."
+            except Exception as exc:
+                return str(exc)
+
+        paths = selected_paths()
+        saved = self.inspect_pdfs(paths, "Ausgefüllte PDFs werden gespeichert …", save_new)
+        report = QMessageBox(self)
+        report.setWindowTitle("Formulare aus Excel")
+        report.setText(f"{sum(not error for _, error in saved)} von {len(paths)} ausgewählten PDF-Kopien gespeichert.")
+        errors = [f"{path.name}: {error}" for path, error in saved if error]
+        if errors:
+            report.setDetailedText("\n".join(errors))
+        report.exec()
+
     def flatten_form_copy(self):
         session = self.standards_source()
         if not session:
@@ -6473,7 +6630,7 @@ class Window(QMainWindow):
         finally:
             progress.close()
 
-    def preview_send(self, doc, summary, title="Versandkopie prüfen"):
+    def preview_send(self, doc, summary, title="Versandkopie prüfen", review_only=False):
         dialog = QDialog(self)
         dialog.setWindowTitle(title)
         layout = QVBoxLayout(dialog)
@@ -6496,9 +6653,13 @@ class Window(QMainWindow):
             image.resize(rendered.size())
 
         pages.currentIndexChanged.connect(show_page)
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Save).setText("Kopie speichern")
-        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        if review_only:
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        else:
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+            buttons.button(QDialogButtonBox.StandardButton.Save).setText("Kopie speichern")
+            buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -7602,8 +7763,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Aus der Excel-Formularvorschau direkt "
-                         "zu markierten Feldern im PDF springen.")
+                         "Neu in dieser Version: PDF-Formulare aus Excel befüllen "
+                         "und die ausgefüllten Kopien vor dem Speichern prüfen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

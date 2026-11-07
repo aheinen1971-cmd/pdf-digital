@@ -1,13 +1,174 @@
 # SPDX-License-Identifier: AGPL-3.0-only
+import os
+import posixpath
 import re
+from collections import Counter
 from pathlib import Path
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element, SubElement, fromstring, tostring
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pymupdf as pdf
 
 REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 OFFICE_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+MAX_FORM_ROWS = 500
+
+
+def workbook_xml(archive, name):
+    with archive.open(name) as stream:
+        data = stream.read(8 * 1024 * 1024 + 1)
+    if len(data) > 8 * 1024 * 1024 or b"\x00" in data or b"<!" in data:
+        raise ValueError("Ein Tabellenbestandteil ist zu groß oder enthält nicht unterstütztes XML.")
+    return fromstring(data)
+
+
+def workbook_parts(archive):
+    book = workbook_xml(archive, "xl/workbook.xml")
+    relationships = workbook_xml(archive, "xl/_rels/workbook.xml.rels")
+    parts, strings = {}, None
+    for link in relationships.findall("{*}Relationship"):
+        kind = link.get("Type", "").rsplit("/", 1)[-1]
+        if kind not in ("worksheet", "sharedStrings") or link.get("TargetMode") == "External":
+            continue
+        target = link.attrib["Target"]
+        name = posixpath.normpath(target.lstrip("/") if target.startswith("/") else "xl/" + target)
+        if not name.startswith("xl/") or "\\" in name:
+            raise ValueError("Ungültiger Tabellenpfad in der Excel-Datei.")
+        if kind == "worksheet":
+            parts[link.attrib["Id"]] = name
+        else:
+            strings = name
+    sheets = {}
+    for sheet in book.findall("{*}sheets/{*}sheet"):
+        relation = next((value for key, value in sheet.attrib.items() if key.endswith("}id")), None)
+        if relation in parts:
+            sheets[sheet.attrib["name"]] = parts[relation]
+    if not sheets:
+        raise ValueError("Die Excel-Datei enthält kein Tabellenblatt.")
+    return sheets, strings
+
+
+def workbook_sheets(path):
+    with ZipFile(path) as archive:
+        sheets, _ = workbook_parts(archive)
+        return list(sheets)
+
+
+def spreadsheet_text(node):
+    if node is None:
+        return ""
+    return "".join(item.text or "" for item in [*node.findall("{*}t"), *node.findall("{*}r/{*}t")])
+
+
+def read_form_sheet(path, sheet):
+    with ZipFile(path) as archive:
+        sheets, strings = workbook_parts(archive)
+        shared = [spreadsheet_text(item) for item in workbook_xml(archive, strings).findall("{*}si")] if strings else []
+        grid = workbook_xml(archive, sheets[sheet])
+    headers, rows = None, []
+    for number, row in enumerate(grid.findall("{*}sheetData/{*}row"), 1):
+        line = int(row.get("r", number))
+        cells, issues = {}, []
+        for cell in row.findall("{*}c"):
+            address = cell.get("r", "")
+            match = re.fullmatch(r"([A-Z]{1,3})[1-9][0-9]*", address)
+            if match is None or match[1] in cells:
+                raise ValueError("Ungültige Zelladresse in der Excel-Datei.")
+            kind = cell.get("t", "n")
+            value = cell.findtext("{*}v") or ""
+            if cell.find("{*}f") is not None or kind == "e":
+                issues.append(f"Formel oder Zellfehler in {address}")
+                value = ""
+            elif kind == "s":
+                index = int(value)
+                if not 0 <= index < len(shared):
+                    raise ValueError("Ungültiger Textverweis in der Excel-Datei.")
+                value = shared[index]
+            elif kind == "inlineStr":
+                value = spreadsheet_text(cell.find("{*}is"))
+            elif kind == "b":
+                value = {"0": "FALSE", "1": "TRUE"}[value]
+            cells[match[1]] = value
+        if not any(value.strip() for value in cells.values()) and not issues:
+            continue
+        if headers is None:
+            headers = {column: value.strip() for column, value in cells.items() if value.strip()}
+            if issues or len({name.casefold() for name in headers.values()}) != len(headers):
+                raise ValueError("Die Kopfzeile braucht eindeutige Spaltennamen ohne Formeln.")
+        else:
+            rows.append((line, {name: cells.get(column, "") for column, name in headers.items()}, issues))
+            if len(rows) > MAX_FORM_ROWS:
+                raise ValueError(f"Bitte höchstens {MAX_FORM_ROWS} Datenzeilen auf einmal einlesen.")
+    if not rows:
+        raise ValueError("Das Tabellenblatt braucht eine Kopfzeile und mindestens eine Datenzeile.")
+    return rows
+
+
+def form_row_plan(doc, columns, rows, target, source):
+    fields = set(name for page in doc for name, _, _ in form_fields(page))
+    plan = []
+    for line, row, issues in rows:
+        issues = list(issues)
+        values = {}
+        for heading, aliases, required in columns:
+            value = row.get(heading, "")
+            matches = fields.intersection(aliases)
+            if required and not value.strip():
+                issues.append(f"Pflichtwert fehlt: {heading}")
+            if value.strip() and not matches:
+                issues.append(f"Kein PDF-Feld für {heading}")
+            if value.strip():
+                for name in sorted(matches):
+                    if name in values and values[name] != value:
+                        issues.append(f"Widersprüchliche Zuordnung: {name}")
+                    values[name] = value
+        if not values:
+            issues.append("Keine Formularwerte zugeordnet")
+        filename = row.get("Dateiname", "").strip() or f"{source.stem}-{line:03d}"
+        if not filename.lower().endswith(".pdf"):
+            filename += ".pdf"
+        if len(filename) > 180 or os.path.isreserved(filename) or re.search(r'[<>:"/\\|?*\x00-\x1f]', filename):
+            issues.append("Ungültiger PDF-Dateiname")
+            path = None
+        else:
+            path = target / filename
+            if path.exists() or path.is_symlink():
+                issues.append("Zieldatei existiert bereits")
+        plan.append((line, filename, path, values, issues))
+    counts = Counter(name.casefold() for _, name, path, _, _ in plan if path is not None)
+    for _, name, path, _, issues in plan:
+        if path is not None and counts[name.casefold()] > 1:
+            issues.append("Doppelter Dateiname")
+    return plan
+
+
+def fill_form(doc, values):
+    for page in doc:
+        for field in page.widgets():
+            name = field.field_name
+            if name not in values:
+                continue
+            value = values[name]
+            if field.field_flags & pdf.PDF_FIELD_IS_READ_ONLY:
+                raise ValueError(f"PDF-Feld ist schreibgeschützt: {name}")
+            if field.field_type == pdf.PDF_WIDGET_TYPE_TEXT and not field.field_flags & pdf.PDF_TX_FIELD_IS_PASSWORD:
+                if field.text_maxlen and len(value) > field.text_maxlen:
+                    raise ValueError(f"Wert ist für das PDF-Feld zu lang: {name}")
+            elif field.field_type == pdf.PDF_WIDGET_TYPE_CHECKBOX:
+                on = field.on_state()
+                if on and (value == on or value.strip().casefold() in {"ja", "true", "1", "x"}):
+                    value = on
+                elif value.strip().casefold() in {"nein", "false", "0", "off"}:
+                    value = "Off"
+                else:
+                    raise ValueError(f"Bitte Ja oder Nein für {name} angeben.")
+            elif field.field_type in (pdf.PDF_WIDGET_TYPE_COMBOBOX, pdf.PDF_WIDGET_TYPE_LISTBOX):
+                if value not in (field.choice_values or ()):
+                    raise ValueError(f"Ungültige Auswahl für {name}: {value}")
+            else:
+                raise ValueError(f"Nicht unterstützter PDF-Feldtyp: {name}")
+            field.field_value = value
+            field.update()
 
 
 def form_fields(page):
