@@ -34,7 +34,8 @@ from online_updates import ReleaseCheck
 from update_worker import digest_file, failed_update, prepared_update
 
 from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet
-from intake import EXPLORER_COMMANDS, audit_pdf, explorer_paths, install_explorer_commands, merge_pdfs, read_invoice
+from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
+                    install_explorer_commands, invoice_match_key, merge_pdfs, read_invoice)
 from pdf_standards import accessibility_blocks, export_accessible, export_archive, export_vector_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import (booklet_sheets, crop_page, edit_image, feeder_pages, fixed_form, image_at, impose_booklet,
@@ -47,7 +48,7 @@ from filing import archive_target, clear_index, filename_hint, folder_matches, i
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
 
-VERSION = (1, 18, 0)
+VERSION = (1, 19, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -786,7 +787,7 @@ class Window(QMainWindow):
                                  ("Gespeicherte Abläufe", self.batch_profiles)]),
             ("Archiv & Zugang", [("PDF/A-Archivkopie", self.archive_copy),
                                 ("PDF/A mit Originaltext", self.archive_vector_copy),
-                                ("PDF/A oder PDF/UA prüfen", self.standard_check), ("Archiv-Check für Ordner", self.archive_check),
+                                ("PDF/A oder PDF/UA prüfen", self.standard_check), ("Archiv-Check für Ordner", self.archive_check), ("Dubletten prüfen", self.duplicate_check),
                                 ("Lesereihenfolge & Bildbeschreibungen", self.accessible_copy)]),
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
@@ -2990,6 +2991,153 @@ class Window(QMainWindow):
             progress.close()
         return results
 
+    def duplicate_check(self, paths=None):
+        if paths is None:
+            folder = QFileDialog.getExistingDirectory(self, "Ordner für Dublettenprüfung auswählen")
+            if not folder:
+                return
+            choice = QMessageBox.question(self, "Dubletten prüfen", "Unterordner einbeziehen?",
+                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
+                                          QMessageBox.StandardButton.Cancel)
+            if choice == QMessageBox.StandardButton.Cancel:
+                return
+            paths = list(pdf_files(Path(folder), choice == QMessageBox.StandardButton.Yes, (".pdf", ".xml")))
+        if not paths:
+            QMessageBox.information(self, "Dubletten prüfen", "Keine PDF- oder XML-Dateien gefunden.")
+            return
+        cache = {}
+        checked = self.inspect_pdfs(paths, "Dateien werden verglichen …", lambda path: inspect_duplicate(
+            path, Path(__file__).with_name("tessdata"), cache))
+        if not checked:
+            return
+        sources = [source for _, source in checked]
+        exact, possible = duplicate_groups(sources)
+        status = (f"{len(sources)} von {len(paths)} Dateien geprüft · Dateiidentische Gruppen: {len(exact)} · "
+                  f"Mögliche Doppelbelege: {len(possible)}")
+        unavailable = sum(invoice_match_key(source.fields) is None for source in sources)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Dubletten prüfen")
+        layout = QVBoxLayout(dialog)
+        status_label = QLabel(status)
+        status_label.setWordWrap(True)
+        layout.addWidget(status_label)
+        info = QLabel(f"Dateien ohne vergleichbare Rechnungsdaten: {unavailable}. "
+                      "Mögliche Doppelbelege stimmen bei Nummer, Datum, Betrag und Währung überein.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        groups = [*exact, *possible]
+        choice = QComboBox()
+        choice.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        for index, group in enumerate(groups):
+            if index < len(exact):
+                label = f"Dateiidentisch · {group[0].path.name}"
+            else:
+                fields = group[0].fields
+                label = "Möglicher Doppelbeleg · " + " · ".join(field.value for field in fields)
+            choice.addItem(f"{label} ({len(group)} Dateien)")
+        if groups:
+            layout.addWidget(choice)
+            split = QSplitter()
+            sides = [self.duplicate_pane(split) for _ in range(2)]
+            split.setSizes([500, 500])
+            layout.addWidget(split, 1)
+
+            def select_group(index):
+                for side, populate in enumerate(sides):
+                    populate(groups[index], side)
+
+            choice.currentIndexChanged.connect(select_group)
+            select_group(0)
+        else:
+            layout.addWidget(QLabel("In den geprüften Dateien wurden keine Dubletten gefunden."))
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(1040, 660 if groups else 190)
+        dialog.exec()
+
+    def duplicate_pane(self, split):
+        pane = QWidget()
+        split.addWidget(pane)
+        layout = QVBoxLayout(pane)
+        files = QComboBox()
+        files.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        layout.addWidget(files)
+        summary = QLabel()
+        summary.setTextFormat(Qt.TextFormat.PlainText)
+        summary.setWordWrap(True)
+        layout.addWidget(summary)
+        pages = QSpinBox()
+        pages.setPrefix("Seite ")
+        layout.addWidget(pages)
+        area = QScrollArea()
+        area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image = QLabel()
+        image.setTextFormat(Qt.TextFormat.PlainText)
+        area.setWidget(image)
+        layout.addWidget(area, 1)
+        sources = []
+
+        def render(value):
+            index = files.currentIndex()
+            if index < 0:
+                return
+            source = sources[index]
+            if source.path.suffix.lower() == ".xml":
+                labels = ("Rechnungsnummer", "Rechnungsdatum", "Betrag")
+                values = [f"{label}  {field.value}" for label, field in zip(labels, source.fields) if field]
+                image.setText("\n".join([source.origin, *values]) if values else source.problem or "XML-Datei")
+                image.adjustSize()
+                return
+            try:
+                with pdf.open(source.path) as doc:
+                    page = doc[value - 1]
+                    drawing = pixmap(page, 480 / max(page.rect.width, page.rect.height))
+                image.setPixmap(drawing)
+                image.resize(drawing.size())
+            except Exception:
+                image.setText("Keine Seitenvorschau verfügbar.")
+                image.adjustSize()
+
+        def select(index):
+            if index < 0:
+                return
+            source = sources[index]
+            fields = [field.value for field in source.fields if field]
+            summary.setText(" · ".join(fields) or "Rechnungsdaten nicht verfügbar.")
+            summary.setToolTip(str(source.path) + ("\n" + source.problem if source.problem else ""))
+            count = 0
+            if source.path.suffix.lower() == ".pdf":
+                try:
+                    with pdf.open(source.path) as doc:
+                        if doc.is_pdf and not doc.needs_pass:
+                            count = len(doc)
+                except Exception:
+                    pass
+            first = next((field.page + 1 for field in source.fields if field and field.page is not None), 1)
+            pages.blockSignals(True)
+            pages.setRange(1, max(1, count))
+            pages.setValue(first)
+            pages.blockSignals(False)
+            pages.setVisible(count > 0)
+            render(pages.value())
+
+        def populate(group, index):
+            sources[:] = group
+            files.blockSignals(True)
+            files.clear()
+            for source in group:
+                files.addItem(f"{source.path.name} · {source.path.parent.name}")
+            files.setCurrentIndex(index)
+            files.blockSignals(False)
+            select(index)
+
+        files.currentIndexChanged.connect(select)
+        pages.valueChanged.connect(render)
+        return populate
+
+
     def invoice_review(self):
         names, _ = QFileDialog.getOpenFileNames(self, "Rechnungen auswählen", "", "PDF und XML (*.pdf *.xml)")
         if not names:
@@ -3077,6 +3225,8 @@ class Window(QMainWindow):
         table.currentCellChanged.connect(preview)
         table.setCurrentCell(0, 0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.addButton("Diese Dateien auf Dubletten prüfen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+            lambda: self.duplicate_check(list(dict.fromkeys(path for path, _ in results))))
         buttons.addButton("Geprüfte Liste als Excel speichern", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(save)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)

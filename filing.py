@@ -85,13 +85,13 @@ def archive_target(root, inbox, filename, group):
     return target
 
 
-def pdf_files(folder, recursive=True):
+def pdf_files(folder, recursive=True, suffixes=(".pdf",)):
     for parent, directories, files in os.walk(folder, followlinks=False):
         directories[:] = sorted(name for name in directories if recursive and not
                                 (os.path.islink(Path(parent) / name) or os.path.isjunction(Path(parent) / name)))
         for name in sorted(files, key=str.casefold):
             path = Path(parent) / name
-            if path.suffix.casefold() == ".pdf" and not path.is_symlink():
+            if path.suffix.casefold() in suffixes and not path.is_symlink():
                 yield path
 
 

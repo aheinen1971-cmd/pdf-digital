@@ -2,14 +2,18 @@
 import os
 import re
 import subprocess
+import unicodedata
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from xml.etree import ElementTree
 
 import pymupdf as pdf
 
 from pdf_standards import ARCHIVE_PROFILES, validate_standard
+from update_worker import digest_file
 
 
 @dataclass
@@ -267,3 +271,76 @@ def read_invoice(path, tessdata):
                     raise ValueError("Für eingebettete ZUGFeRD-Daten wird CII erwartet.")
                 return fields, "PDF + XML · CII"
     return invoice_fields(path, tessdata), ""
+
+
+def invoice_match_key(fields):
+    if any(field is None for field in fields):
+        return None
+    number, date, amount = (field.value.strip() for field in fields)
+    number = unicodedata.normalize("NFKC", number).casefold()
+    number = re.sub(r"\s+", "", number)
+    amount = unicodedata.normalize("NFKC", amount).upper()
+    match = re.fullmatch(r"(?:([A-Z]{3}|[€$])\s*)?([+-]?[0-9][0-9., '’]*?)\s*(?:([A-Z]{3}|[€$]))?", amount)
+    if not match or not number or not date:
+        return None
+    prefix, digits, suffix = match.groups()
+    currencies = {"€": "EUR", "$": "USD"}
+    prefix, suffix = currencies.get(prefix, prefix), currencies.get(suffix, suffix)
+    if prefix and suffix and prefix != suffix:
+        return None
+    digits = re.sub(r"[ '’]", "", digits)
+    if "," in digits:
+        if "." in digits and digits.rindex(".") > digits.rindex(","):
+            digits = digits.replace(",", "")
+        else:
+            digits = digits.replace(".", "").replace(",", ".")
+    try:
+        return number, date, Decimal(digits), prefix or suffix or ""
+    except InvalidOperation:
+        return None
+
+
+@dataclass(frozen=True)
+class DuplicateSource:
+    path: Path
+    digest: str
+    fields: tuple
+    origin: str
+    problem: str = ""
+
+
+def inspect_duplicate(path, tessdata, cached):
+    try:
+        before = path.stat()
+        digest = digest_file(path)
+    except OSError as exc:
+        return DuplicateSource(path, "", (None, None, None), "", str(exc))
+    cache_key = (digest, path.suffix.lower())
+    if cache_key not in cached:
+        try:
+            cached[cache_key] = (*read_invoice(path, tessdata), "")
+        except Exception as exc:
+            cached[cache_key] = (None, None, None), "", str(exc)
+    try:
+        after = path.stat()
+        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+            raise OSError("Datei wurde während der Prüfung verändert.")
+    except OSError as exc:
+        cached.pop(cache_key, None)
+        return DuplicateSource(path, "", (None, None, None), "", str(exc))
+    fields, origin, problem = cached[cache_key]
+    return DuplicateSource(path, digest, fields, origin, problem)
+
+
+def duplicate_groups(sources):
+    exact, invoices = defaultdict(list), defaultdict(list)
+    for source in sources:
+        if source.digest:
+            exact[source.digest].append(source)
+        key = invoice_match_key(source.fields)
+        if source.digest and key:
+            invoices[key].append(source)
+    return (
+        [group for group in exact.values() if len(group) > 1],
+        [group for group in invoices.values() if len({source.digest for source in group}) > 1],
+    )
