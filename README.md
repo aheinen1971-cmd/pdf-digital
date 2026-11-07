@@ -1,11 +1,11 @@
-# PDF Werkbank 1.21.0 für Windows
+# PDF Werkbank 1.22.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.21.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.22.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.21.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.22.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -35,6 +35,20 @@ vorhandene passende Modelldatei wird verwendet.
 - Druckvorschau und Duplexdruck nach den Fähigkeiten des Druckertreibers.
 - Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
   zum jeweiligen Dokument.
+
+## Pläne messen
+
+Unter **Messen** gilt der Maßstab für die aktuelle Seite. **Maßstab
+eingeben** setzt ein Verhältnis wie 1 : 100. Mit **Kalibrieren** klickst
+du die Enden einer bekannten Strecke an und gibst ihre tatsächliche
+Länge in Metern ein. Das ist auch bei eingescannten Plänen möglich.
+
+**Strecke messen** verwendet zwei Klicks. Für **Fläche messen** klickst
+du die Eckpunkte am Rand entlang an und bestätigst mit Eingabe oder
+**Fläche abschließen**. Esc verwirft einen begonnenen Umriss. **Letzte
+Messung entfernen** entfernt die letzte Messmarke der Seite.
+Die Messwerte erscheinen in m und m². Maßstab und Markierungen
+bleiben im geöffneten Tab und werden beim Speichern der PDF nicht übernommen.
 
 ## Bilder und Scanner
 

@@ -20,8 +20,8 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QEventLoop, QLockFile, QMimeData, QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap
+from PySide6.QtCore import QEventLoop, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap, QPolygonF
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
@@ -52,8 +52,10 @@ from document_review import attachments, comments, insert_labels, label_conflict
 from filing import archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches, pdf_files, scan_breaks, scan_ranges
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
+from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
+                          PlanMeasurements, calibrated_scale, distance, format_measure, polygon_area)
 
-VERSION = (1, 21, 0)
+VERSION = (1, 22, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -663,6 +665,7 @@ class Session:
         self.recovery_id = uuid.uuid4().hex
         self.recovery_path = self.path.resolve()
         self.recovery_dirty = True
+        self.plan_measurements = {}
 
     def snapshot(self, label):
         return [self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP), self.page, self.changed, label]
@@ -700,16 +703,33 @@ class Canvas(QLabel):
         self.window = window
         self.origin = None
         self.band = QRubberBand(QRubberBand.Shape.Rectangle, self)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.setMouseTracking(True)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter(self)
+        try:
+            self.window.paint_measurements(painter)
+        finally:
+            painter.end()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and self.window.current:
+            if self.window.mode in MEASURE_MODES:
+                self.setFocus()
+                self.window.measure_click(event.position())
+                return
             self.origin = event.position().toPoint()
             self.band.setGeometry(QRect(self.origin, QSize()))
             if self.window.mode in ("Markieren", "Schwärzen", "Zuschneiden", "Link", "Feld"):
                 self.band.show()
 
     def mouseMoveEvent(self, event):
-        if self.origin is not None:
+        if self.window.mode in MEASURE_MODES and self.window.current and self.window.measure_points:
+            self.window.measure_hover = self.window.measure_position(event.position())
+            self.update()
+        elif self.origin is not None:
             self.band.setGeometry(QRect(self.origin, event.position().toPoint()).normalized())
 
     def mouseReleaseEvent(self, event):
@@ -720,11 +740,30 @@ class Canvas(QLabel):
             self.band.hide()
             self.window.annotate(rect, origin, endpoint)
 
+    def leaveEvent(self, event):
+        if self.window.measure_hover is not None:
+            self.window.measure_hover = None
+            self.update()
+        super().leaveEvent(event)
+
+    def keyPressEvent(self, event):
+        if self.window.mode in MEASURE_MODES:
+            if event.key() == Qt.Key.Key_Escape:
+                self.window.clear_measure_draft()
+                self.update()
+                return
+            if self.window.mode == "Fläche messen" and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self.window.finish_area()
+                return
+        super().keyPressEvent(event)
+
 
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.sessions = []
+        self.measure_points = []
+        self.measure_hover = None
         self.recovery = None
         self.grid_mm = 0
         self.transfer_history = []
@@ -777,6 +816,11 @@ class Window(QMainWindow):
             ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
                            ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send),
                            ("Versandcheck", self.dispatch_check), ("Schwärzung prüfen", self.verify_redaction)]),
+            ("Messen", [("Maßstab eingeben", self.set_plan_scale),
+                        ("Kalibrieren", lambda: self.start_measure("Kalibrieren")),
+                        ("Strecke messen", lambda: self.start_measure("Strecke messen")),
+                        ("Fläche messen", lambda: self.start_measure("Fläche messen")),
+                        ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
@@ -1254,6 +1298,7 @@ class Window(QMainWindow):
             return False
 
     def switch_doc(self, index):
+        self.clear_measure_draft()
         self.search_text = ""
         self.mode = "Lesen"
         self.canvas.setCursor(Qt.CursorShape.ArrowCursor)
@@ -1355,10 +1400,20 @@ class Window(QMainWindow):
         except Exception as exc:
             self.canvas.clear()
             self.error(exc)
-        self.status.setText(f"Seite {session.page + 1} von {len(session.doc)}   •   {self.scale:.0%}   •   {self.mode}")
+        self.update_page_status()
+
+    def update_page_status(self):
+        session = self.current
+        plan = self.current_plan() if session.plan_measurements else None
+        label = f"Seite {session.page + 1} von {len(session.doc)}   •   {self.scale:.0%}   •   {self.mode}"
+        if plan and plan.scale:
+            label += "   •   Maßstab 1 : " + format_measure(plan.scale / METRES_PER_POINT, "").strip()
+        self.status.setText(label)
 
     def go_page(self, index):
         if self.current and 0 <= index < len(self.current.doc):
+            if self.current.page != index:
+                self.clear_measure_draft()
             self.current.page = index
             self.render()
             self.scroll.verticalScrollBar().setValue(0)
@@ -1394,6 +1449,7 @@ class Window(QMainWindow):
             self.schedule_thumbnails()
 
     def set_mode(self, mode):
+        self.clear_measure_draft()
         self.mode = mode
         self.canvas.setCursor(Qt.CursorShape.ArrowCursor if mode == "Lesen" else Qt.CursorShape.CrossCursor)
         self.render()
@@ -1410,6 +1466,165 @@ class Window(QMainWindow):
                  "Feld": "Einen Bereich für das neue Formularfeld aufziehen.", "Link": "Einen Bereich für den Link aufziehen.", "Stempel": "Auf die Stelle für den Stempel klicken."}
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
+
+    def current_plan(self, create=False):
+        session = self.current
+        if not session:
+            return None
+        page = session.doc[session.page]
+        key = page.xref, tuple(page.cropbox), tuple(page.mediabox)
+        if create and key not in session.plan_measurements:
+            session.plan_measurements[key] = PlanMeasurements()
+        return session.plan_measurements.get(key)
+
+    def clear_measure_draft(self):
+        self.measure_points.clear()
+        self.measure_hover = None
+
+    def set_plan_scale(self):
+        if not self.current:
+            return
+        plan = self.current_plan()
+        ratio, ok = QInputDialog.getDouble(self, "Maßstab eingeben", "Maßstab 1 : n dieser Seite",
+                                            plan.scale / METRES_PER_POINT if plan and plan.scale else 100,
+                                            0.001, 1000000, 3)
+        if ok:
+            self.current_plan(create=True).scale = ratio * METRES_PER_POINT
+            self.clear_measure_draft()
+            self.canvas.update()
+            self.show_plan_scale()
+
+    def show_plan_scale(self):
+        self.update_page_status()
+        plan = self.current_plan()
+        ratio = format_measure(plan.scale / METRES_PER_POINT, "").strip()
+        self.statusBar().showMessage(f"Maßstab dieser Seite 1 : {ratio} · Messwerte in m und m².", 9500)
+
+    def start_measure(self, mode):
+        if not self.current:
+            return
+        plan = self.current_plan()
+        if mode != "Kalibrieren" and (not plan or not plan.scale):
+            QMessageBox.information(self, "Maßstab fehlt",
+                                    "Bitte zuerst den Maßstab dieser Seite eingeben oder eine bekannte Strecke kalibrieren.")
+            return
+        self.set_mode(mode)
+        self.canvas.setFocus()
+        hints = {"Kalibrieren": "Zwei Endpunkte einer bekannten Strecke anklicken.",
+                 "Strecke messen": "Anfang und Ende der Strecke anklicken.",
+                 "Fläche messen": "Eckpunkte der Reihe nach anklicken und mit Eingabe oder „Fläche abschließen“ bestätigen."}
+        self.statusBar().showMessage(hints[mode] + " Esc verwirft die angefangene Messung.", 15000)
+
+    def measure_position(self, screen):
+        session = self.current
+        page = session.doc[session.page]
+        display = pdf.Point(screen.x() / self.scale, screen.y() / self.scale)
+        if not page.rect.contains(display):
+            return None
+        return display * page.derotation_matrix
+
+    def measure_click(self, screen):
+        point = self.measure_position(screen)
+        if point is None:
+            return
+        if self.mode != "Kalibrieren" and not getattr(self.current_plan(), "scale", 0):
+            self.start_measure(self.mode)
+            return
+        if self.measure_points and distance(self.measure_points[-1], point) <= EPSILON:
+            self.statusBar().showMessage("Bitte einen anderen Punkt anklicken.", 6000)
+            return
+        if len(self.measure_points) >= MAX_VERTICES:
+            self.statusBar().showMessage("Bitte die Fläche abschließen. Die maximale Punktzahl ist erreicht.", 6500)
+            return
+        self.measure_points.append(point)
+        self.measure_hover = None
+        self.canvas.update()
+        if self.mode == "Fläche messen" or len(self.measure_points) < 2:
+            return
+        points = tuple(self.measure_points)
+        self.clear_measure_draft()
+        if self.mode == "Kalibrieren":
+            plan = self.current_plan()
+            estimate = distance(*points) * plan.scale if plan and plan.scale else 1.0
+            metres, ok = QInputDialog.getDouble(self, "Bekannte Strecke", "Tatsächliche Länge in Metern",
+                                                estimate, 0.000001, 10000000, 6)
+            if ok:
+                self.current_plan(create=True).scale = calibrated_scale(*points, metres)
+                self.show_plan_scale()
+        else:
+            self.add_measurement(Measurement(points, distance(*points)))
+        self.canvas.update()
+
+    def add_measurement(self, mark):
+        plan = self.current_plan()
+        plan.marks.append(mark)
+        self.statusBar().showMessage(mark.label(plan.scale), 12000)
+
+    def finish_area(self):
+        if not self.current or self.mode != "Fläche messen":
+            return
+        try:
+            points = tuple(self.measure_points)
+            self.add_measurement(Measurement(points, polygon_area(points), area=True))
+        except ValueError as exc:
+            self.statusBar().showMessage(str(exc) + " Esc verwirft den Umriss.", 12000)
+            return
+        self.clear_measure_draft()
+        self.canvas.update()
+
+    def remove_measurement(self):
+        if self.measure_points:
+            self.clear_measure_draft()
+        elif (plan := self.current_plan()) and plan.marks:
+            plan.marks.pop()
+        self.canvas.update()
+
+    def paint_measurements(self, painter):
+        session = self.current
+        if not session:
+            return
+        plan = self.current_plan() if session.plan_measurements else None
+        marks = plan.marks if plan else ()
+        if not marks and not self.measure_points:
+            return
+        page = session.doc[session.page]
+        transform = page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        def draw(points, area=False, label="", pending=False):
+            rotated = [point * transform for point in points]
+            screen = QPolygonF([QPointF(point.x, point.y) for point in rotated])
+            if not screen:
+                return
+            accent = QColor("#ad5300") if pending else QColor("#005b91")
+            painter.setPen(QPen(accent, 2, Qt.PenStyle.DashLine if pending else Qt.PenStyle.SolidLine))
+            painter.setBrush(QColor(15, 126, 183, 45) if area else Qt.BrushStyle.NoBrush)
+            if area:
+                painter.drawPolygon(screen)
+            elif len(screen) > 1:
+                painter.drawPolyline(screen)
+            painter.setBrush(QColor("white"))
+            for point in screen:
+                painter.drawEllipse(point, 3.5, 3.5)
+            if label:
+                center = screen.boundingRect().center()
+                width = painter.fontMetrics().horizontalAdvance(label) + 14
+                x = min(max(1, center.x() - width / 2), max(1, self.canvas.width() - width - 1))
+                y = min(max(1, center.y() - 24), max(1, self.canvas.height() - 24))
+                box = QRectF(x, y, width, 23)
+                painter.setBrush(QColor(255, 255, 255, 242))
+                painter.drawRoundedRect(box, 4, 4)
+                painter.setPen(accent)
+                painter.drawText(box, Qt.AlignmentFlag.AlignCenter, label)
+
+        for mark in marks:
+            draw(mark.points, mark.area, mark.label(plan.scale))
+        if self.measure_points:
+            points = [*self.measure_points]
+            if self.measure_hover is not None:
+                points.append(self.measure_hover)
+            draw(points, pending=True)
+
 
     def configure_grid(self):
         value, ok = QInputDialog.getInt(self, "Hilfsraster", "Abstand in Millimetern (0 schaltet das Raster aus)",
@@ -5048,6 +5263,8 @@ class Window(QMainWindow):
         self.render()
 
     def mark_changed(self, session):
+        if session is self.current:
+            self.clear_measure_draft()
         self.clear_page_cache(session)
         session.redo_stack.clear()
         session.changed = True
@@ -5377,6 +5594,7 @@ class Window(QMainWindow):
                     break
             for session in sessions:
                 session.restore_edit(forward)
+                self.clear_measure_draft()
                 self.clear_page_cache(session)
                 marker = " *" if session.changed else ""
                 self.tabs.setTabText(self.sessions.index(session), session.path.name + marker)
