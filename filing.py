@@ -69,6 +69,22 @@ def normalized(value):
     return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
 
+def archive_target(root, inbox, filename, group):
+    invalid = r'[<>:"/\\|?*\x00-\x1f]'
+    filename, group = filename.strip(), group.strip()
+    if not root.is_absolute() or not root.is_dir():
+        raise ValueError("Bitte zuerst einen vorhandenen Archivordner wählen.")
+    if not filename or filename.endswith(".") or re.search(invalid, filename) or os.path.isreserved(filename):
+        raise ValueError("Bitte einen gültigen Dateinamen eingeben.")
+    if group in (".", "..") or group.endswith(".") or re.search(invalid, group) or os.path.isreserved(group):
+        raise ValueError("Bitte einen einzelnen gültigen Unterordner eingeben.")
+    target = root / group / (filename if filename.lower().endswith(".pdf") else filename + ".pdf")
+    resolved = target.resolve()
+    if target.exists() or resolved.is_relative_to(inbox.resolve()) or not resolved.is_relative_to(root.resolve()):
+        raise ValueError("Bitte einen freien Namen im gewählten Archivordner außerhalb des Scan-Posteingangs wählen.")
+    return target
+
+
 def pdf_files(folder, recursive=True):
     for parent, directories, files in os.walk(folder, followlinks=False):
         directories[:] = sorted(name for name in directories if recursive and not

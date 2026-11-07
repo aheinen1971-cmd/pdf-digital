@@ -23,7 +23,8 @@ from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
     QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
-    QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter, QSpinBox, QTabBar,
+    QHeaderView, QMenu, QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter,
+    QSpinBox, QTabBar, QTableWidget, QTableWidgetItem, QToolBar, QToolButton,
     QVBoxLayout, QWidget,
 )
 
@@ -40,9 +41,9 @@ from assistants import (add_suggested_field, append_scan, clean_hidden, form_can
                         scan_quality, similar_scan, text_changes)
 from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
-from filing import clear_index, filename_hint, folder_matches, indexed_matches, scan_breaks, scan_ranges
+from filing import archive_target, clear_index, filename_hint, folder_matches, indexed_matches, scan_breaks, scan_ranges
 
-VERSION = (1, 11, 0)
+VERSION = (1, 12, 0)
 POINTS_PER_MM = 72 / 25.4
 
 STYLE = """
@@ -712,6 +713,7 @@ class Window(QMainWindow):
         self.resize(1200, 820)
         self.setMinimumSize(820, 500)
         self.setStyleSheet(STYLE)
+        self.setup_favorites()
         shell = QWidget(objectName="shell")
         self.setCentralWidget(shell)
         layout = QVBoxLayout(shell)
@@ -823,6 +825,62 @@ class Window(QMainWindow):
     def current(self):
         index = self.tabs.currentIndex()
         return self.sessions[index] if 0 <= index < len(self.sessions) else None
+
+    def setup_favorites(self):
+        self.favorite_commands = {
+            "scan": ("Scannen", self.scan_stack),
+            "inbox": ("Scan-Posteingang", self.scan_inbox),
+            "folder": ("Ordnersuche", self.search_folder),
+            "duplex": ("Samsung-Duplex", lambda: self.print_dialog(samsung=True)),
+            "open": ("PDF öffnen", self.open_files),
+            "save": ("Kopie speichern", self.save),
+            "archive": ("PDF/A-Archiv", self.archive_copy),
+            "compare": ("PDFs vergleichen", self.compare),
+        }
+        self.favorite_settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        defaults = ["scan", "folder", "duplex"]
+        saved = self.favorite_settings.value("toolbar/favorites", defaults)
+        if not isinstance(saved, list):
+            saved = defaults
+        self.favorite_keys = list(dict.fromkeys(key for key in saved if isinstance(key, str) and key in self.favorite_commands))
+        self.favorite_actions = []
+        self.favorite_toolbar = QToolBar("Angeheftete Funktionen", self)
+        self.favorite_toolbar.setObjectName("favorites")
+        self.favorite_toolbar.setMovable(False)
+        self.favorite_toolbar.setFloatable(False)
+        self.favorite_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.favorite_toolbar)
+        button = QToolButton()
+        button.setText("Favoriten")
+        button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        menu = QMenu(button)
+        button.setMenu(menu)
+        self.favorite_toolbar.addWidget(button)
+        for key, (label, _) in self.favorite_commands.items():
+            action = menu.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(key in self.favorite_keys)
+            action.toggled.connect(lambda checked, key=key: self.pin_favorite(key, checked))
+        self.refresh_favorites()
+
+    def pin_favorite(self, key, enabled):
+        if enabled and key not in self.favorite_keys:
+            self.favorite_keys.append(key)
+        elif not enabled and key in self.favorite_keys:
+            self.favorite_keys.remove(key)
+        self.favorite_settings.setValue("toolbar/favorites", self.favorite_keys)
+        self.refresh_favorites()
+
+    def refresh_favorites(self):
+        for action in self.favorite_actions:
+            self.favorite_toolbar.removeAction(action)
+            action.deleteLater()
+        self.favorite_actions.clear()
+        for key in self.favorite_keys:
+            label, callback = self.favorite_commands[key]
+            action = self.favorite_toolbar.addAction(label)
+            action.triggered.connect(lambda _=False, run=callback: run())
+            self.favorite_actions.append(action)
 
     def error(self, exc):
         QMessageBox.warning(self, "PDF Werkbank", str(exc))
@@ -1534,6 +1592,7 @@ class Window(QMainWindow):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         choose = buttons.addButton("Archivordner wählen", QDialogButtonBox.ButtonRole.ActionRole)
         archive = buttons.addButton("Prüfen und archivieren", QDialogButtonBox.ButtonRole.ActionRole)
+        batch = buttons.addButton("Mehrere archivieren", QDialogButtonBox.ButtonRole.ActionRole)
         split = buttons.addButton("Stapel aufteilen", QDialogButtonBox.ButtonRole.ActionRole)
         discard = buttons.addButton("Entwurf löschen", QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(buttons)
@@ -1547,6 +1606,7 @@ class Window(QMainWindow):
                 rows.addItem(f"{path.name[:10]} · Scan {len(drafts) - index}")
             rows.setCurrentRow(0)
             archive.setEnabled(bool(drafts))
+            batch.setEnabled(bool(drafts))
             split.setEnabled(bool(drafts))
             discard.setEnabled(bool(drafts))
 
@@ -1574,19 +1634,8 @@ class Window(QMainWindow):
             if index < 0:
                 return
             try:
-                invalid = r'[<>:"/\\|?*\x00-\x1f]'
                 root = Path(base.text().strip())
-                filename, group = name.text().strip(), category.text().strip()
-                if not root.is_absolute() or not root.is_dir():
-                    raise ValueError("Bitte zuerst einen vorhandenen Archivordner wählen.")
-                if not filename or filename.endswith(".") or re.search(invalid, filename) or os.path.isreserved(filename):
-                    raise ValueError("Bitte einen gültigen Dateinamen eingeben.")
-                if group in (".", "..") or group.endswith(".") or re.search(invalid, group) or os.path.isreserved(group):
-                    raise ValueError("Bitte einen einzelnen gültigen Unterordner eingeben.")
-                target = root / group / (filename if filename.lower().endswith(".pdf") else filename + ".pdf")
-                resolved = target.resolve()
-                if target.exists() or resolved.is_relative_to(folder.resolve()) or not resolved.is_relative_to(root.resolve()):
-                    raise ValueError("Bitte einen freien Namen außerhalb des Scan-Posteingangs wählen.")
+                target = archive_target(root, folder, name.text(), category.text())
                 target.parent.mkdir(exist_ok=True)
                 settings.setValue("scan/archive-folder", str(root))
                 path = drafts[index]
@@ -1620,10 +1669,154 @@ class Window(QMainWindow):
         rows.currentRowChanged.connect(suggest)
         choose.clicked.connect(select_base)
         archive.clicked.connect(archive_draft)
+        batch.clicked.connect(lambda: (self.review_archive_batch(drafts, base.text()), refresh()))
         split.clicked.connect(split_selected)
         discard.clicked.connect(discard_draft)
         refresh()
         dialog.exec()
+
+    def review_archive_batch(self, drafts, initial_folder):
+        if not drafts:
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Scan-Entwürfe gemeinsam freigeben")
+        dialog.resize(920, 560)
+        layout = QVBoxLayout(dialog)
+        explanation = QLabel("Prüfe Dateiname und Unterordner in jeder Zeile. Nur angekreuzte Entwürfe "
+                             "werden archiviert. Bei Fehlern bleibt der jeweilige Entwurf im Posteingang.")
+        explanation.setWordWrap(True)
+        layout.addWidget(explanation)
+        controls = QHBoxLayout()
+        layout.addLayout(controls)
+        controls.addWidget(QLabel("Archivordner"))
+        base = QLineEdit(initial_folder)
+        controls.addWidget(base, 1)
+        browse = QPushButton("Ordner wählen")
+        controls.addWidget(browse)
+        table = QTableWidget(len(drafts), 5)
+        table.setHorizontalHeaderLabels(["Auswahl", "Miniatur", "Seiten", "Dateiname", "Unterordner"])
+        table.setIconSize(QSize(56, 72))
+        table.verticalHeader().setVisible(False)
+        for index in range(5):
+            mode = QHeaderView.ResizeMode.Stretch if index in (3, 4) else QHeaderView.ResizeMode.ResizeToContents
+            table.horizontalHeader().setSectionResizeMode(index, mode)
+        layout.addWidget(table, 1)
+        proposed = set()
+        for row, path in enumerate(drafts):
+            table.setRowHeight(row, 76)
+            check = QTableWidgetItem()
+            check.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
+            table.setItem(row, 0, check)
+            try:
+                with pdf.open(path) as doc:
+                    filename, group = filename_hint(doc, date.fromisoformat(path.name[:10]))
+                    page = doc[0]
+                    icon = QIcon(pixmap(page, min(56 / page.rect.width, 70 / page.rect.height)))
+                    thumb = QTableWidgetItem(icon, "")
+                    count = QTableWidgetItem(str(len(doc)))
+                stem = Path(filename).stem
+                number = 2
+                while (group.casefold(), filename.casefold()) in proposed:
+                    filename = f"{stem} ({number}).pdf"
+                    number += 1
+                proposed.add((group.casefold(), filename.casefold()))
+                check.setCheckState(Qt.CheckState.Checked)
+            except Exception as exc:
+                filename, group = "Entwurf konnte nicht gelesen werden", ""
+                thumb, count = QTableWidgetItem(), QTableWidgetItem("–")
+                check.setCheckState(Qt.CheckState.Unchecked)
+                check.setFlags(Qt.ItemFlag.NoItemFlags)
+                check.setToolTip(str(exc))
+            for column, item in ((1, thumb), (2, count), (3, QTableWidgetItem(filename)), (4, QTableWidgetItem(group))):
+                if column < 3:
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                table.setItem(row, column, item)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        buttons.addButton("Auswahl archivieren", QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def select_folder():
+            directory = QFileDialog.getExistingDirectory(dialog, "Archivordner auswählen", base.text())
+            if directory:
+                base.setText(directory)
+
+        browse.clicked.connect(select_folder)
+        while dialog.exec() == QDialog.DialogCode.Accepted:
+            root = Path(base.text().strip())
+            jobs, names = [], set()
+            try:
+                for row, path in enumerate(drafts):
+                    if table.item(row, 0).checkState() != Qt.CheckState.Checked:
+                        continue
+                    try:
+                        target = archive_target(root, path.parent, table.item(row, 3).text(), table.item(row, 4).text())
+                        key = os.path.normcase(str(target.resolve()))
+                        if key in names:
+                            raise ValueError("Der Zielname kommt in der Auswahl mehrfach vor.")
+                        names.add(key)
+                        jobs.append((path, target))
+                    except ValueError as exc:
+                        table.setCurrentCell(row, 3)
+                        raise ValueError(f"Zeile {row + 1}. {exc}") from exc
+                if not jobs:
+                    raise ValueError("Bitte mindestens einen Entwurf auswählen.")
+            except ValueError as exc:
+                self.error(exc)
+                continue
+            QSettings("PDF Werkbank", "PDF Werkbank").setValue("scan/archive-folder", str(root))
+            self.archive_batch(jobs)
+            return
+
+    def archive_batch(self, jobs):
+        tools = self.standard_tools()
+        if tools is None:
+            return
+        progress = QProgressDialog("Archivkopien werden erstellt …", "Abbrechen", 0, len(jobs),
+                                   QApplication.activeModalWidget() or self)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        saved, failures, notes = 0, [], []
+        cancelled = False
+        try:
+            for index, (draft, target) in enumerate(jobs):
+                progress.setValue(index)
+                progress.setLabelText(f"Prüfe {target.name} …")
+                QApplication.processEvents()
+                if progress.wasCanceled():
+                    cancelled = True
+                    break
+                try:
+                    if target.exists() or any(target.resolve() == session.path.resolve() for session in self.sessions):
+                        raise ValueError("Die Zieldatei ist bereits vorhanden oder geöffnet.")
+                    target.parent.mkdir(exist_ok=True)
+                    with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                        candidate = Path(folder) / "Archiv.pdf"
+                        with pdf.open(draft) as source:
+                            if not source.is_pdf or source.needs_pass or not len(source):
+                                raise ValueError("Der Entwurf ist keine lesbare ungeschützte PDF.")
+                            summary = self.build_archive(source, candidate, True, tools)
+                        if summary is None or progress.wasCanceled():
+                            cancelled = True
+                            break
+                        candidate.rename(target)
+                    saved += 1
+                    if "Ohne Suchtext" in summary:
+                        notes.append(f"{target.name}. {summary}")
+                    draft.unlink(missing_ok=True)
+                except Exception as exc:
+                    failures.append(f"{target.name}. {exc}")
+        finally:
+            progress.close()
+        report = QMessageBox(self)
+        report.setWindowTitle("Archivierung abgeschlossen")
+        report.setText(f"{saved} geprüfte Archivkopien gespeichert. {len(failures)} Fehler."
+                       + (" Der Lauf wurde abgebrochen." if cancelled else ""))
+        if failures or notes:
+            report.setInformativeText("Die Details zeigen Fehler und Seiten ohne Suchtext.")
+            report.setDetailedText("\n\n".join(failures + notes))
+        report.exec()
 
     def split_scan_draft(self, original):
         with tempfile.TemporaryDirectory(dir=original.parent) as folder:
@@ -2435,31 +2628,8 @@ class Window(QMainWindow):
         try:
             with tempfile.TemporaryDirectory(dir=target.parent) as folder:
                 candidate = Path(folder) / "Archiv.pdf"
-                windows = Path(os.environ["WINDIR"])
-                profile = windows / "System32/spool/drivers/color/sRGB Color Space Profile.icm"
-                font = windows / "Fonts/arial.ttf"
-                with pdf.open(stream=source.tobytes(), filetype="pdf") as copy:
-                    if recognize:
-                        for page in copy:
-                            if page.rotation and not page.get_text().strip():
-                                page.remove_rotation()
-                        count, _ = self.send_ocr(copy, range(len(copy)), "deu+eng")
-                        if count is None:
-                            return
-                    QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-                    try:
-                        export_archive(copy, candidate, profile, font)
-                        passed, details = validate_standard(*tools, candidate, "2b")
-                    finally:
-                        QApplication.restoreOverrideCursor()
-                if not passed:
-                    raise ValueError("veraPDF hat die Archivkopie abgelehnt.\n" + "\n".join(details[:10]))
-                with pdf.open(candidate) as check:
-                    missing = [str(page.number + 1) for page in check if not page.get_text().strip()]
-                summary = "PDF/A-2b von veraPDF bestätigt."
-                if missing:
-                    summary += " Ohne Suchtext: Seite " + ", ".join(missing) + "."
-                if not self.preview_send_from_path(candidate, summary):
+                summary = self.build_archive(source, candidate, recognize, tools)
+                if summary is None or not self.preview_send_from_path(candidate, summary):
                     return
                 if confirmed_target:
                     candidate.rename(target)
@@ -2469,6 +2639,30 @@ class Window(QMainWindow):
             return target
         except Exception as exc:
             self.error(exc)
+
+    def build_archive(self, source, candidate, recognize, tools):
+        windows = Path(os.environ["WINDIR"])
+        profile = windows / "System32/spool/drivers/color/sRGB Color Space Profile.icm"
+        font = windows / "Fonts/arial.ttf"
+        with pdf.open(stream=source.tobytes(), filetype="pdf") as copy:
+            if recognize:
+                for page in copy:
+                    if page.rotation and not page.get_text().strip():
+                        page.remove_rotation()
+                count, _ = self.send_ocr(copy, range(len(copy)), "deu+eng")
+                if count is None:
+                    return
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            try:
+                export_archive(copy, candidate, profile, font)
+                passed, details = validate_standard(*tools, candidate, "2b")
+            finally:
+                QApplication.restoreOverrideCursor()
+        if not passed:
+            raise ValueError("veraPDF hat die Archivkopie abgelehnt.\n" + "\n".join(details[:10]))
+        with pdf.open(candidate) as check:
+            missing = [str(page.number + 1) for page in check if not page.get_text().strip()]
+        return "PDF/A-2b von veraPDF bestätigt." + (" Ohne Suchtext: Seite " + ", ".join(missing) + "." if missing else "")
 
     def preview_send_from_path(self, path, summary):
         with pdf.open(path) as document:
