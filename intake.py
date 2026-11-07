@@ -250,28 +250,34 @@ def structured_invoice(data):
     return tuple(InvoiceField(text, None, None) for text in (number, date, value.replace(".", ",") + " " + currency)), syntax
 
 
-def read_invoice(path, tessdata):
+def invoice_xml(path):
     if path.suffix.lower() == ".xml":
         with path.open("rb") as stream:
-            fields, syntax = structured_invoice(stream.read(INVOICE_XML_LIMIT + 1))
-        return fields, "XML · " + syntax
+            return stream.read(INVOICE_XML_LIMIT + 1), False
     with pdf.open(path) as doc:
-        if doc.is_pdf and not doc.needs_pass:
-            attachments = [index for index, name in enumerate(doc.embfile_names())
-                           if name.casefold() in INVOICE_ATTACHMENTS or
-                           Path(doc.embfile_info(index).get("filename", "")).name.casefold() in INVOICE_ATTACHMENTS]
-            if len(attachments) > 1:
-                raise ValueError("Mehrere eingebettete Rechnungs-XMLs gefunden.")
-            if attachments:
-                index = attachments[0]
-                if doc.embfile_info(index).get("size", 0) > INVOICE_XML_LIMIT:
-                    raise ValueError("Die eingebettete Rechnungs-XML ist zu groß.")
-                fields, syntax = structured_invoice(doc.embfile_get(index))
-                if syntax != "CII":
-                    raise ValueError("Für eingebettete ZUGFeRD-Daten wird CII erwartet.")
-                return fields, "PDF + XML · CII"
-    return invoice_fields(path, tessdata), ""
+        if not doc.is_pdf or doc.needs_pass:
+            return None, False
+        attachments = [index for index, name in enumerate(doc.embfile_names())
+                       if name.casefold() in INVOICE_ATTACHMENTS or
+                       Path(doc.embfile_info(index).get("filename", "")).name.casefold() in INVOICE_ATTACHMENTS]
+        if len(attachments) > 1:
+            raise ValueError("Mehrere eingebettete Rechnungs-XMLs gefunden.")
+        if attachments:
+            index = attachments[0]
+            if doc.embfile_info(index).get("size", 0) > INVOICE_XML_LIMIT:
+                raise ValueError("Die eingebettete Rechnungs-XML ist zu groß.")
+            return doc.embfile_get(index), True
+    return None, False
 
+
+def read_invoice(path, tessdata):
+    data, embedded = invoice_xml(path)
+    if data is None:
+        return invoice_fields(path, tessdata), ""
+    fields, syntax = structured_invoice(data)
+    if embedded and syntax != "CII":
+        raise ValueError("Für eingebettete ZUGFeRD-Daten wird CII erwartet.")
+    return fields, ("PDF + XML · " if embedded else "XML · ") + syntax
 
 def invoice_match_key(fields):
     if any(field is None for field in fields):

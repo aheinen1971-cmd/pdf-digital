@@ -10,6 +10,7 @@ import tempfile
 import unicodedata
 import uuid
 from collections import Counter, OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from difflib import SequenceMatcher
 from itertools import zip_longest
@@ -17,7 +18,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QLockFile, QMimeData, QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QEventLoop, QLockFile, QMimeData, QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
@@ -35,7 +36,8 @@ from update_worker import digest_file, failed_update, prepared_update
 
 from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
-                    install_explorer_commands, invoice_match_key, merge_pdfs, read_invoice)
+                    install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
+from invoice_validation import RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
 from pdf_standards import accessibility_blocks, export_accessible, export_archive, export_vector_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import (booklet_sheets, crop_page, edit_image, feeder_pages, fixed_form, image_at, impose_booklet,
@@ -48,7 +50,7 @@ from filing import archive_target, clear_index, filename_hint, folder_matches, i
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
 
-VERSION = (1, 19, 0)
+VERSION = (1, 20, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -3138,6 +3140,113 @@ class Window(QMainWindow):
         return populate
 
 
+    def check_einvoice(self, path, parent):
+        try:
+            data, embedded = invoice_xml(path)
+            if data is None:
+                QMessageBox.information(parent, "E-Rechnung prüfen",
+                                        "Diese PDF enthält keine erkannte Rechnungs-XML. Für Bildscans stehen die OCR-Vorschläge bereit.")
+                return
+        except Exception as exc:
+            self.error(exc)
+            return
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        tools = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
+        java = Path(settings.value("einvoice/java", "", str) or settings.value("standards/java", "", str)
+                    or tools / "Java/bin/java.exe")
+        if not java.is_file():
+            selected, _ = QFileDialog.getOpenFileName(parent, "Java 11 oder neuer auswählen", "", "Java (java.exe)")
+            if not selected:
+                return
+            java = Path(selected)
+            settings.setValue("einvoice/java", selected)
+
+        def check():
+            try:
+                xml_root(data)
+            except ElementTree.ParseError:
+                return validate_invoice_xml(data, java, None, None)
+            jar, rules = ensure_validator(tools / "KoSIT-1.6.3-XRechnung-2026-08-31")
+            return validate_invoice_xml(data, java, jar, rules)
+
+        progress = QProgressDialog("Rechnungs-XML wird lokal geprüft. Beim ersten Start werden die KoSIT-Prüfregeln geladen.",
+                                   "", 0, 0, parent)
+        progress.setWindowTitle("E-Rechnung prüfen")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setCancelButton(None)
+        progress.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
+        progress.setMinimumDuration(0)
+        loop = QEventLoop(progress)
+        timer = QTimer(progress)
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(check)
+                timer.timeout.connect(lambda: loop.quit() if future.done() else None)
+                progress.show()
+                timer.start(75)
+                loop.exec()
+                validation = future.result()
+        except Exception as exc:
+            self.error(exc)
+            return
+        finally:
+            timer.stop()
+            progress.close()
+        self.show_invoice_validation(path, embedded, validation, parent)
+
+    def show_invoice_validation(self, path, embedded, validation, parent):
+        dialog = QDialog(parent)
+        dialog.setWindowTitle("E-Rechnung prüfen")
+        layout = QVBoxLayout(dialog)
+        statuses = {"passed": "Prüfung bestanden", "rejected": "Fehler gefunden",
+                    "unsupported": "Rechnungsprofil wird vom Regelpaket nicht unterstützt"}
+        summary = QLabel()
+        summary.setTextFormat(Qt.TextFormat.PlainText)
+        summary.setWordWrap(True)
+        summary.setText(f"{path.name}\n{statuses[validation.status]}\n"
+                        f"{validation.scenario or 'Ohne bestätigtes Prüfszenario'} · {RULES_VERSION}")
+        layout.addWidget(summary)
+        if embedded:
+            note = QLabel("Geprüft wurde die eingebettete XML. Der PDF-Aufbau und die Übereinstimmung mit der Sichtfassung "
+                          "sind gesondert zu prüfen.")
+            note.setWordWrap(True)
+            layout.addWidget(note)
+        table = QTableWidget(len(validation.issues), 5)
+        table.setHorizontalHeaderLabels(["Stufe", "Feld", "Regel", "Fundstelle", "Meldung"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.horizontalHeader().setStretchLastSection(True)
+        table.setColumnWidth(1, 250)
+        table.setColumnWidth(3, 225)
+        levels = {"error": "Fehler", "fatal": "Fehler", "warning": "Warnung", "information": "Hinweis"}
+        for row, issue in enumerate(validation.issues):
+            for column, value in enumerate((levels.get(issue.level, issue.level), issue.field, issue.rule,
+                                            issue.location, issue.message)):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, column, item)
+        if validation.issues:
+            layout.addWidget(table, 2)
+            details = QPlainTextEdit()
+            details.setReadOnly(True)
+            layout.addWidget(details, 1)
+
+            def selected(row, *_):
+                if row >= 0:
+                    issue = validation.issues[row]
+                    details.setPlainText("\n".join(value for value in (issue.field, issue.rule, issue.location,
+                                                                       issue.message) if value))
+
+            table.currentCellChanged.connect(selected)
+            table.setCurrentCell(0, 0)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(1100, 610 if validation.issues else 220)
+        dialog.exec()
+
+
     def invoice_review(self):
         names, _ = QFileDialog.getOpenFileNames(self, "Rechnungen auswählen", "", "PDF und XML (*.pdf *.xml)")
         if not names:
@@ -3225,6 +3334,8 @@ class Window(QMainWindow):
         table.currentCellChanged.connect(preview)
         table.setCurrentCell(0, 0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.addButton("E-Rechnung der Auswahl prüfen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+            lambda: self.check_einvoice(results[table.currentRow()][0], dialog) if table.currentRow() >= 0 else None)
         buttons.addButton("Diese Dateien auf Dubletten prüfen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
             lambda: self.duplicate_check(list(dict.fromkeys(path for path, _ in results))))
         buttons.addButton("Geprüfte Liste als Excel speichern", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(save)

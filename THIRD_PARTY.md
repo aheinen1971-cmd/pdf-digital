@@ -27,3 +27,9 @@ Für Zertifikatssignaturen bezieht der Starter zusätzlich
 [pyHanko](https://pypi.org/project/pyHanko/) (MIT) und dessen Laufzeitpakete.
 Alle zugehörigen Windows-Wheels sind in DEPENDENCIES.tsv festgeschrieben.
 Die Lizenzen der jeweiligen Pakete liegen in ihren Original-Wheels.
+
+Die optionale E-Rechnungsprüfung lädt beim ersten Aufruf den
+[KoSIT Validator 1.6.3](https://github.com/itplr-kosit/validator/releases/tag/v1.6.3)
+und die [KoSIT-Prüfkonfiguration XRechnung 3.0.2 vom 31.08.2026](https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/tag/v2026-08-31).
+Die Prüfsummen der Originalpakete stehen in `invoice_validation.py`.
+Die Pakete werden separat bezogen und folgen ihren jeweiligen Lizenzhinweisen.

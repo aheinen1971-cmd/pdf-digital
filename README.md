@@ -1,11 +1,11 @@
-# PDF Werkbank 1.19.0 für Windows
+# PDF Werkbank 1.20.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.19.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.20.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.19.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.20.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -87,7 +87,12 @@ vorhandene passende Modelldatei wird verwendet.
   CII-Anlage und XRechnung-Dateien in UBL oder CII auf. Die gemeinsame
   Tabelle zeigt Nummer, Datum, Zahlbetrag und Quelle. Bei Scans werden
   die ersten drei und die letzte Seite lokal ausgewertet. Bei XML
-  werden die Daten ausgelesen. Der Import führt keine Normprüfung durch.
+  werden die Daten ausgelesen. Mit **E-Rechnung der Auswahl prüfen**
+  läuft eine separate lokale KoSIT-Prüfung für XRechnung 3.0 (UBL/CII)
+  und die im Regelpaket enthaltenen EN-16931-Szenarien. Der erste
+  Prüflauf lädt den KoSIT-Prüfer und die Regeln mit SHA-256-Prüfung.
+  Java 11 oder neuer wird benötigt. Bei PDF-Anlagen wird die XML geprüft.
+  Der PDF-Aufbau und der Abgleich mit der Sichtfassung sind separat.
 - **Datei → Explorer-Befehle einrichten** legt für den aktuellen Windows-
   Benutzer zwei Befehle unter **Rechtsklick → Senden an** an. Unter Windows
   11 ist das Menü über **Weitere Optionen anzeigen** erreichbar.
