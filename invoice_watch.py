@@ -117,3 +117,24 @@ def archive_watched_invoice(record, incoming, destination):
 
 def archive_setting_key(path):
     return "invoice-watch/archived/" + hashlib.sha256(os.path.normcase(str(path)).encode("utf-8")).hexdigest()
+
+
+def invoice_archive_state(record, duplicate=False):
+    notices = []
+    if record.validation:
+        status = {"passed": "Bestanden", "rejected": "Fehler gefunden", "unsupported": "Profil nicht unterstützt"}[
+            record.validation.status]
+        if record.validation.status != "passed":
+            notices.append(status)
+    elif record.check_problem:
+        status = record.check_problem
+        notices.append(status)
+    else:
+        status = "PDF ohne Rechnungs-XML"
+        if any(field is None for field in record.source.fields):
+            notices.append("Rechnungsdaten prüfen")
+    if record.source.problem and not notices:
+        notices.append(record.source.problem)
+    if duplicate:
+        notices.append("Mögliche Dublette")
+    return status, notices

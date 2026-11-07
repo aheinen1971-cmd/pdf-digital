@@ -1,11 +1,11 @@
-# PDF Werkbank 1.27.0 für Windows
+# PDF Werkbank 1.28.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.27.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.28.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.27.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.28.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -142,6 +142,9 @@ der Messliste. Excel enthält auch die Stückzahlen.
   geschlossenem Rechnungsfenster. Die Liste zeigt Prüfergebnisse und
   mögliche Dubletten im Eingang. Die Archivfreigabe schreibt eine
   unveränderte Kopie in einen anderen Ordner; vorhandene Ziele bleiben erhalten.
+  Mehrere Belege lassen sich mit Strg oder Umschalt auswählen und prüfen.
+  In der Sammelfreigabe sind Fehler und mögliche Dubletten zunächst
+  abgewählt. Bereits archivierte Belege und belegte Ziele sind gesperrt.
 - **Archiv & Zugang → Dubletten prüfen** vergleicht PDF- und XML-Dateien
   im gewählten Ordner. Dateiidentische Kopien und mögliche Doppelbelege
   mit übereinstimmenden Rechnungsdaten stehen getrennt in einer Vorschau.

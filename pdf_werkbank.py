@@ -17,10 +17,11 @@ from datetime import date, datetime
 from difflib import SequenceMatcher
 from itertools import zip_longest
 from pathlib import Path
+from threading import Event
 from xml.etree import ElementTree
 
 import pymupdf as pdf
-from PySide6.QtCore import QEventLoop, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QEventLoop, QItemSelectionModel, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
@@ -40,7 +41,8 @@ from office_export import export_word, export_word_layout, export_excel, export_
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
 from invoice_validation import KOSIT_FOLDER, RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
-from invoice_watch import IntakeSettler, archive_setting_key, archive_watched_invoice, read_watched_invoice
+from invoice_watch import (IntakeSettler, archive_setting_key, archive_watched_invoice,
+                           invoice_archive_state, read_watched_invoice)
 from pdf_standards import accessibility_blocks, export_accessible, export_archive, export_vector_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
 from page_tools import (booklet_sheets, crop_page, edit_image, feeder_pages, fixed_form, image_at, impose_booklet,
@@ -60,7 +62,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 27, 0)
+VERSION = (1, 28, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -3891,8 +3893,8 @@ class Window(QMainWindow):
             return False, str(exc)
 
 
-    def inspect_pdfs(self, paths, title, inspect):
-        progress = QProgressDialog(title, "Abbrechen", 0, len(paths), self)
+    def inspect_pdfs(self, paths, title, inspect, parent=None):
+        progress = QProgressDialog(title, "Abbrechen", 0, len(paths), parent or self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         results = []
@@ -4055,6 +4057,145 @@ class Window(QMainWindow):
         return populate
 
 
+    def invoice_java(self, parent):
+        settings = self.favorite_settings
+        tools = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
+        java = Path(settings.value("einvoice/java", "", str) or settings.value("standards/java", "", str)
+                    or tools / "Java/bin/java.exe")
+        if not java.is_file():
+            selected, _ = QFileDialog.getOpenFileName(parent, "Java 11 oder neuer auswählen", "", "Java (java.exe)")
+            if not selected:
+                return None
+            java = Path(selected)
+            settings.setValue("einvoice/java", selected)
+        return java, tools / KOSIT_FOLDER
+
+    def check_invoice_batch(self, records, parent):
+        electronic = any(record.source.path.suffix.lower() == ".xml" or record.embedded or record.source.origin
+                         for record in records)
+        setup = self.invoice_java(parent) if electronic else None
+        if electronic and setup is None:
+            return []
+        stop = Event()
+        results = []
+        progress = QProgressDialog("Ausgewählte Belege werden lokal geprüft …", "Nach aktueller Datei abbrechen",
+                                   0, len(records), parent)
+        progress.setWindowTitle("Sammelprüfung")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setAutoReset(False)
+        progress.setAutoClose(False)
+        progress.canceled.connect(stop.set)
+        loop = QEventLoop(progress)
+        timer = QTimer(progress)
+
+        def check():
+            installed = None
+            if setup:
+                java, directory = setup
+                jar, rules = ensure_validator(directory)
+                installed = java, jar, rules
+            tessdata = Path(__file__).with_name("tessdata")
+            for record in records:
+                if stop.is_set():
+                    break
+                path = record.source.path
+                try:
+                    checked = read_watched_invoice(path, record.signature, tessdata, installed)
+                    if not checked or checked.source.digest != record.source.digest or file_signature(path) != record.signature:
+                        raise ValueError("Beleg hat sich geändert und muss erneut eingelesen werden.")
+                    results.append((record, checked, ""))
+                except Exception as exc:
+                    results.append((record, None, str(exc)))
+
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(check)
+
+                def refresh():
+                    if not stop.is_set():
+                        progress.setValue(len(results))
+                    if future.done():
+                        loop.quit()
+
+                timer.timeout.connect(refresh)
+                progress.show()
+                timer.start(75)
+                loop.exec()
+                future.result()
+        except Exception as exc:
+            self.error(exc)
+        finally:
+            timer.stop()
+            progress.close()
+        return results
+
+    def invoice_batch_dialog(self, records, duplicates, parent, destination=None, blocked=None, errors=None):
+        dialog = QDialog(parent)
+        dialog.setWindowTitle("Archivfreigabe für Auswahl" if destination else "Ergebnis der Sammelprüfung")
+        layout = QVBoxLayout(dialog)
+        heading = QLabel()
+        heading.setTextFormat(Qt.TextFormat.PlainText)
+        heading.setWordWrap(True)
+        heading.setText(f"Zielordner: {destination}\nBelege mit Auffälligkeiten sind zunächst abgewählt. "
+                        "Setze bei Bedarf ein Häkchen für die bewusste Freigabe."
+                        if destination else "Doppelklick auf einen Beleg öffnet den KoSIT-Prüfbericht, sofern vorhanden.")
+        layout.addWidget(heading)
+        columns = ["Datei", "Prüfergebnis", "Hinweise"]
+        if destination:
+            columns.insert(0, "Freigeben")
+        table = QTableWidget(len(records), len(columns))
+        table.setHorizontalHeaderLabels(columns)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.horizontalHeader().setStretchLastSection(True)
+        table.setColumnWidth(1 if destination else 0, 240)
+        table.setColumnWidth(2 if destination else 1, 195)
+        for row, record in enumerate(records):
+            path = record.source.path
+            duplicate = path in duplicates
+            status, notices = invoice_archive_state(record, duplicate)
+            issue = (errors or {}).get(path)
+            if issue:
+                status = "Prüfung fehlgeschlagen"
+                notices.insert(0, issue)
+            block = (blocked or {}).get(path)
+            if block:
+                notices.insert(0, block)
+            offset = int(bool(destination))
+            for column, value in enumerate((path.name, status, " · ".join(notices)), offset):
+                item = QTableWidgetItem(value)
+                item.setToolTip(str(path) if column == offset else value)
+                table.setItem(row, column, item)
+            if destination:
+                box = QTableWidgetItem()
+                box.setCheckState(Qt.CheckState.Unchecked if notices else Qt.CheckState.Checked)
+                if block:
+                    box.setFlags(box.flags() & ~(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled))
+                table.setItem(row, 0, box)
+        table.cellDoubleClicked.connect(lambda row, _: self.show_invoice_validation(
+            records[row].source.path, records[row].embedded, records[row].validation, dialog)
+            if records[row].validation else None)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel if destination else QDialogButtonBox.StandardButton.Close)
+        if destination:
+            approve = buttons.addButton("Markierte Belege freigeben", QDialogButtonBox.ButtonRole.AcceptRole)
+
+            def update_button():
+                approve.setEnabled(any(table.item(row, 0).checkState() == Qt.CheckState.Checked
+                                       for row in range(table.rowCount())))
+
+            table.itemChanged.connect(update_button)
+            update_button()
+            buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(920, 485)
+        if dialog.exec() != QDialog.DialogCode.Accepted or not destination:
+            return []
+        return [record for row, record in enumerate(records)
+                if not (blocked or {}).get(record.source.path) and table.item(row, 0).checkState() == Qt.CheckState.Checked]
+
+
     def check_einvoice(self, path, parent):
         try:
             data, embedded = invoice_xml(path)
@@ -4065,23 +4206,17 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
             return
-        settings = QSettings("PDF Werkbank", "PDF Werkbank")
-        tools = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
-        java = Path(settings.value("einvoice/java", "", str) or settings.value("standards/java", "", str)
-                    or tools / "Java/bin/java.exe")
-        if not java.is_file():
-            selected, _ = QFileDialog.getOpenFileName(parent, "Java 11 oder neuer auswählen", "", "Java (java.exe)")
-            if not selected:
-                return
-            java = Path(selected)
-            settings.setValue("einvoice/java", selected)
+        setup = self.invoice_java(parent)
+        if setup is None:
+            return
+        java, tools = setup
 
         def check():
             try:
                 xml_root(data)
             except ElementTree.ParseError:
                 return validate_invoice_xml(data, java, None, None)
-            jar, rules = ensure_validator(tools / KOSIT_FOLDER)
+            jar, rules = ensure_validator(tools)
             return validate_invoice_xml(data, java, jar, rules)
 
         progress = QProgressDialog("Rechnungs-XML wird lokal geprüft. Beim ersten Start werden die KoSIT-Prüfregeln geladen.",
@@ -4190,12 +4325,14 @@ class Window(QMainWindow):
         layout.addWidget(location)
         status = QLabel("Die Werkbank überwacht den gewählten Ordner auch bei geschlossenem Rechnungsfenster.")
         layout.addWidget(status)
+        layout.addWidget(QLabel("Mit Strg oder Umschalt mehrere Belege auswählen."))
         filter = QComboBox()
         filter.addItems(["Alle", "Neu", "Fehler", "Dubletten", "Archiviert"])
         layout.addWidget(filter)
         table = QTableWidget(0, 6)
         table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten", "Archiv", "Notiz"])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         table.horizontalHeader().setStretchLastSection(True)
@@ -4208,6 +4345,7 @@ class Window(QMainWindow):
         choose = controls.addButton("Ordner wählen", QDialogButtonBox.ButtonRole.ActionRole)
         review = controls.addButton("Beleg ansehen", QDialogButtonBox.ButtonRole.ActionRole)
         validate = controls.addButton("Prüfdetails", QDialogButtonBox.ButtonRole.ActionRole)
+        batch = controls.addButton("Auswahl prüfen", QDialogButtonBox.ButtonRole.ActionRole)
         note = controls.addButton("Notiz", QDialogButtonBox.ButtonRole.ActionRole)
         reviewed = controls.addButton("Prüfstatus ändern", QDialogButtonBox.ButtonRole.ActionRole)
         archive = controls.addButton("Für Archiv freigeben", QDialogButtonBox.ButtonRole.ActionRole)
@@ -4226,6 +4364,32 @@ class Window(QMainWindow):
         def selected():
             item = table.item(table.currentRow(), 0)
             return records.get(item.data(Qt.ItemDataRole.UserRole)) if item else None
+
+        def selected_records():
+            paths = (table.item(index.row(), 0).data(Qt.ItemDataRole.UserRole)
+                     for index in sorted(table.selectionModel().selectedRows(), key=lambda index: index.row())
+                     if table.item(index.row(), 0) is not None)
+            return [records[path] for path in paths if path in records]
+
+        def duplicate_paths():
+            exact, possible = duplicate_groups([record.source for record in records.values()])
+            return ({source.path for group in exact for source in group},
+                    {source.path for group in possible for source in group})
+
+        def archived_path(record):
+            source = record.source
+            for key in (archive_setting_key(source.path), "invoice-watch/archived-digest/" + source.digest):
+                digest, _, target = settings.value(key, "", str).partition("|")
+                if digest == source.digest and target and Path(target).is_file():
+                    return target
+            return ""
+
+        def update_actions():
+            count = len(selected_records())
+            for button in (review, validate, note, reviewed):
+                button.setEnabled(count == 1)
+            batch.setEnabled(count > 0)
+            archive.setEnabled(count > 0)
 
         def update_badge():
             unread = 0
@@ -4248,25 +4412,23 @@ class Window(QMainWindow):
         def refresh():
             update_badge()
             current = selected()
-            exact, possible = duplicate_groups([record.source for record in records.values()])
-            exact = {source.path for group in exact for source in group}
-            possible = {source.path for group in possible for source in group}
+            selection = {record.source.path for record in selected_records()}
+            exact, possible = duplicate_paths()
             ordered = []
             visible = []
             for path in sorted(records, key=lambda path: path.name.casefold()):
                 record = records[path]
                 source = record.source
-                history = settings.value(archive_setting_key(path), "", str).partition("|")
-                if not (history[0] == source.digest and history[2] and Path(history[2]).is_file()):
-                    history = settings.value("invoice-watch/archived-digest/" + source.digest, "", str).partition("|")
-                archived = history[0] == source.digest and history[2] and Path(history[2]).is_file()
+                destination = archived_path(record)
+                archived = bool(destination)
                 checked = settings.value("invoice-watch/reviewed/" + source.digest, False, bool)
                 problem = (record.validation and record.validation.status != "passed") or source.problem or (
                     record.check_problem and record.check_problem != "E-Rechnung noch nicht geprüft")
                 flags = (True, not archived and not checked, problem, path in exact or path in possible, archived)
                 if flags[filter.currentIndex()]:
                     ordered.append(path)
-                    visible.append((archived, checked, history[2]))
+                    visible.append((archived, checked, destination))
+            table.blockSignals(True)
             table.setRowCount(len(ordered))
             for row, path in enumerate(ordered):
                 record = records[path]
@@ -4286,12 +4448,17 @@ class Window(QMainWindow):
                     if column == 0:
                         item.setData(Qt.ItemDataRole.UserRole, path)
                     table.setItem(row, column, item)
+            table.clearSelection()
             if ordered:
                 old = current.source.path if current else None
-                table.selectRow(ordered.index(old) if old in ordered else 0)
-            for button in (review, validate, archive, note, reviewed):
-                button.setEnabled(bool(ordered))
-
+                chosen = [row for row, path in enumerate(ordered) if path in selection] or [0]
+                active = ordered.index(old) if old in ordered and ordered.index(old) in chosen else chosen[0]
+                flags = QItemSelectionModel.SelectionFlag
+                table.selectionModel().setCurrentIndex(table.model().index(active, 0), flags.NoUpdate)
+                for row in chosen:
+                    table.selectionModel().select(table.model().index(row, 0), flags.Select | flags.Rows)
+            table.blockSignals(False)
+            update_actions()
         def change_folder():
             nonlocal settler
             folder = QFileDialog.getExistingDirectory(dialog, "Rechnungsordner auswählen",
@@ -4397,13 +4564,78 @@ class Window(QMainWindow):
             settings.setValue(key, not settings.value(key, False, bool))
             refresh()
 
-        def approve():
-            record = selected()
-            if not record:
+        def check_selection():
+            selected_items = selected_records()
+            if not selected_items:
                 return
-            name = QFileDialog.getExistingDirectory(dialog, "Archivordner für die Originalkopie auswählen",
+            errors = {}
+            completed = []
+            for previous, checked, issue in self.check_invoice_batch(selected_items, dialog):
+                path = previous.source.path
+                current = records.get(path)
+                if not checked or not current or current.signature != checked.signature or current.source.digest != checked.source.digest:
+                    errors[path] = issue or "Beleg hat sich während der Prüfung geändert."
+                    completed.append(previous)
+                    continue
+                records[path] = checked
+                completed.append(checked)
+            refresh()
+            if completed:
+                exact, possible = duplicate_paths()
+                self.invoice_batch_dialog(completed, exact | possible, dialog, errors=errors)
+
+        def approve_many(items, name):
+            incoming, destination = settler.folder, Path(name).resolve()
+            if not destination.is_dir() or destination.is_relative_to(incoming.resolve()):
+                self.error("Bitte einen Archivordner außerhalb des Rechnungsordners auswählen.")
+                return
+            blocked = {}
+            for record in items:
+                path = record.source.path
+                if archived_path(record):
+                    blocked[path] = "Bereits archiviert."
+                elif (destination / path.name).exists():
+                    blocked[path] = "Zieldatei existiert bereits."
+            exact, possible = duplicate_paths()
+            approved = self.invoice_batch_dialog(items, exact | possible, dialog, destination, blocked)
+            if not approved:
+                return
+            by_path = {record.source.path: record for record in approved}
+
+            def save(path):
+                record = by_path[path]
+                try:
+                    saved = archive_watched_invoice(record, incoming, destination)
+                    settings.setValue("invoice-watch/archive", str(destination))
+                    settings.setValue(archive_setting_key(path), f"{record.source.digest}|{saved}")
+                    settings.sync()
+                except Exception as exc:
+                    return False, str(exc)
+                if settings.status() != QSettings.Status.NoError:
+                    return True, "Datei kopiert. Archivstatus konnte nicht gespeichert werden."
+                return True, ""
+
+            outcomes = self.inspect_pdfs(list(by_path), "Belege werden archiviert …", save, dialog)
+            refresh()
+            message = QMessageBox(dialog)
+            message.setWindowTitle("Sammelarchivierung")
+            message.setText(f"{sum(success for _, (success, _) in outcomes)} von {len(approved)} freigegebenen Belegen kopiert.")
+            details = [f"{path.name}: {issue}" for path, (_, issue) in outcomes if issue]
+            if details:
+                message.setDetailedText("\n".join(details))
+            message.exec()
+
+        def approve():
+            items = selected_records()
+            if not items:
+                return
+            record = items[0]
+            name = QFileDialog.getExistingDirectory(dialog, "Archivordner für die Originalkopien auswählen",
                                                      settings.value("invoice-watch/archive", "", str))
             if not name:
+                return
+            if len(items) > 1:
+                approve_many(items, name)
                 return
             target = Path(name) / record.source.path.name
             if QMessageBox.question(dialog, "Archivfreigabe", f"Diesen Beleg als unveränderte Kopie ablegen?\n{target}",
@@ -4428,6 +4660,8 @@ class Window(QMainWindow):
         choose.clicked.connect(change_folder)
         review.clicked.connect(lambda: self.invoice_review([str(record.source.path)]) if (record := selected()) else None)
         validate.clicked.connect(show_check)
+        batch.clicked.connect(check_selection)
+        table.itemSelectionChanged.connect(update_actions)
         archive.clicked.connect(approve)
         note.clicked.connect(edit_note)
         reviewed.clicked.connect(toggle_review)
@@ -4437,7 +4671,7 @@ class Window(QMainWindow):
         timer.start(750)
         refresh()
         tick()
-        dialog.resize(970, 530)
+        dialog.resize(1110, 550)
         if show:
             dialog.show()
             update_badge()
