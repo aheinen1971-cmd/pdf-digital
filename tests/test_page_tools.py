@@ -115,12 +115,13 @@ with TemporaryDirectory() as folder:
         def poll(self):
             return self.returncode
 
-        def communicate(self):
-            return b"300,300\n", b""
+        def wait(self):
+            return self.returncode
 
     def fake_scanner(command, **kwargs):
         output = Path(kwargs["env"]["PDF_WERKBANK_SCAN_FILE"])
         raster((30, 70, 140), 300, 600).save(output)
+        kwargs["stdout"].write(b"300,300\n")
         return ScanResult()
 
     target = root / "Vom Scanner.pdf"
