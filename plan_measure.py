@@ -253,3 +253,95 @@ def draw_plan_copy(source, measurements, font_path):
     except Exception:
         output.close()
         raise
+
+
+def vector_geometry(page):
+    points, segments = [], []
+    for path in page.get_drawings():
+        for item in path["items"]:
+            kind = item[0]
+            if kind == "l":
+                edges = [item[1:]]
+            elif kind in ("re", "qu"):
+                box = item[1]
+                ring = (box.tl, box.tr, box.br, box.bl)
+                edges = list(zip(ring, (*ring[1:], ring[0])))
+            else:
+                if kind == "c":
+                    points.extend((item[1], item[-1]))
+                continue
+            segments.extend(edges)
+            for edge in edges:
+                points.extend(edge)
+            if len(points) >= 40000:
+                return points, segments
+    return points, segments
+
+
+def snap_point(point, geometry, tolerance):
+    vertices, segments = geometry
+    nearest = None
+    best = tolerance
+    for vertex in vertices:
+        gap = distance(point, vertex)
+        if gap <= best:
+            best, nearest = gap, vertex
+    if nearest is not None:
+        return nearest
+    for first, last in segments:
+        dx, dy = last.x - first.x, last.y - first.y
+        length = dx * dx + dy * dy
+        if not length:
+            continue
+        ratio = ((point.x - first.x) * dx + (point.y - first.y) * dy) / length
+        if 0 < ratio < 1:
+            projected = pdf.Point(first.x + ratio * dx, first.y + ratio * dy)
+            gap = distance(point, projected)
+            if gap <= best:
+                best, nearest = gap, projected
+    return nearest
+
+
+def alignment(fixed, moving):
+    first, last = fixed
+    start, end = moving
+    fx, fy = last[0] - first[0], last[1] - first[1]
+    mx, my = end[0] - start[0], end[1] - start[1]
+    norm = mx * mx + my * my
+    if min(norm, fx * fx + fy * fy) < 1:
+        raise ValueError("Bitte zwei gut unterscheidbare Referenzpunkte je Plan setzen.")
+    a, b = (fx * mx + fy * my) / norm, (fy * mx - fx * my) / norm
+    return a, b, first[0] - a * start[0] + b * start[1], first[1] - b * start[0] - a * start[1]
+
+
+def encode_project(doc, measurements, digest):
+    data = json.dumps({"project": 1, "pdf_sha256": digest,
+                       "plans": json.loads(encode_plans(doc, measurements))}, ensure_ascii=False).encode("utf-8")
+    if len(data) > MAX_PLAN_BYTES:
+        raise ValueError("Das Messprojekt ist zu groß.")
+    return data
+
+
+def decode_project(doc, data, digest):
+    project = json.loads(data)
+    if not isinstance(project, dict) or project.get("project") != 1 or "plans" not in project:
+        raise ValueError("Diese Datei ist kein Messprojekt der PDF Werkbank.")
+    if project.get("pdf_sha256") != digest:
+        raise ValueError("Das Messprojekt gehört zu einer anderen PDF-Fassung.")
+    return decode_plans(doc, json.dumps(project["plans"]))
+
+
+def measurement_rows(doc, measurements):
+    rows = []
+    lengths, areas = [], []
+    for index, plan in plan_entries(doc, measurements):
+        for mark in plan.marks:
+            unit, values = ("m²", areas) if mark.area else ("m", lengths)
+            value = mark.amount * (plan.scale ** 2 if mark.area else plan.scale)
+            values.append(value)
+            rows.append((index + 1, mark.name, value, unit))
+    if lengths:
+        rows.append((None, "Summe Strecken", math.fsum(lengths), "m"))
+    if areas:
+        rows.append((None, "Summe Flächen", math.fsum(areas), "m²"))
+    return rows

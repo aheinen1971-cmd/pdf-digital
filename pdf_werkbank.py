@@ -21,13 +21,13 @@ from xml.etree import ElementTree
 
 import pymupdf as pdf
 from PySide6.QtCore import QEventLoop, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap, QPolygonF
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
     QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
     QHeaderView, QMenu, QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter,
-    QSpinBox, QTabBar, QTableWidget, QTableWidgetItem, QToolBar, QToolButton,
+    QSlider, QSpinBox, QTabBar, QTableWidget, QTableWidgetItem, QToolBar, QToolButton,
     QVBoxLayout, QWidget,
 )
 
@@ -54,9 +54,10 @@ from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups
 from archive_run import ArchiveRun
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
-                          format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes)
+                          format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
+                          alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry)
 
-VERSION = (1, 23, 0)
+VERSION = (1, 24, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -667,6 +668,7 @@ class Session:
         self.recovery_path = self.path.resolve()
         self.recovery_dirty = True
         self.plan_measurements = {}
+        self.measure_geometry = {}
         self.plan_saved_token = None
         self.plan_source_stamp = file_signature(self.path) if snapshot is None else None
 
@@ -729,9 +731,8 @@ class Canvas(QLabel):
                 self.band.show()
 
     def mouseMoveEvent(self, event):
-        if self.window.mode in MEASURE_MODES and self.window.current and self.window.measure_points:
-            self.window.measure_hover = self.window.measure_position(event.position())
-            self.update()
+        if self.window.mode in MEASURE_MODES and self.window.current:
+            self.window.measure_pointer(event.position())
         elif self.origin is not None:
             self.band.setGeometry(QRect(self.origin, event.position().toPoint()).normalized())
 
@@ -746,6 +747,7 @@ class Canvas(QLabel):
     def leaveEvent(self, event):
         if self.window.measure_hover is not None:
             self.window.measure_hover = None
+            self.window.measure_cursor = None
             self.update()
         super().leaveEvent(event)
 
@@ -766,6 +768,9 @@ class Window(QMainWindow):
         super().__init__()
         self.sessions = []
         self.measure_points = []
+        self.measure_assist = "Automatisch"
+        self.measure_cursor = None
+        self.measure_snap_hit = False
         self.measure_hover = None
         self.recovery = None
         self.grid_mm = 0
@@ -824,7 +829,8 @@ class Window(QMainWindow):
                         ("Strecke messen", lambda: self.start_measure("Strecke messen")),
                         ("Fläche messen", lambda: self.start_measure("Fläche messen")),
                         ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement),
-                        ("Messliste", self.measurement_list), ("PDF mit Maßen", self.export_measurements)]),
+                        ("Messliste", self.measurement_list), ("PDF mit Maßen", self.export_measurements),
+                        ("Messoptionen", self.measurement_options), ("Pläne überlagern", self.plan_overlay)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
@@ -1363,6 +1369,7 @@ class Window(QMainWindow):
             self.thumbs.item(old).setIcon(QIcon())
 
     def clear_page_cache(self, session):
+        session.measure_geometry.clear()
         for key in [key for key in self.page_cache if key[0] == session.recovery_id]:
             self.page_cache.pop(key)
 
@@ -1379,6 +1386,7 @@ class Window(QMainWindow):
         return image
 
     def render(self):
+        self.measure_cursor = self.measure_hover = None
         session = self.current
         self.welcome.setVisible(session is None)
         self.splitter.setVisible(session is not None)
@@ -1479,6 +1487,243 @@ class Window(QMainWindow):
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
+    def measurement_options(self):
+        options = ("Automatisch", "Fangpunkte", "Lupe", "Aus")
+        selected, ok = QInputDialog.getItem(self, "Messoptionen", "Beim Messen verwenden",
+                                            options, options.index(self.measure_assist), editable=False)
+        if ok:
+            self.measure_assist = selected
+            self.clear_measure_draft()
+            self.canvas.update()
+
+    def measurement_geometry(self):
+        session = self.current
+        if not session or self.measure_assist in ("Aus", "Lupe"):
+            return (), ()
+        page = session.doc[session.page]
+        key = plan_page_key(page)
+        if key not in session.measure_geometry:
+            try:
+                session.measure_geometry[key] = vector_geometry(page)
+            except (RuntimeError, ValueError):
+                session.measure_geometry[key] = (), ()
+        return session.measure_geometry[key]
+
+    def measure_pointer(self, screen):
+        if self.mode not in MEASURE_MODES:
+            return
+        point = self.measure_position(screen, hover=True)
+        self.measure_hover = point
+        self.measure_cursor = screen if point is not None and self.measure_assist != "Aus" else None
+        self.canvas.update()
+
+    def paint_measure_assist(self, painter, transform):
+        if self.measure_cursor is None or self.measure_hover is None or self.mode not in MEASURE_MODES:
+            return
+        point = self.measure_hover * transform
+        marker = QPointF(point.x, point.y)
+        vertices, _ = self.measurement_geometry()
+        if self.measure_assist == "Lupe" or (self.measure_assist == "Automatisch" and not vertices):
+            image = self.canvas.pixmap()
+            if image.isNull():
+                return
+            radius = 18
+            source = QRectF(point.x - radius, point.y - radius, radius * 2, radius * 2)
+            size = 108
+            left = max(0, min(self.measure_cursor.x() + 16, self.canvas.width() - size))
+            top = max(0, min(self.measure_cursor.y() + 16, self.canvas.height() - size))
+            if left <= self.measure_cursor.x() <= left + size and top <= self.measure_cursor.y() <= top + size:
+                top = max(0, self.measure_cursor.y() - size - 16)
+            target = QRectF(left, top, size, size)
+            painter.fillRect(target, QColor("white"))
+            painter.drawPixmap(target, image, source)
+            painter.setPen(QPen(QColor("#005b91"), 1.5))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(target)
+            center = target.center()
+            painter.drawLine(QPointF(center.x() - 7, center.y()), QPointF(center.x() + 7, center.y()))
+            painter.drawLine(QPointF(center.x(), center.y() - 7), QPointF(center.x(), center.y() + 7))
+        elif self.measure_snap_hit:
+            painter.setPen(QPen(QColor("#007047"), 2))
+            painter.setBrush(QColor(245, 255, 250, 205))
+            painter.drawRect(QRectF(marker.x() - 5, marker.y() - 5, 10, 10))
+
+    def export_measurement_excel(self):
+        session = self.current
+        rows = measurement_rows(session.doc, session.plan_measurements)
+        if not rows:
+            QMessageBox.information(self, "Messliste", "Bitte zuerst eine Strecke oder Fläche messen.")
+            return
+        name, _ = QFileDialog.getSaveFileName(self, "Messliste als Excel speichern",
+                                               str(session.path.with_suffix(".xlsx")), "Excel (*.xlsx)")
+        if name:
+            self.save_workbook(name, lambda target: export_linked_sheet(
+                rows, target, "Messliste", ("Seite", "Name", "Messwert", "Einheit"), (10, 45, 18, 12)))
+
+    def transfer_measurement_project(self, importing):
+        session = self.current
+        try:
+            if session.changed:
+                raise ValueError("Bitte zuerst eine PDF-Kopie der bearbeiteten Fassung speichern.")
+            stamp = session.plan_source_stamp
+            if stamp is None or file_signature(session.recovery_path) != stamp:
+                raise ValueError("Die PDF auf dem Datenträger wurde geändert. Bitte erneut öffnen.")
+            digest = digest_file(session.recovery_path)
+            if file_signature(session.recovery_path) != stamp:
+                raise ValueError("Die PDF auf dem Datenträger wurde geändert. Bitte erneut öffnen.")
+            kind = "Messprojekt (*.messprojekt)"
+            if importing:
+                name, _ = QFileDialog.getOpenFileName(self, "Messprojekt öffnen", "", kind)
+                if not name:
+                    return False
+                data = stored_bytes(Path(name))
+                if data is None:
+                    raise ValueError("Das Messprojekt wurde nicht gefunden.")
+                plans = decode_project(session.doc, data, digest)
+                if session.plan_measurements and QMessageBox.question(
+                        self, "Messprojekt öffnen", "Die Messliste im geöffneten Tab durch das Projekt ersetzen?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                    return False
+                session.plan_measurements = plans
+                self.clear_measure_draft()
+                self.render()
+                self.statusBar().showMessage("Messprojekt geladen. Mit „Messliste speichern“ lokal übernehmen.", 7500)
+                return True
+            name, _ = QFileDialog.getSaveFileName(self, "Messprojekt speichern",
+                                                   str(session.path.with_suffix(".messprojekt")), kind)
+            if name:
+                path = Path(name)
+                if path.suffix.lower() != ".messprojekt":
+                    path = Path(name + ".messprojekt")
+                atomic_write(path, encode_project(session.doc, session.plan_measurements, digest))
+                self.statusBar().showMessage(f"Messprojekt gespeichert: {path.name}", 7500)
+        except Exception as exc:
+            self.error(exc)
+        return False
+
+    def plan_overlay(self):
+        session = self.current
+        if not session:
+            return
+        path, _ = QFileDialog.getOpenFileName(self, "Zweite Planfassung wählen", "", "PDF-Dateien (*.pdf)")
+        if not path:
+            return
+        try:
+            with pdf.open(path) as other:
+                if not other.is_pdf or other.needs_pass or not len(other):
+                    raise ValueError("Bitte eine lesbare zweite PDF ohne Passwort auswählen.")
+                self.overlay_dialog(session.doc, session.page, other)
+        except Exception as exc:
+            self.error(exc)
+
+    def overlay_dialog(self, fixed, index, moving):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Planfassungen überlagern")
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Wähle je Plan dieselben zwei Referenzpunkte in derselben Reihenfolge. "
+                      "Danach kannst du zwischen beiden Fassungen umblenden.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        controls = QHBoxLayout()
+        first, second = QSpinBox(), QSpinBox()
+        for field, name, count, value in ((first, "Referenzseite ", len(fixed), index + 1),
+                                          (second, "Vergleichsseite ", len(moving), min(index + 1, len(moving)))):
+            field.setRange(1, count)
+            field.setPrefix(name)
+            field.setValue(value)
+            controls.addWidget(field)
+        mode = QComboBox()
+        mode.addItems(["Referenzpunkte im ersten Plan", "Referenzpunkte im zweiten Plan", "Überlagerung"])
+        controls.addWidget(mode)
+        layout.addLayout(controls)
+        blend = QSlider(Qt.Orientation.Horizontal)
+        blend.setRange(0, 100)
+        blend.setValue(50)
+        blend.setToolTip("Links erster Plan, rechts zweiter Plan")
+        layout.addWidget(blend)
+        area = QScrollArea()
+        area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(area, 1)
+        anchors = [[], []]
+        images = []
+
+        class OverlayCanvas(QLabel):
+            def mousePressEvent(self, event):
+                side = mode.currentIndex()
+                if side < 2 and event.button() == Qt.MouseButton.LeftButton:
+                    point = (event.position().x(), event.position().y())
+                    if len(anchors[side]) == 2:
+                        anchors[side].clear()
+                    anchors[side].append(point)
+                    refresh()
+
+        image = OverlayCanvas()
+        area.setWidget(image)
+
+        def refresh():
+            side = mode.currentIndex()
+            result = QPixmap(images[0 if side == 2 else side])
+            painter = QPainter(result)
+            try:
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                if side == 2:
+                    if all(len(points) == 2 for points in anchors):
+                        try:
+                            a, b, x, y = alignment(*anchors)
+                            transform = QTransform(a, b, -b, a, x, y)
+                        except ValueError as exc:
+                            info.setText(str(exc))
+                            return
+                        aligned = QPixmap(result.size())
+                        aligned.fill(QColor("white"))
+                        overlay = QPainter(aligned)
+                        try:
+                            overlay.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+                            overlay.setTransform(transform)
+                            overlay.drawPixmap(0, 0, images[1])
+                        finally:
+                            overlay.end()
+                        painter.setOpacity(blend.value() / 100)
+                        painter.drawPixmap(0, 0, aligned)
+                        info.setText("Ausgerichtete Überlagerung. Der Regler blendet zwischen den Fassungen um.")
+                    else:
+                        info.setText("Bitte zuerst je zwei Referenzpunkte setzen.")
+                else:
+                    for number, (x, y) in enumerate(anchors[side], 1):
+                        painter.setPen(QPen(QColor("#005b91"), 2))
+                        painter.setBrush(QColor("white"))
+                        painter.drawEllipse(QPointF(x, y), 6, 6)
+                        painter.drawText(QPointF(x + 9, y - 4), str(number))
+                    info.setText(f"Plan {side + 1} · {len(anchors[side])} von 2 Referenzpunkten gesetzt. "
+                                 "Ein weiterer Klick beginnt die Auswahl neu.")
+            finally:
+                painter.end()
+            image.setPixmap(result)
+            image.resize(result.size())
+            blend.setEnabled(side == 2 and all(len(points) == 2 for points in anchors))
+
+        def pages_changed():
+            anchors[0].clear()
+            anchors[1].clear()
+            pages = (fixed[first.value() - 1], moving[second.value() - 1])
+            images[:] = [pixmap(page, 740 / max(page.rect.width, page.rect.height)) for page in pages]
+            mode.setCurrentIndex(0)
+            refresh()
+
+        first.valueChanged.connect(pages_changed)
+        second.valueChanged.connect(pages_changed)
+        mode.currentIndexChanged.connect(refresh)
+        blend.valueChanged.connect(refresh)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(950, 850)
+        pages_changed()
+        dialog.exec()
+
+
     def measurement_store(self):
         return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Messungen"
 
@@ -1542,6 +1787,12 @@ class Window(QMainWindow):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
         save = buttons.addButton("Messliste speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        extra = buttons.addButton("Export und Projekte", QDialogButtonBox.ButtonRole.ActionRole)
+        menu = QMenu(extra)
+        menu.addAction("Messliste als Excel", self.export_measurement_excel)
+        menu.addAction("Messprojekt speichern", lambda: self.transfer_measurement_project(False))
+        menu.addAction("Messprojekt öffnen", lambda: dialog.accept() if self.transfer_measurement_project(True) else None)
+        extra.setMenu(menu)
         jump = buttons.addButton("Zur Seite", QDialogButtonBox.ButtonRole.ActionRole)
         jump.setEnabled(bool(entries))
         buttons.rejected.connect(dialog.reject)
@@ -1608,6 +1859,7 @@ class Window(QMainWindow):
     def clear_measure_draft(self):
         self.measure_points.clear()
         self.measure_hover = None
+        self.measure_cursor = None
 
     def set_plan_scale(self):
         if not self.current:
@@ -1643,13 +1895,21 @@ class Window(QMainWindow):
                  "Fläche messen": "Eckpunkte der Reihe nach anklicken und mit Eingabe oder „Fläche abschließen“ bestätigen."}
         self.statusBar().showMessage(hints[mode] + " Esc verwirft die angefangene Messung.", 15000)
 
-    def measure_position(self, screen):
+    def measure_position(self, screen, hover=False):
+        if hover:
+            self.measure_snap_hit = False
         session = self.current
         page = session.doc[session.page]
         display = pdf.Point(screen.x() / self.scale, screen.y() / self.scale)
         if not page.rect.contains(display):
             return None
-        return display * page.derotation_matrix
+        point = display * page.derotation_matrix
+        snapped = snap_point(point, self.measurement_geometry(), 9 / self.scale)
+        if snapped is not None and page.rect.contains(snapped * page.rotation_matrix):
+            if hover:
+                self.measure_snap_hit = True
+            return snapped
+        return point
 
     def measure_click(self, screen):
         point = self.measure_position(screen)
@@ -1713,7 +1973,7 @@ class Window(QMainWindow):
             return
         plan = self.current_plan() if session.plan_measurements else None
         marks = plan.marks if plan else ()
-        if not marks and not self.measure_points:
+        if not marks and not self.measure_points and self.measure_cursor is None:
             return
         page = session.doc[session.page]
         transform = page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
@@ -1754,6 +2014,7 @@ class Window(QMainWindow):
             if self.measure_hover is not None:
                 points.append(self.measure_hover)
             draw(points, pending=True)
+        self.paint_measure_assist(painter, transform)
 
 
     def configure_grid(self):

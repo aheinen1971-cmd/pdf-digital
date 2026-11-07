@@ -234,7 +234,7 @@ def export_invoices(rows, path):
                         (24, 18, 22, 65, 42), 4)
 
 
-def export_linked_sheet(rows, path, title, header, widths, source_column):
+def export_linked_sheet(rows, path, title, header, widths, source_column=None):
     namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     workbook = Element("workbook", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
     SubElement(SubElement(workbook, "sheets"), "sheet", {"name": title, "sheetId": "1", "r:id": "rId1"})
@@ -251,9 +251,13 @@ def export_linked_sheet(rows, path, title, header, widths, source_column):
     for index, values in enumerate(all_rows, 1):
         row = SubElement(data, "row", r=str(index))
         for column, value in enumerate(values, 1):
-            cell = SubElement(row, "c", r=f"{column_name(column)}{index}", t="inlineStr")
-            SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
-        if index > 1 and values[source_column - 1]:
+            address = f"{column_name(column)}{index}"
+            if type(value) in (int, float):
+                SubElement(SubElement(row, "c", r=address, t="n"), "v").text = str(value)
+            elif value is not None:
+                cell = SubElement(row, "c", r=address, t="inlineStr")
+                SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
+        if source_column and index > 1 and values[source_column - 1]:
             if hyperlinks is None:
                 hyperlinks = SubElement(sheet, "hyperlinks")
             key = f"rId{index}"

@@ -1,11 +1,11 @@
-# PDF Werkbank 1.23.0 für Windows
+# PDF Werkbank 1.24.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.23.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.24.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.23.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.24.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -52,6 +52,14 @@ Messungen benennen und zusammen mit ihren Maßstäben lokal speichern.
 Die Werkbank lädt die Liste beim Öffnen derselben PDF-Fassung wieder.
 **PDF mit Maßen** zeigt vor dem Speichern eine Vorschau einer separaten
 PDF-Kopie mit sichtbaren Maßlinien, Flächen und Beschriftungen.
+
+**Messoptionen** bietet Fangpunkte für Vektorlinien und eine Lupe für
+Bildscans. In **Messliste → Export und Projekte** lassen sich Messwerte
+als Excel mit getrennten Strecken- und Flächensummen ausgeben.
+Eine .messprojekt-Datei enthält Namen, Messungen und Maßstäbe und lässt
+sich auf einem anderen PC zur bytegleichen PDF-Fassung öffnen.
+Mit **Pläne überlagern** richtest du zwei Seiten über je zwei
+entsprechende Punkte aus und blendest mit dem Regler zwischen ihnen um.
 
 ## Bilder und Scanner
 
