@@ -53,9 +53,10 @@ from filing import archive_target, clear_index, filename_hint, file_signature, f
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
-                          PlanMeasurements, calibrated_scale, distance, format_measure, polygon_area)
+                          PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
+                          format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes)
 
-VERSION = (1, 22, 0)
+VERSION = (1, 23, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -666,6 +667,8 @@ class Session:
         self.recovery_path = self.path.resolve()
         self.recovery_dirty = True
         self.plan_measurements = {}
+        self.plan_saved_token = None
+        self.plan_source_stamp = file_signature(self.path) if snapshot is None else None
 
     def snapshot(self, label):
         return [self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP), self.page, self.changed, label]
@@ -820,7 +823,8 @@ class Window(QMainWindow):
                         ("Kalibrieren", lambda: self.start_measure("Kalibrieren")),
                         ("Strecke messen", lambda: self.start_measure("Strecke messen")),
                         ("Fläche messen", lambda: self.start_measure("Fläche messen")),
-                        ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement)]),
+                        ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement),
+                        ("Messliste", self.measurement_list), ("PDF mit Maßen", self.export_measurements)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
@@ -1234,6 +1238,14 @@ class Window(QMainWindow):
         self.sessions.append(session)
         tab = self.tabs.addTab(session.path.name + (" *" if session.changed else ""))
         self.tabs.setCurrentIndex(tab)
+        if snapshot is None:
+            try:
+                self.restore_measurements(session)
+                if session.plan_measurements:
+                    self.render()
+            except (ValueError, OSError) as exc:
+                self.statusBar().showMessage(f"Messliste konnte nicht geladen werden: {exc}", 9000)
+
         self.write_recovery()
         return session
 
@@ -1467,12 +1479,128 @@ class Window(QMainWindow):
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
+    def measurement_store(self):
+        return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Messungen"
+
+    def restore_measurements(self, session):
+        path = store_path(self.measurement_store(), session.recovery_path, session.plan_source_stamp)
+        if path is None:
+            return
+        data = stored_bytes(path)
+        session.plan_saved_token = plan_token(data)
+        if data is not None:
+            session.plan_measurements = decode_plans(session.doc, data)
+
+    def save_measurements(self, session):
+        try:
+            if session.changed:
+                raise ValueError("Bitte zuerst eine PDF-Kopie der bearbeiteten Seiten speichern.")
+            path = store_path(self.measurement_store(), session.recovery_path, session.plan_source_stamp, create=True)
+            data = encode_plans(session.doc, session.plan_measurements)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            lock = QLockFile(str(path.with_suffix(".lock")))
+            if not lock.tryLock(0):
+                raise ValueError("Diese Messliste wird gerade gespeichert. Bitte erneut versuchen.")
+            try:
+                if plan_token(stored_bytes(path)) != session.plan_saved_token:
+                    raise ValueError("Die Messliste wurde in einem anderen Tab geändert. Bitte die PDF erneut öffnen.")
+                atomic_write(path, data)
+                session.plan_saved_token = plan_token(data)
+            finally:
+                lock.unlock()
+            self.statusBar().showMessage("Maßstäbe und Messliste lokal gespeichert.", 8000)
+            return True
+        except Exception as exc:
+            self.error(exc)
+            return False
+
+    def measurement_list(self):
+        session = self.current
+        if not session:
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Messliste")
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Messnamen per Doppelklick bearbeiten. „Messliste speichern“ speichert alle Maße und Maßstäbe "
+                      "lokal für diese PDF-Fassung.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        rows = QTableWidget(0, 3)
+        rows.setHorizontalHeaderLabels(["Seite", "Name", "Messwert"])
+        rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        entries = [(index, plan, number) for index, plan in plan_entries(session.doc, session.plan_measurements)
+                   for number in range(len(plan.marks))]
+        rows.setRowCount(len(entries))
+        for row, (index, plan, number) in enumerate(entries):
+            mark = plan.marks[number]
+            for column, value in enumerate((str(index + 1), mark.name, mark.label(plan.scale))):
+                item = QTableWidgetItem(value)
+                if column != 1:
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                rows.setItem(row, column, item)
+        layout.addWidget(rows)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        save = buttons.addButton("Messliste speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        jump = buttons.addButton("Zur Seite", QDialogButtonBox.ButtonRole.ActionRole)
+        jump.setEnabled(bool(entries))
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def name_changed(item):
+            if item.column() == 1:
+                _, plan, number = entries[item.row()]
+                value = "".join(char for char in item.text().strip() if ord(char) >= 32)[:80]
+                plan.marks[number] = replace(plan.marks[number], name=value)
+                if item.text() != value:
+                    item.setText(value)
+                self.canvas.update()
+
+        def go():
+            if rows.currentRow() >= 0:
+                self.go_page(entries[rows.currentRow()][0])
+                dialog.accept()
+
+        rows.itemChanged.connect(name_changed)
+        save.clicked.connect(lambda: self.save_measurements(session))
+        jump.clicked.connect(go)
+        if entries:
+            rows.setCurrentCell(0, 1)
+        dialog.resize(660, 430)
+        dialog.exec()
+
+    def export_measurements(self):
+        session = self.current
+        if not session:
+            return
+        if not any(plan.marks for _, plan in plan_entries(session.doc, session.plan_measurements)):
+            QMessageBox.information(self, "PDF mit Maßen", "Bitte zuerst eine Strecke oder Fläche messen.")
+            return
+        try:
+            if session.password:
+                raise ValueError("Bitte eine PDF ohne Passwortschutz auswählen.")
+            font_path = Path(os.environ["WINDIR"]) / "Fonts/arial.ttf"
+            with draw_plan_copy(session.doc, session.plan_measurements, font_path) as output:
+                if not self.preview_send(output, "Die Maßlinien, Flächen und Beschriftungen erscheinen in einer separaten PDF-Kopie.",
+                                         "PDF-Kopie mit Maßen prüfen"):
+                    return
+                target = self.output_path(" - mit Maßen", "PDF-Kopie mit Maßen speichern")
+                if not target:
+                    return
+                if target.resolve() == session.recovery_path:
+                    raise ValueError("Bitte einen anderen Namen als den der bearbeiteten PDF wählen.")
+                save_copy(output, target)
+            self.statusBar().showMessage(f"PDF-Kopie mit Maßen gespeichert: {target.name}", 7500)
+        except Exception as exc:
+            self.error(exc)
+
+
     def current_plan(self, create=False):
         session = self.current
         if not session:
             return None
         page = session.doc[session.page]
-        key = page.xref, tuple(page.cropbox), tuple(page.mediabox)
+        key = plan_page_key(page)
         if create and key not in session.plan_measurements:
             session.plan_measurements[key] = PlanMeasurements()
         return session.plan_measurements.get(key)
@@ -1608,7 +1736,9 @@ class Window(QMainWindow):
                 painter.drawEllipse(point, 3.5, 3.5)
             if label:
                 center = screen.boundingRect().center()
-                width = painter.fontMetrics().horizontalAdvance(label) + 14
+                metrics = painter.fontMetrics()
+                label = metrics.elidedText(label, Qt.TextElideMode.ElideRight, max(1, self.canvas.width() - 16))
+                width = metrics.horizontalAdvance(label) + 14
                 x = min(max(1, center.x() - width / 2), max(1, self.canvas.width() - width - 1))
                 y = min(max(1, center.y() - 24), max(1, self.canvas.height() - 24))
                 box = QRectF(x, y, width, 23)
@@ -1618,7 +1748,7 @@ class Window(QMainWindow):
                 painter.drawText(box, Qt.AlignmentFlag.AlignCenter, label)
 
         for mark in marks:
-            draw(mark.points, mark.area, mark.label(plan.scale))
+            draw(mark.points, mark.area, mark.caption(plan.scale))
         if self.measure_points:
             points = [*self.measure_points]
             if self.measure_hover is not None:
@@ -5655,6 +5785,8 @@ class Window(QMainWindow):
         self.statusBar().showMessage(f"Kopie gespeichert: {Path(target).name}", 6500)
         session.changed = False
         session.recovery_path = Path(target).resolve()
+        session.plan_source_stamp = file_signature(session.recovery_path)
+        session.plan_saved_token = None
         self.write_recovery()
         for entry in session.history + session.redo_stack:
             entry[2] = True
