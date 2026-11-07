@@ -23,14 +23,52 @@ def page_image(source, dpi=180, clip=None):
     return source.get_pixmap(matrix=pdf.Matrix(scale, scale), colorspace=pdf.csRGB, alpha=False, clip=clip)
 
 
-def export_archive(source, path, color_profile):
+def prepare_embedded_fonts(doc):
+    doc.subset_fonts()
+    for xref in range(1, doc.xref_length()):
+        if (doc.xref_get_key(xref, "Subtype")[1] == "/CIDFontType2"
+                and doc.xref_get_key(xref, "CIDToGIDMap")[0] == "null"):
+            doc.xref_set_key(xref, "CIDToGIDMap", "/Identity")
+
+
+def archive_text(original, page, font, font_name):
+    flags = pdf.TEXTFLAGS_DICT & ~pdf.TEXT_PRESERVE_IMAGES
+    for block in original.get_text("dict", flags=flags, sort=True)["blocks"]:
+        for line in block.get("lines", ()):
+            text = "".join(span["text"] for span in line["spans"]).strip()
+            rect = (pdf.Rect(line["bbox"]) * original.rotation_matrix) & page.rect
+            if not text or rect.is_empty:
+                continue
+            size = max(1, min(rect.height * 0.75, 32))
+            point = pdf.Point(rect.x0, min(rect.y1, rect.y0 + size))
+            try:
+                text.encode("cp1252")
+                replacement = text
+            except UnicodeEncodeError:
+                replacement = "x" * len(text)
+            advance = font.text_length(replacement, fontsize=size)
+            if advance <= 0:
+                continue
+            page.insert_text(point, replacement, fontname=font_name, fontsize=size, render_mode=3,
+                             morph=(point, pdf.Matrix(rect.width / advance, 1)))
+            if replacement != text:
+                # Preserve characters outside the simple font's encoding.
+                header = "/Span <</ActualText " + pdf.get_pdf_str(text) + ">> BDC"
+                tag_stream(page.parent, page.get_contents()[-1], header.encode("ascii"))
+
+
+def export_archive(source, path, color_profile, font_path=None):
     profile = Path(color_profile).read_bytes()
     if len(profile) < 128 or profile[16:20] != b"RGB " or profile[36:40] != b"acsp":
         raise ValueError("Das Windows-sRGB-Farbprofil ist ungültig.")
     with pdf.open() as doc:
+        font = pdf.Font(fontfile=str(font_path)) if font_path is not None else None
         for original in source:
             page = doc.new_page(width=original.rect.width, height=original.rect.height)
             page.insert_image(page.rect, pixmap=page_image(original))
+            if font is not None and original.get_text().strip():
+                page.insert_font(fontname="Werkbank", fontbuffer=font.buffer, set_simple=True)
+                archive_text(original, page, font, "Werkbank")
         profile_ref = object_ref(doc, "<< /N 3 /Alternate /DeviceRGB >>")
         doc.update_stream(profile_ref, profile)
         intent = object_ref(doc, "<< /Type /OutputIntent /S /GTS_PDFA1 "
@@ -46,6 +84,8 @@ def export_archive(source, path, color_profile):
   </rdf:RDF>
 </x:xmpmeta>
 <?xpacket end="w"?>''')
+        if font is not None:
+            prepare_embedded_fonts(doc)
         doc.save(path, garbage=4, deflate=True)
 
 
@@ -145,9 +185,5 @@ def export_accessible(source, path, pages, title, language, font_path):
   </rdf:RDF>
 </x:xmpmeta>
 <?xpacket end="w"?>''')
-        doc.subset_fonts()
-        for xref in range(1, doc.xref_length()):
-            if (doc.xref_get_key(xref, "Subtype")[1] == "/CIDFontType2"
-                    and doc.xref_get_key(xref, "CIDToGIDMap")[0] == "null"):
-                doc.xref_set_key(xref, "CIDToGIDMap", "/Identity")
+        prepare_embedded_fonts(doc)
         doc.save(path, garbage=4, deflate=True)

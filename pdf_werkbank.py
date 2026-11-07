@@ -10,6 +10,7 @@ import tempfile
 import unicodedata
 import uuid
 from collections import Counter
+from datetime import date
 from difflib import SequenceMatcher
 from itertools import zip_longest
 from pathlib import Path
@@ -38,8 +39,9 @@ from page_tools import crop_page, edit_image, image_at, scan_command, scanned_do
 from assistants import (add_suggested_field, append_scan, clean_hidden, form_candidates, redaction_candidates,
                         scan_quality, similar_scan, text_changes)
 from recovery import Recovery, atomic_write
+from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
 
-VERSION = (1, 8, 0)
+VERSION = (1, 9, 0)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -679,7 +681,7 @@ class Window(QMainWindow):
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
                          ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs)]),
             ("Kommentar", [("Lesen", lambda: self.set_mode("Lesen")), ("Text markieren", lambda: self.set_mode("Markieren")),
-                            ("Notiz setzen", lambda: self.set_mode("Notiz"))]),
+                            ("Notiz setzen", lambda: self.set_mode("Notiz")), ("Kommentarübersicht", self.review_comments)]),
             ("Seiten", [("Nach links drehen", lambda: self.edit_page("rotate", -90)),
                         ("Nach rechts drehen", lambda: self.edit_page("rotate", 90)),
                         ("Nach vorn", lambda: self.edit_page("move", -1)), ("Nach hinten", lambda: self.edit_page("move", 1)),
@@ -692,7 +694,8 @@ class Window(QMainWindow):
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
                               ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen"))]),
             ("Dokument", [("Lesezeichen", self.bookmarks), ("Link einfügen", lambda: self.set_mode("Link")),
-                           ("Seitenzahlen", self.add_page_numbers), ("Stempel", lambda: self.set_mode("Stempel"))]),
+                           ("Seitenzahlen", self.add_page_numbers), ("Kopf- und Fußzeilen", self.headers_and_footers),
+                           ("Anlagen", self.manage_attachments), ("Stempel", lambda: self.set_mode("Stempel"))]),
             ("Export & Schutz", [("Word", self.export_office), ("Excel", lambda: self.export_office(True)),
                                  ("Word mit Layout", lambda: self.export_office(layout=True)),
                                  ("Passwortschutz", self.protect_copy), ("Stapelverarbeitung", self.batch_process),
@@ -1205,6 +1208,8 @@ class Window(QMainWindow):
             ocr = QCheckBox("Scan-PDF durchsuchbar machen (Deutsch und Englisch)")
             ocr.setChecked(settings.value("scan/ocr", True, type=bool))
             layout.addWidget(ocr)
+            archive = QCheckBox("Als geprüftes PDF/A-Archiv speichern")
+            layout.addWidget(archive)
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
             save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
             save_button.setText("Als eine PDF speichern")
@@ -1268,7 +1273,11 @@ class Window(QMainWindow):
                         if failures:
                             QMessageBox.information(self, "Texterkennung", "Ohne neue Textebene: Seite " +
                                                     ", ".join(map(str, failures)))
-                    self.save_scanned_document(result)
+                    if archive.isChecked():
+                        self.archive_document(result, Path.home() / "Documents" / "Scan - Archiv.pdf",
+                                              run_ocr=False)
+                    else:
+                        self.save_scanned_document(result)
             except Exception as exc:
                 self.error(exc)
 
@@ -1369,6 +1378,291 @@ class Window(QMainWindow):
             self.error(exc)
             return
         self.changed()
+
+    def headers_and_footers(self):
+        session = self.current
+        if not session:
+            return
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        try:
+            templates = json.loads(settings.value("document/page-labels", "{}", str))
+            if not isinstance(templates, dict):
+                raise ValueError()
+        except ValueError:
+            templates = {}
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Kopf- und Fußzeilen")
+        dialog.resize(680, 730)
+        layout = QVBoxLayout(dialog)
+        form = QFormLayout()
+        layout.addLayout(form)
+        template = QComboBox()
+        template.addItem("Neue Vorlage")
+        template.addItems(sorted(templates))
+        form.addRow("Vorlage", template)
+        header = QLineEdit()
+        footer = QLineEdit("Seite {Seite} von {Seiten}")
+        indices = QLineEdit(f"1-{len(session.doc)}")
+        alignment = QComboBox()
+        alignment.addItems(["links", "mittig", "rechts"])
+        alignment.setCurrentText("mittig")
+        size = QSpinBox()
+        size.setRange(6, 24)
+        size.setValue(10)
+        sample = QSpinBox()
+        sample.setRange(1, len(session.doc))
+        sample.setValue(session.page + 1)
+        for label, field in (("Kopfzeile", header), ("Fußzeile", footer), ("Seiten", indices),
+                             ("Ausrichtung", alignment), ("Schriftgröße", size), ("Vorschauseite", sample)):
+            form.addRow(label, field)
+        layout.addWidget(QLabel("Platzhalter  {Seite}   {Seiten}   {Datum}   {Datei}"))
+        status = QLabel()
+        status.setWordWrap(True)
+        layout.addWidget(status)
+        area = QScrollArea()
+        area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image = QLabel()
+        area.setWidget(image)
+        layout.addWidget(area, 1)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        save = buttons.addButton("Vorlage speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        layout.addWidget(buttons)
+        today = date.today()
+
+        def values():
+            return header.text(), footer.text(), alignment.currentText(), size.value()
+
+        def placements(page):
+            return list(page_labels(page, session.path.name, *values(), today))
+
+        def render_preview():
+            try:
+                selected = page_selection(indices.text(), len(session.doc))
+                page = session.doc[sample.value() - 1]
+                labels = placements(page) if page.number in selected else []
+                notice = ("Mögliche Überdeckung auf der Vorschauseite. Bitte prüfen." if label_conflicts(page, labels)
+                          else "Vorschauseite" if labels else "Diese Seite ist von der Auswahl ausgenommen.")
+                with pdf.open() as copy:
+                    copy.insert_pdf(session.doc, from_page=page.number, to_page=page.number)
+                    insert_labels(copy[0], labels, size.value())
+                    rendered = pixmap(copy[0], min(440 / page.rect.width, 480 / page.rect.height))
+                image.setPixmap(rendered)
+                image.resize(rendered.size())
+                status.setText(notice)
+            except Exception as exc:
+                image.clear()
+                status.setText(str(exc))
+
+        def save_template():
+            name, ok = QInputDialog.getText(dialog, "Vorlage speichern", "Name",
+                                            text=template.currentText() if template.currentIndex() else "")
+            name = name.strip()
+            if not ok or not name or name == template.itemText(0):
+                return
+            if name not in templates:
+                template.addItem(name)
+            templates[name] = values()
+            settings.setValue("document/page-labels", json.dumps(templates, ensure_ascii=False))
+            template.setCurrentText(name)
+
+        def load_template(index):
+            stored = templates.get(template.itemText(index)) if index > 0 else None
+            if isinstance(stored, (list, tuple)) and len(stored) == 4:
+                header.setText(str(stored[0]))
+                footer.setText(str(stored[1]))
+                alignment.setCurrentText(str(stored[2]))
+                if isinstance(stored[3], int):
+                    size.setValue(stored[3])
+
+        timer = QTimer(dialog, interval=120, singleShot=True)
+        timer.timeout.connect(render_preview)
+        for field in (header, footer, indices):
+            field.textChanged.connect(lambda _: timer.start())
+        alignment.currentIndexChanged.connect(lambda _: timer.start())
+        size.valueChanged.connect(lambda _: timer.start())
+        sample.valueChanged.connect(lambda _: timer.start())
+        template.currentIndexChanged.connect(load_template)
+        save.clicked.connect(save_template)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        render_preview()
+        while dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                selected = page_selection(indices.text(), len(session.doc))
+                staged = [(index, placements(session.doc[index])) for index in selected]
+                if not any(labels for _, labels in staged):
+                    raise ValueError("Bitte eine Kopf- oder Fußzeile eingeben.")
+                overlaps = [str(index + 1) for index, labels in staged if label_conflicts(session.doc[index], labels)]
+                if overlaps and QMessageBox.question(dialog, "Mögliche Überdeckung",
+                        "Vorhandener Inhalt liegt im Bereich der Kopf- oder Fußzeile auf Seite "
+                        + ", ".join(overlaps) + ". Trotzdem einfügen?") != QMessageBox.StandardButton.Yes:
+                    continue
+            except (ValueError, RuntimeError) as exc:
+                self.error(exc)
+                continue
+            session.checkpoint()
+            try:
+                for index, labels in staged:
+                    insert_labels(session.doc[index], labels, size.value())
+            except Exception as exc:
+                session.undo()
+                self.error(exc)
+                return
+            self.changed()
+            return
+
+    def review_comments(self):
+        session = self.current
+        if not session:
+            return
+        entries = list(comments(session.doc))
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Kommentarübersicht")
+        dialog.resize(650, 540)
+        layout = QVBoxLayout(dialog)
+        search = QLineEdit()
+        search.setPlaceholderText("Nach Text, Typ, Autor oder Seite filtern")
+        layout.addWidget(search)
+        rows = QListWidget()
+        layout.addWidget(rows, 1)
+        body = QPlainTextEdit()
+        body.setReadOnly(True)
+        body.setMaximumHeight(120)
+        layout.addWidget(body)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        jump = buttons.addButton("Zur Stelle", QDialogButtonBox.ButtonRole.ActionRole)
+        export = buttons.addButton("Gefilterte Übersicht speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def label(entry):
+            index, _, kind, author, text = entry
+            return f"Seite {index + 1} · {kind}" + (f" · {author}" if author else "") + (f" · {text}" if text else "")
+
+        def refresh():
+            rows.clear()
+            for index, entry in enumerate(entries):
+                value = label(entry)
+                if search.text().casefold() in value.casefold():
+                    item = QListWidgetItem(" ".join(value.split())[:160])
+                    item.setData(Qt.ItemDataRole.UserRole, index)
+                    rows.addItem(item)
+            rows.setCurrentRow(0)
+            export.setEnabled(rows.count() > 0)
+
+        def display(item):
+            jump.setEnabled(item is not None)
+            body.setPlainText(label(entries[item.data(Qt.ItemDataRole.UserRole)]) if item is not None else "Keine Kommentare gefunden.")
+
+        def go():
+            item = rows.currentItem()
+            if item is None:
+                return
+            page, box, *_ = entries[item.data(Qt.ItemDataRole.UserRole)]
+            self.thumbs.setCurrentRow(page)
+            self.go_page(page)
+            self.scroll.ensureVisible(round(box.x0 * self.scale), round(box.y0 * self.scale), 20, 60)
+            dialog.accept()
+
+        def save_summary():
+            target, _ = QFileDialog.getSaveFileName(dialog, "Kommentarübersicht speichern",
+                                                    str(session.path.with_suffix(".txt")), "Textdateien (*.txt)")
+            if target:
+                path = Path(target if target.lower().endswith(".txt") else target + ".txt")
+                lines = [label(entries[rows.item(i).data(Qt.ItemDataRole.UserRole)]) for i in range(rows.count())]
+                try:
+                    atomic_write(path, ("\n\n".join(lines) + "\n").encode("utf-8"))
+                except OSError as exc:
+                    self.error(exc)
+
+        search.textChanged.connect(lambda _: refresh())
+        rows.currentItemChanged.connect(lambda item, _: display(item))
+        rows.itemDoubleClicked.connect(lambda _: go())
+        jump.clicked.connect(go)
+        export.clicked.connect(save_summary)
+        refresh()
+        display(rows.currentItem())
+        dialog.exec()
+
+    def manage_attachments(self):
+        session = self.standards_source()
+        if not session:
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Anlagen")
+        dialog.resize(600, 440)
+        layout = QVBoxLayout(dialog)
+        rows = QListWidget()
+        layout.addWidget(rows)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        add = buttons.addButton("Datei hinzufügen", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton("Anlage speichern unter", QDialogButtonBox.ButtonRole.ActionRole)
+        remove = buttons.addButton("Anlage entfernen", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        entries = []
+
+        def refresh():
+            entries[:] = attachments(session.doc)
+            rows.clear()
+            for _, name, index, _ in entries:
+                rows.addItem(f"{name} · " + (f"Seite {index + 1}" if index is not None else "Dokument"))
+            rows.setCurrentRow(0)
+            save.setEnabled(bool(entries))
+            remove.setEnabled(bool(entries))
+
+        def mutate(callback):
+            session.checkpoint()
+            try:
+                callback()
+            except Exception:
+                session.undo()
+                raise
+            self.changed()
+            refresh()
+
+        def add_file():
+            path, _ = QFileDialog.getOpenFileName(dialog, "Datei als Anlage hinzufügen")
+            if path:
+                source = Path(path)
+                if source.name in session.doc.embfile_names():
+                    raise ValueError("Eine Dokumentanlage mit diesem Namen ist bereits vorhanden.")
+                if source.stat().st_size > 100 * 1024 * 1024:
+                    raise ValueError("Die Anlage darf höchstens 100 MB groß sein.")
+                payload = source.read_bytes()
+                mutate(lambda: session.doc.embfile_add(source.name, payload, filename=source.name, ufilename=source.name))
+
+        def selected(remove_selected=False):
+            row = rows.currentRow()
+            if row < 0:
+                return
+            key, name, index, xref = entries[row]
+            page = session.doc[index] if index is not None else None
+            annot = page.load_annot(xref) if page is not None else None
+            if remove_selected:
+                if QMessageBox.question(dialog, "Anlage entfernen", f"„{name}“ aus der PDF entfernen?"
+                                        ) == QMessageBox.StandardButton.Yes:
+                    mutate(lambda: page.delete_annot(annot) if page is not None else session.doc.embfile_del(key))
+                return
+            filename = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name).strip(" .") or "Anlage"
+            target, _ = QFileDialog.getSaveFileName(dialog, "Anlage speichern unter", str(session.path.parent / filename))
+            if target:
+                path = Path(target)
+                if any(path.resolve() == opened.path.resolve() for opened in self.sessions):
+                    raise ValueError("Eine geöffnete PDF kann nicht durch die Anlage ersetzt werden.")
+                atomic_write(path, annot.get_file() if annot is not None else session.doc.embfile_get(key))
+
+        def safely(callback):
+            try:
+                callback()
+            except Exception as exc:
+                self.error(exc)
+
+        add.clicked.connect(lambda: safely(add_file))
+        save.clicked.connect(lambda: safely(selected))
+        remove.clicked.connect(lambda: safely(lambda: selected(True)))
+        refresh()
+        dialog.exec()
 
     def put_link(self, page, rect):
         if rect.width < 3 or rect.height < 3:
@@ -1632,32 +1926,74 @@ class Window(QMainWindow):
         session = self.standards_source()
         if not session:
             return
-        if QMessageBox.question(self, "PDF/A-Archivkopie",
-                                "Die Archivkopie speichert das sichtbare Seitenbild. Suchtext, "
-                                "ausfüllbare Felder, Anhänge und Signaturen werden nicht übernommen. Fortfahren?"
-                                ) != QMessageBox.StandardButton.Yes:
+        self.archive_document(session.doc, session.path.with_stem(session.path.stem + " - Archiv"))
+
+    def archive_document(self, source, suggested, run_ocr=True):
+        options = QDialog(self)
+        options.setWindowTitle("Durchsuchbare PDF/A-Archivkopie")
+        form = QFormLayout(options)
+        description = QLabel("Das Seitenbild und vorhandener Suchtext werden übernommen. Ausfüllbare Felder, Anhänge "
+                             "und Signaturen bleiben in der ursprünglichen Datei. veraPDF prüft die Kopie vor dem Speichern.")
+        description.setWordWrap(True)
+        form.addRow(description)
+        recognize = QCheckBox("Seiten ohne Text per OCR erkennen (Deutsch und Englisch)")
+        recognize.setChecked(run_ocr)
+        form.addRow(recognize)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(options.accept)
+        buttons.rejected.connect(options.reject)
+        form.addRow(buttons)
+        if options.exec() != QDialog.DialogCode.Accepted:
             return
-        target = self.output_path(" - Archiv", "PDF/A-Archivkopie speichern")
-        if not target:
+        selected, _ = QFileDialog.getSaveFileName(self, "PDF/A-Archivkopie speichern", str(suggested), "PDF-Dateien (*.pdf)")
+        if not selected:
+            return
+        target = Path(selected if selected.lower().endswith(".pdf") else selected + ".pdf")
+        if any(target.resolve() == session.path.resolve() for session in self.sessions):
+            self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+            return
+        tools = self.standard_tools()
+        if tools is None:
             return
         try:
             with tempfile.TemporaryDirectory(dir=target.parent) as folder:
                 candidate = Path(folder) / "Archiv.pdf"
-                profile = Path(os.environ["WINDIR"]) / "System32/spool/drivers/color/sRGB Color Space Profile.icm"
-                export_archive(session.doc, candidate, profile)
+                windows = Path(os.environ["WINDIR"])
+                profile = windows / "System32/spool/drivers/color/sRGB Color Space Profile.icm"
+                font = windows / "Fonts/arial.ttf"
+                with pdf.open(stream=source.tobytes(), filetype="pdf") as copy:
+                    if recognize.isChecked():
+                        for page in copy:
+                            if page.rotation and not page.get_text().strip():
+                                page.remove_rotation()
+                        count, _ = self.send_ocr(copy, range(len(copy)), "deu+eng")
+                        if count is None:
+                            return
+                    QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+                    try:
+                        export_archive(copy, candidate, profile, font)
+                        passed, details = validate_standard(*tools, candidate, "2b")
+                    finally:
+                        QApplication.restoreOverrideCursor()
+                if not passed:
+                    raise ValueError("veraPDF hat die Archivkopie abgelehnt.\n" + "\n".join(details[:10]))
+                with pdf.open(candidate) as check:
+                    missing = [str(page.number + 1) for page in check if not page.get_text().strip()]
+                summary = "PDF/A-2b von veraPDF bestätigt."
+                if missing:
+                    summary += " Ohne Suchtext: Seite " + ", ".join(missing) + "."
+                if not self.preview_send_from_path(candidate, summary):
+                    return
                 os.replace(candidate, target)
-            self.statusBar().showMessage(f"Archivkopie gespeichert: {target.name}. Konformität separat prüfen.", 9000)
+            self.statusBar().showMessage(f"Geprüfte Archivkopie gespeichert: {target.name}", 9000)
         except Exception as exc:
             self.error(exc)
 
-    def standard_check(self):
-        label, ok = QInputDialog.getItem(self, "PDF-Norm prüfen", "Prüfprofil",
-                                          ["PDF/A-2b (Archiv)", "PDF/UA-1 (Barrierefreiheit)"], editable=False)
-        if not ok:
-            return
-        path, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF prüfen", "", "PDF-Dateien (*.pdf)")
-        if not path:
-            return
+    def preview_send_from_path(self, path, summary):
+        with pdf.open(path) as document:
+            return self.preview_send(document, summary, "Geprüfte Archivkopie ansehen")
+
+    def standard_tools(self):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         base = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
         jars = sorted((base / "veraPDF" / "bin").glob("cli-*.jar"))
@@ -1672,16 +2008,29 @@ class Window(QMainWindow):
                                                  "veraPDF CLI (*.jar)")
         if not jar:
             return
+        settings.setValue("standards/java", java)
+        settings.setValue("standards/jar", jar)
+        return java, jar
+
+    def standard_check(self):
+        label, ok = QInputDialog.getItem(self, "PDF-Norm prüfen", "Prüfprofil",
+                                          ["PDF/A-2b (Archiv)", "PDF/UA-1 (Barrierefreiheit)"], editable=False)
+        if not ok:
+            return
+        path, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF prüfen", "", "PDF-Dateien (*.pdf)")
+        if not path:
+            return
+        tools = self.standard_tools()
+        if tools is None:
+            return
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
-            passed, details = validate_standard(java, jar, path, "2b" if label.startswith("PDF/A") else "ua1")
+            passed, details = validate_standard(*tools, path, "2b" if label.startswith("PDF/A") else "ua1")
         except Exception as exc:
             self.error(exc)
             return
         finally:
             QApplication.restoreOverrideCursor()
-        settings.setValue("standards/java", java)
-        settings.setValue("standards/jar", jar)
         result = QMessageBox(self)
         result.setWindowTitle(label)
         result.setText("veraPDF-Prüfung bestanden." if passed else "veraPDF hat Abweichungen gefunden.")
@@ -2262,9 +2611,9 @@ class Window(QMainWindow):
         finally:
             progress.close()
 
-    def preview_send(self, doc, summary):
+    def preview_send(self, doc, summary, title="Versandkopie prüfen"):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Versandkopie prüfen")
+        dialog.setWindowTitle(title)
         layout = QVBoxLayout(dialog)
         info = QLabel(summary)
         info.setWordWrap(True)
