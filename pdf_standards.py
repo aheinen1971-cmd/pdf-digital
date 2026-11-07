@@ -2,6 +2,7 @@
 import os
 import subprocess
 from pathlib import Path
+from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
@@ -57,10 +58,65 @@ def archive_text(original, page, font, font_name):
                 tag_stream(page.parent, page.get_contents()[-1], header.encode("ascii"))
 
 
-def export_archive(source, path, color_profile, font_path=None):
+def add_archive_intent(doc, color_profile):
     profile = Path(color_profile).read_bytes()
     if len(profile) < 128 or profile[16:20] != b"RGB " or profile[36:40] != b"acsp":
         raise ValueError("Das Windows-sRGB-Farbprofil ist ungültig.")
+    profile_ref = object_ref(doc, "<< /N 3 /Alternate /DeviceRGB >>")
+    doc.update_stream(profile_ref, profile)
+    intent = object_ref(doc, "<< /Type /OutputIntent /S /GTS_PDFA1 "
+                        "/OutputConditionIdentifier (sRGB IEC61966-2.1) /Info (sRGB IEC61966-2.1) "
+                        f"/DestOutputProfile {reference(profile_ref)} >>")
+    doc.xref_set_key(doc.pdf_catalog(), "OutputIntents", f"[{reference(intent)}]")
+
+
+def mark_archive(doc):
+    rdf_ns = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    aid_ns = "http://www.aiim.org/pdfa/ns/id/"
+    existing = doc.get_xml_metadata()
+    if existing and "<!DOCTYPE" in existing:
+        raise ValueError("Die vorhandenen XMP-Metadaten können nicht sicher übernommen werden.")
+    content = existing or ('<x:xmpmeta xmlns:x="adobe:ns:meta/">'
+                           f'<rdf:RDF xmlns:rdf="{rdf_ns}"/></x:xmpmeta>')
+    with minidom.parseString(content) as metadata:
+        roots = metadata.getElementsByTagNameNS(rdf_ns, "RDF")
+        if len(roots) != 1:
+            raise ValueError("Die vorhandenen XMP-Metadaten haben keine eindeutige RDF-Struktur.")
+        for element in metadata.getElementsByTagName("*"):
+            for name in ("part", "conformance", "rev", "amd", "corr"):
+                if element.hasAttributeNS(aid_ns, name):
+                    element.removeAttributeNS(aid_ns, name)
+        for name in ("part", "conformance", "rev", "amd", "corr"):
+            for node in list(metadata.getElementsByTagNameNS(aid_ns, name)):
+                node.parentNode.removeChild(node)
+        entry = metadata.createElementNS(rdf_ns, "rdf:Description")
+        entry.setAttribute("xmlns:rdf", rdf_ns)
+        entry.setAttributeNS(rdf_ns, "rdf:about", "")
+        entry.setAttribute("xmlns:pdfaid", aid_ns)
+        for name, value in (("part", "2"), ("conformance", "B")):
+            child = metadata.createElementNS(aid_ns, "pdfaid:" + name)
+            child.appendChild(metadata.createTextNode(value))
+            entry.appendChild(child)
+        roots[0].appendChild(entry)
+        xml = metadata.documentElement.toxml()
+    doc.set_xml_metadata('<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
+                         + xml + '\n<?xpacket end="w"?>')
+
+
+def export_vector_archive(source, path, color_profile):
+    if source.needs_pass or not source.permissions & pdf.PDF_PERM_MODIFY:
+        raise ValueError("Bitte eine ungeschützte PDF auswählen.")
+    if source.get_sigflags() > 0 or any(field.field_type == pdf.PDF_WIDGET_TYPE_SIGNATURE
+                                       for page in source for field in page.widgets()):
+        raise ValueError("Für signierte PDFs oder Signaturfelder ist die Originaltext-Option deaktiviert.")
+    with pdf.open(stream=source.tobytes(), filetype="pdf") as copy:
+        if copy.xref_get_key(copy.pdf_catalog(), "OutputIntents")[0] == "null":
+            add_archive_intent(copy, color_profile)
+        mark_archive(copy)
+        copy.save(path, garbage=4, deflate=True)
+
+
+def export_archive(source, path, color_profile, font_path=None):
     with pdf.open() as doc:
         font = pdf.Font(fontfile=str(font_path)) if font_path is not None else None
         for original in source:
@@ -69,21 +125,8 @@ def export_archive(source, path, color_profile, font_path=None):
             if font is not None and original.get_text().strip():
                 page.insert_font(fontname="Werkbank", fontbuffer=font.buffer, set_simple=True)
                 archive_text(original, page, font, "Werkbank")
-        profile_ref = object_ref(doc, "<< /N 3 /Alternate /DeviceRGB >>")
-        doc.update_stream(profile_ref, profile)
-        intent = object_ref(doc, "<< /Type /OutputIntent /S /GTS_PDFA1 "
-                            "/OutputConditionIdentifier (sRGB IEC61966-2.1) /Info (sRGB IEC61966-2.1) "
-                            f"/DestOutputProfile {reference(profile_ref)} >>")
-        doc.xref_set_key(doc.pdf_catalog(), "OutputIntents", f"[{reference(intent)}]")
-        doc.set_xml_metadata('''<?xpacket begin="\ufeff" id="W5M0MpCehiHzreSzNTczkc9d"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/">
-  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">
-      <pdfaid:part>2</pdfaid:part><pdfaid:conformance>B</pdfaid:conformance>
-    </rdf:Description>
-  </rdf:RDF>
-</x:xmpmeta>
-<?xpacket end="w"?>''')
+        add_archive_intent(doc, color_profile)
+        mark_archive(doc)
         if font is not None:
             prepare_embedded_fonts(doc)
         doc.save(path, garbage=4, deflate=True)

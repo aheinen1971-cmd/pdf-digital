@@ -18,7 +18,7 @@ from xml.etree import ElementTree
 
 import pymupdf as pdf
 from PySide6.QtCore import QMimeData, QPoint, QRect, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageSize, QPainter, QPixmap
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPen, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
@@ -34,16 +34,16 @@ from online_updates import ReleaseCheck
 from update_worker import prepared_update
 
 from office_export import export_word, export_word_layout, export_excel
-from pdf_standards import accessibility_blocks, export_accessible, export_archive, validate_standard
+from pdf_standards import accessibility_blocks, export_accessible, export_archive, export_vector_archive, validate_standard
 from pdf_signatures import sign_pdf, verify_pdf
-from page_tools import crop_page, edit_image, feeder_pages, image_at, scan_command, scanned_document, twain_command
+from page_tools import booklet_sheets, crop_page, edit_image, feeder_pages, image_at, impose_booklet, scan_command, scanned_document, twain_command
 from assistants import (add_suggested_field, append_scan, clean_hidden, form_candidates, redaction_candidates,
                         scan_quality, similar_scan, text_changes)
 from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
 from filing import archive_target, clear_index, filename_hint, folder_matches, indexed_matches, scan_breaks, scan_ranges
 
-VERSION = (1, 12, 0)
+VERSION = (1, 13, 0)
 POINTS_PER_MM = 72 / 25.4
 
 STYLE = """
@@ -725,6 +725,7 @@ class Window(QMainWindow):
         self.tools.setExpanding(False)
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
+                       ("Broschürendruck", self.booklet_dialog),
                        ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
             ("Start", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
@@ -754,6 +755,7 @@ class Window(QMainWindow):
                                  ("Passwortschutz", self.protect_copy), ("Stapelverarbeitung", self.batch_process),
                                  ("Gespeicherte Abläufe", self.batch_profiles)]),
             ("Archiv & Zugang", [("PDF/A-Archivkopie", self.archive_copy),
+                                ("PDF/A mit Originaltext", self.archive_vector_copy),
                                 ("PDF/A oder PDF/UA prüfen", self.standard_check),
                                 ("Lesereihenfolge & Bildbeschreibungen", self.accessible_copy)]),
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
@@ -832,6 +834,7 @@ class Window(QMainWindow):
             "inbox": ("Scan-Posteingang", self.scan_inbox),
             "folder": ("Ordnersuche", self.search_folder),
             "duplex": ("Samsung-Duplex", lambda: self.print_dialog(samsung=True)),
+            "booklet": ("Broschürendruck", self.booklet_dialog),
             "open": ("PDF öffnen", self.open_files),
             "save": ("Kopie speichern", self.save),
             "archive": ("PDF/A-Archiv", self.archive_copy),
@@ -2592,6 +2595,42 @@ class Window(QMainWindow):
             return
         self.archive_document(session.doc, session.path.with_stem(session.path.stem + " - Archiv"))
 
+    def archive_vector_copy(self):
+        session = self.standards_source()
+        if not session:
+            return
+        target = self.output_path(" - Archiv Originaltext", "PDF/A mit Originaltext speichern")
+        if not target:
+            return
+        tools = self.standard_tools()
+        if tools is None:
+            return
+        try:
+            with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                candidate = Path(folder) / "Originaltext.pdf"
+                profile = Path(os.environ["WINDIR"]) / "System32/spool/drivers/color/sRGB Color Space Profile.icm"
+                QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+                try:
+                    export_vector_archive(session.doc, candidate, profile)
+                    passed, details = validate_standard(*tools, candidate, "2b")
+                finally:
+                    QApplication.restoreOverrideCursor()
+                if not passed:
+                    raise ValueError("veraPDF hat diese PDF/A-2b-Kopie abgelehnt. "
+                                     "Für eine Archivkopie als Seitenbild gibt es „PDF/A-Archivkopie“.\n"
+                                     + "\n".join(details[:8]))
+                with pdf.open(candidate) as check:
+                    missing = [str(page.number + 1) for page in check if not page.get_text().strip()]
+                    summary = "PDF/A-2b von veraPDF bestätigt. Vorhandener Text und Vektorgrafiken wurden übernommen."
+                    if missing:
+                        summary += " Ohne Suchtext: Seite " + ", ".join(missing) + "."
+                    if not self.preview_send(check, summary, "PDF/A mit Originaltext prüfen"):
+                        return
+                os.replace(candidate, target)
+            self.statusBar().showMessage(f"Geprüfte PDF/A-Kopie gespeichert: {target.name}", 9000)
+        except Exception as exc:
+            self.error(exc)
+
     def choose_archive_options(self, suggested, run_ocr):
         options = QDialog(self)
         options.setWindowTitle("Durchsuchbare PDF/A-Archivkopie")
@@ -3954,6 +3993,124 @@ class Window(QMainWindow):
                 self.error(exc)
             self.recovery = None
         event.accept()
+
+    def booklet_dialog(self):
+        session = self.current
+        if not session:
+            return
+        duplex = QPrinter.DuplexMode.DuplexShortSide
+        printers = [device for device in QPrinterInfo.availablePrinters()
+                    if duplex in device.supportedDuplexModes()]
+        printers.sort(key=lambda device: ("samsung" not in device.printerName().casefold(),
+                                          device.printerName().casefold()))
+        options = QDialog(self)
+        options.setWindowTitle("Broschürendruck")
+        form = QFormLayout(options)
+        selection = QLineEdit(f"1-{len(session.doc)}")
+        form.addRow("PDF-Seiten", selection)
+        devices = QComboBox()
+        devices.addItems([device.printerName() for device in printers] + ["Nur Druck-PDF speichern"])
+        form.addRow("Ausgabe", devices)
+        guide = QLabel("A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.")
+        guide.setWordWrap(True)
+        form.addRow(guide)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Faltvorschau")
+        buttons.accepted.connect(options.accept)
+        buttons.rejected.connect(options.reject)
+        form.addRow(buttons)
+        while options.exec() == QDialog.DialogCode.Accepted:
+            try:
+                indices = page_selection(selection.text(), len(session.doc))
+                sheets = booklet_sheets(indices)
+                printer = None
+                margin = 28
+                if devices.currentIndex() < len(printers):
+                    device = printers[devices.currentIndex()]
+                    printer = QPrinter(device, QPrinter.PrinterMode.HighResolution)
+                    printer.setDocName(session.path.stem + " – Broschüre")
+                    printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+                    printer.setPageOrientation(QPageLayout.Orientation.Landscape)
+                    printer.setPageOrder(QPrinter.PageOrder.FirstPageFirst)
+                    printer.setDuplex(duplex)
+                    printer.setCopyCount(1)
+                    layout = printer.pageLayout()
+                    if (layout.orientation() != QPageLayout.Orientation.Landscape
+                            or layout.pageSize().id() != QPageSize.PageSizeId.A4 or printer.duplex() != duplex):
+                        raise ValueError("Der Drucker hat A4 quer oder Duplex an der kurzen Kante nicht übernommen.")
+                    layout.setUnits(QPageLayout.Unit.Point)
+                    minimum = layout.minimumMargins()
+                    margin = max(margin, minimum.left(), minimum.right(), minimum.top(), minimum.bottom())
+                    printer.setFullPage(True)
+                with impose_booklet(session.doc, sheets, margin) as booklet:
+                    self.booklet_preview(booklet, sheets, printer)
+                return
+            except Exception as exc:
+                self.error(exc)
+
+    def booklet_preview(self, booklet, sheets, printer):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Faltvorschau")
+        dialog.resize(930, 460)
+        layout = QVBoxLayout(dialog)
+        blanks = sum(index is None for sheet in sheets for side in sheet for index in side)
+        layout.addWidget(QLabel(f"A4 quer · {len(sheets)} Blatt · {blanks} leere Heftseiten · Duplex an der kurzen Kante"))
+        preview = QHBoxLayout()
+        layout.addLayout(preview, 1)
+        panels = []
+        for title in ("Vorderseite", "Rückseite"):
+            column = QVBoxLayout()
+            preview.addLayout(column, 1)
+            heading = QLabel(title)
+            column.addWidget(heading, alignment=Qt.AlignmentFlag.AlignHCenter)
+            picture = QLabel()
+            column.addWidget(picture, alignment=Qt.AlignmentFlag.AlignHCenter)
+            panels.append((heading, picture))
+        row = QHBoxLayout()
+        layout.addLayout(row)
+        row.addWidget(QLabel("Blatt"))
+        sheet_number = QSpinBox()
+        sheet_number.setRange(1, len(sheets))
+        row.addWidget(sheet_number)
+        row.addWidget(QLabel(f"von {len(sheets)}"))
+        row.addStretch()
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        save = buttons.addButton("Druck-PDF speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        print_button = buttons.addButton("Jetzt drucken", QDialogButtonBox.ButtonRole.AcceptRole)
+        print_button.setEnabled(printer is not None)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def show(value):
+            for side, ((heading, picture), pair) in enumerate(zip(panels, sheets[value - 1])):
+                pages = ["Leer" if index is None else f"Seite {index + 1}" for index in pair]
+                label = "Vorderseite" if side == 0 else "Rückseite"
+                heading.setText(f"{label} · {pages[0]} | {pages[1]}")
+                page = booklet[(value - 1) * 2 + side]
+                image = pixmap(page, 410 / page.rect.width)
+                painter = QPainter(image)
+                painter.setPen(QPen(QColor("#3677a9"), 1, Qt.PenStyle.DashLine))
+                middle = image.width() // 2
+                painter.drawLine(middle, 0, middle, image.height())
+                painter.end()
+                picture.setPixmap(image)
+
+        def save_pdf():
+            target = self.output_path(" - Broschüre", "Druck-PDF speichern")
+            if target:
+                try:
+                    save_copy(booklet, target)
+                    self.statusBar().showMessage(f"Druck-PDF gespeichert: {target.name}", 6500)
+                except Exception as exc:
+                    self.error(exc)
+
+        sheet_number.valueChanged.connect(show)
+        save.clicked.connect(save_pdf)
+        show(1)
+        if dialog.exec() == QDialog.DialogCode.Accepted and printer is not None:
+            print_pages(booklet, printer, range(len(booklet)))
+            self.statusBar().showMessage("Broschüren-Druckauftrag übergeben.", 6500)
 
     def print_dialog(self, samsung=False):
         session = self.current

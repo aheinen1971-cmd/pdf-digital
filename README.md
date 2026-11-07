@@ -1,11 +1,11 @@
-# PDF Werkbank 1.12.0 für Windows
+# PDF Werkbank 1.13.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.12.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.13.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.12.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.13.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -97,6 +97,10 @@ erhalten.
   mit A4 und Duplex an der langen Kante. Die Duplex-Vorschau zeigt
   Vorder- und Rückseite pro Blatt. Bei ungerader Seitenanzahl wird die
   letzte Rückseite als leer angezeigt.
+- **Datei → Broschürendruck** ordnet ausgewählte Seiten auf A4 im
+  Querformat an. Die Faltvorschau zeigt Vorder- und Rückseite, den Falz
+  und erforderliche Leerseiten. Drucken erfordert Duplex an der kurzen
+  Kante. Die angeordneten Seiten lassen sich auch als Druck-PDF speichern.
 
 ## Dokumentwerkzeuge und Export
 
@@ -170,6 +174,12 @@ erhalten.
   Die Vorschau nennt Seiten ohne Suchtext. Den Ablauf gibt es auch direkt
   im Scanassistenten. Ausfüllbare Felder, Anhänge und Signaturen verbleiben
   in der ursprünglichen Datei.
+- **PDF/A mit Originaltext** erhält vorhandene Textobjekte und Vektorgrafik.
+  Das Werkzeug ergänzt Archivmetadaten und bei Bedarf das Windows-sRGB-
+  Profil. Es eignet sich für PDFs, die damit die PDF/A-2b-Prüfung bestehen,
+  beispielsweise mit bereits eingebetteten Schriften. Bei einer Ablehnung
+  bleibt die Zieldatei unverändert. Die Seitenbild-Archivkopie bleibt
+  separat verfügbar.
 - **Lesereihenfolge & Bildbeschreibungen** erstellt eine Kopie mit
   Dokumenttitel, Sprache, geordneten Absätzen, Überschriften und
   Alternativtexten. Die visuelle Ebene wird als Bild übernommen.

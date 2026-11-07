@@ -7,6 +7,41 @@ from pathlib import Path
 import pymupdf as pdf
 
 
+def booklet_sheets(indices):
+    pages = list(indices)
+    if not pages:
+        raise ValueError("Bitte mindestens eine Seite auswählen.")
+    pages.extend([None] * (-len(pages) % 4))
+    return [((pages[-1 - 2 * sheet], pages[2 * sheet]),
+             (pages[2 * sheet + 1], pages[-2 - 2 * sheet]))
+            for sheet in range(len(pages) // 4)]
+
+
+def impose_booklet(source, sheets, margin=28, gutter=10):
+    width, height = pdf.paper_size("a4-l")
+    halves = (pdf.Rect(margin, margin, width / 2 - gutter, height - margin),
+              pdf.Rect(width / 2 + gutter, margin, width - margin, height - margin))
+    if any(rect.is_empty for rect in halves):
+        raise ValueError("Der Druckbereich ist zu klein für eine Broschüre.")
+    result = pdf.open()
+    try:
+        with pdf.open(stream=source.tobytes(), filetype="pdf") as copy:
+            copy.bake(annots=True, widgets=True)
+            for index in {index for sheet in sheets for side in sheet for index in side if index is not None}:
+                if copy[index].rotation:
+                    copy[index].remove_rotation()
+            for sheet in sheets:
+                for side in sheet:
+                    page = result.new_page(width=width, height=height)
+                    for area, index in zip(halves, side):
+                        if index is not None and copy[index].read_contents().strip():
+                            page.show_pdf_page(area, copy, index)
+        return result
+    except Exception:
+        result.close()
+        raise
+
+
 def crop_page(page, selection):
     visible = page.rect * page.derotation_matrix
     rectangle = pdf.Rect(selection) & visible
