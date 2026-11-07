@@ -29,7 +29,7 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import prepared_update
 
-VERSION = (1, 4, 2)
+VERSION = (1, 4, 3)
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -528,7 +528,7 @@ class Window(QMainWindow):
         self.mode = "Lesen"
         self.search_text = ""
         self.thumb_index = 0
-        self.setWindowTitle("PDF Werkbank")
+        self.setWindowTitle("PDF Werkbank " + ".".join(map(str, VERSION)))
         self.release_check = ReleaseCheck(VERSION, self)
         self.release_check.finished.connect(self.show_online_update)
         self.update_process = None
