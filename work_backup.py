@@ -224,42 +224,53 @@ def write_backup(target, settings, root, password=None):
         for name, data in entries.items():
             archive.writestr(name, data)
     if buffer is not None:
-        salt, nonce = os.urandom(16), os.urandom(12)
-        header = ENCRYPTED_PREFIX + ENCRYPTED_VERSION + salt + nonce
-        payload = buffer.getvalue()
-        if len(header) + len(payload) + 16 > MAX_ENCRYPTED:
-            raise ValueError("Das Werkbank-Backup ist zu groß.")
-        encrypted = backup_cipher(password, salt).encrypt(nonce, payload, header)
-        with Path(target).open("wb") as stream:
-            stream.write(header)
-            stream.write(encrypted)
+        encrypt_package(target, buffer.getvalue(), password, ENCRYPTED_PREFIX, MAX_ENCRYPTED)
 
 
-def read_backup(path, password=None):
+def encrypt_package(target, payload, password, prefix, maximum):
+    if not MIN_PASSWORD <= len(password) <= MAX_PASSWORD:
+        raise ValueError(f"Das Passwort muss {MIN_PASSWORD} bis {MAX_PASSWORD} Zeichen lang sein.")
+    salt, nonce = os.urandom(16), os.urandom(12)
+    header = prefix + ENCRYPTED_VERSION + salt + nonce
+    if len(header) + len(payload) + 16 > maximum:
+        raise ValueError("Das Paket ist zu groß.")
+    encrypted = backup_cipher(password, salt).encrypt(nonce, payload, header)
+    with Path(target).open("wb") as stream:
+        stream.write(header)
+        stream.write(encrypted)
+
+
+def open_package(path, password, prefix, maximum, reader):
     with Path(path).open("rb") as stream:
-        if stream.read(len(ENCRYPTED_PREFIX)) != ENCRYPTED_PREFIX:
+        size = os.fstat(stream.fileno()).st_size
+        if size > maximum:
+            raise ValueError("Das Paket ist zu groß.")
+        if stream.read(len(prefix)) != prefix:
             if password is not None:
                 raise ValueError("Das verschlüsselte Backup wurde beim Lesen verändert.")
             stream.seek(0)
-            return read_backup_zip(stream)
+            return reader(stream)
         version = stream.read(1)
         if version != ENCRYPTED_VERSION:
             raise ValueError("Dieses verschlüsselte Backup-Format wird nicht unterstützt.")
         salt, nonce = stream.read(16), stream.read(12)
-        header = ENCRYPTED_PREFIX + version + salt + nonce
-        size = os.fstat(stream.fileno()).st_size
-        if len(nonce) != 12 or not len(header) + 16 <= size <= MAX_ENCRYPTED:
+        header = prefix + version + salt + nonce
+        if len(nonce) != 12 or not len(header) + 16 <= size <= maximum:
             raise ValueError("Das verschlüsselte Backup ist beschädigt oder zu groß.")
         if password is None:
             raise BackupPasswordRequired("Dieses Backup ist mit einem Passwort geschützt.")
-        ciphertext = stream.read(MAX_ENCRYPTED - len(header) + 1)
+        ciphertext = stream.read(maximum - len(header) + 1)
         if len(ciphertext) != size - len(header):
             raise ValueError("Das verschlüsselte Backup wurde beim Lesen verändert.")
     try:
         payload = backup_cipher(password, salt).decrypt(nonce, ciphertext, header)
     except InvalidTag as exc:
         raise ValueError("Das Passwort ist falsch oder die Sicherungsdatei wurde beschädigt.") from exc
-    return read_backup_zip(io.BytesIO(payload))
+    return reader(io.BytesIO(payload))
+
+
+def read_backup(path, password=None):
+    return open_package(path, password, ENCRYPTED_PREFIX, MAX_ENCRYPTED, read_backup_zip)
 
 
 def read_backup_zip(source):

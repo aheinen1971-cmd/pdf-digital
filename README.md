@@ -1,11 +1,11 @@
-# PDF Werkbank 1.38.0 für Windows
+# PDF Werkbank 1.39.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.38.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.39.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.38.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.39.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -67,6 +67,12 @@ und Formularläufe neu zuordnen** einem alten Ordner seinen neuen Ort zu.
 Excel- und PDF-Eingaben, fertige PDFs und Scan-Entwürfe müssen separat
 mitgenommen werden. Eine vorhandene passende Laufdatei behält ihren
 Fortschritt.
+
+Unter **Datei → Umzugsassistent** kannst du einen Formularlauf und
+ausgewählte Scan-Entwürfe samt PDF- und Excel-Dateien in ein Projektpaket
+mit bis zu 64 MiB Inhalt packen. Optional schützt ein Passwort das Paket.
+Beim Import entsteht ein neuer Projektordner. Scan-Kopien erscheinen im
+Scan-Posteingang und der importierte Lauf unter **Offene Arbeiten**.
 
 ## Pläne messen
 

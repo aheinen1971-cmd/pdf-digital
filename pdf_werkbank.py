@@ -59,6 +59,8 @@ from preferences import (DEFAULT_FAVORITES, FORM_TEMPLATES, GROUPS, export_packa
                          read_package, validate_form_templates)
 from archive_run import ArchiveRun
 from form_run import FormRun
+from project_move import (MAX_PROJECT, import_project, project_sources, read_project, scan_destinations,
+                          write_project)
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
                          app_backup_root, archive_remap, automatic_backup, backup_check_rows, backup_preview,
                          default_scan_inbox, location_plan, location_roots, read_backup, reminder_date,
@@ -69,7 +71,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 38, 0)
+VERSION = (1, 39, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -849,6 +851,7 @@ class Window(QMainWindow):
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
                        ("Einstellungen übertragen", self.transfer_preferences), ("Arbeitsstand sichern", self.work_backup), ("Explorer-Befehle einrichten", self.configure_explorer),
+                       ("Umzugsassistent", self.project_move_dialog),
                        ("Broschürendruck", self.booklet_dialog),
                        ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
                        ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Info", self.update_info), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
@@ -1558,6 +1561,153 @@ class Window(QMainWindow):
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
+    def project_move_dialog(self):
+        actions = ("Projektpaket erstellen", "Projektpaket öffnen")
+        action, ok = QInputDialog.getItem(self, "Umzugsassistent", "Aktion", actions, editable=False)
+        if not ok:
+            return
+        try:
+            if action == actions[0]:
+                self.export_project_move()
+            else:
+                self.import_project_move()
+        except Exception as exc:
+            self.error(exc)
+
+    def project_file_preview(self, title, explanation, rows, allowed=True):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.resize(800, 440)
+        layout = QVBoxLayout(dialog)
+        info = QLabel(explanation)
+        info.setTextFormat(Qt.TextFormat.PlainText)
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        table = QTableWidget(len(rows), 2)
+        table.setHorizontalHeaderLabels(["Datei im Paket", "Größe oder Ziel"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        table.setColumnWidth(0, 290)
+        for row, values in enumerate(rows):
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, column, item)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(allowed)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        return dialog.exec() == QDialog.DialogCode.Accepted and allowed
+
+    def export_project_move(self):
+        selector = QDialog(self)
+        selector.setWindowTitle("Dateien für den Umzug wählen")
+        selector.resize(650, 410)
+        layout = QVBoxLayout(selector)
+        journal = QLineEdit()
+        journal.setReadOnly(True)
+        journal.setPlaceholderText("Kein Formularlauf ausgewählt")
+        layout.addWidget(journal)
+        choose = QPushButton("Formularlauf auswählen")
+        clear = QPushButton("Auswahl des Formularlaufs entfernen")
+        layout.addWidget(choose)
+        layout.addWidget(clear)
+        layout.addWidget(QLabel("Scan-Entwürfe für das Paket ankreuzen"))
+        scans = QListWidget()
+        layout.addWidget(scans)
+        for path in self.scan_drafts():
+            item = QListWidgetItem(path.name)
+            item.setData(Qt.ItemDataRole.UserRole, path)
+            item.setCheckState(Qt.CheckState.Unchecked)
+            scans.addItem(item)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(selector.accept)
+        buttons.rejected.connect(selector.reject)
+        layout.addWidget(buttons)
+
+        def choose_run():
+            name, _ = QFileDialog.getOpenFileName(self, "Formularlauf auswählen",
+                                                 self.favorite_settings.value("form-export/run-folder", "", str),
+                                                 "Werkbank-Formularlauf (*.werkbanklauf)")
+            if name:
+                journal.setText(name)
+
+        choose.clicked.connect(choose_run)
+        clear.clicked.connect(journal.clear)
+        if selector.exec() != QDialog.DialogCode.Accepted:
+            return
+        selected = [scans.item(index).data(Qt.ItemDataRole.UserRole) for index in range(scans.count())
+                    if scans.item(index).checkState() == Qt.CheckState.Checked]
+        state, files = project_sources(Path(journal.text()).resolve() if journal.text() else None, selected)
+        if not files:
+            raise ValueError("Wähle einen Formularlauf oder mindestens einen Scan-Entwurf.")
+        rows, total, missing = [], 0, False
+        for name, (path, _) in files.items():
+            try:
+                size = path.stat().st_size
+                if not path.is_file():
+                    raise OSError(path)
+                total += size
+                rows.append((name, f"{size / 1024:.1f} KiB"))
+            except OSError:
+                missing = True
+                rows.append((name, "Datei fehlt oder ist nicht erreichbar"))
+        description = f"{len(files)} Dateien mit insgesamt {total / 1048576:.2f} MiB vor dem Komprimieren."
+        if total > MAX_PROJECT:
+            description += " Das Paket darf bis zu 64 MiB enthalten."
+        if not self.project_file_preview("Projektpaket prüfen", description, rows, not missing and total <= MAX_PROJECT):
+            return
+        name, _ = QFileDialog.getSaveFileName(self, "Projektpaket speichern", "Umzug.werkbankprojekt",
+                                             "Werkbank-Projekt (*.werkbankprojekt)")
+        if not name:
+            return
+        target = Path(name)
+        if target.suffix.lower() != ".werkbankprojekt":
+            target = target.with_name(target.name + ".werkbankprojekt")
+        confirmed, password = self.backup_password_dialog(project=True)
+        if confirmed:
+            with tempfile.TemporaryDirectory(dir=target.parent) as folder:
+                candidate = Path(folder) / target.name
+                write_project(candidate, state, files, password)
+                read_project(candidate, password)
+                os.replace(candidate, target)
+            self.statusBar().showMessage(f"Projektpaket gespeichert: {target.name}", 8500)
+
+    def import_project_move(self):
+        name, _ = QFileDialog.getOpenFileName(self, "Projektpaket öffnen", "",
+                                             "Werkbank-Projekt (*.werkbankprojekt)")
+        if not name:
+            return
+        package = Path(name)
+        try:
+            state, files = read_project(package)
+        except BackupPasswordRequired:
+            password, ok = QInputDialog.getText(self, "Geschütztes Projektpaket öffnen", "Passwort",
+                                                QLineEdit.EchoMode.Password)
+            if not ok:
+                return
+            state, files = read_project(package, password)
+        folder = QFileDialog.getExistingDirectory(self, "Zielordner für das Projekt wählen")
+        if not folder:
+            return
+        target = Path(folder).resolve() / (package.stem + " – Projekt")
+        destinations = scan_destinations(files, self.inbox_folder())
+        rows = [(key, str(destinations.get(key, target / key))) for key in files]
+        conflict = target.exists() or target.is_symlink()
+        description = ("Der Projektordner ist bereits vorhanden. Wähle beim nächsten Versuch einen anderen Zielordner."
+                       if conflict else f"Projektordner: {target}\nScans erscheinen zusätzlich im Scan-Posteingang. "
+                                        "Bei gleichen Scannamen erhält die neue Kopie einen eindeutigen Namen.")
+        if not self.project_file_preview("Projektimport prüfen", description, rows, not conflict):
+            return
+        journal = import_project(target, state, files, destinations)
+        if journal is not None:
+            self.remember_form_run(journal)
+            self.favorite_settings.setValue("form-export/run-folder", str(journal.parent))
+            self.favorite_settings.sync()
+        self.show_open_work()
+
     def work_backup(self):
         action, ok = QInputDialog.getItem(self, "Arbeitsstand sichern", "Aktion",
                                           ("Backup speichern", "Backup wiederherstellen", "Rücksicherung testen"),
@@ -1626,11 +1776,12 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
         dialog.exec()
 
-    def backup_password_dialog(self):
+    def backup_password_dialog(self, project=False):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Backup speichern")
+        label = "Projektpaket" if project else "Backup"
+        dialog.setWindowTitle(f"{label} speichern")
         layout = QVBoxLayout(dialog)
-        protect = QCheckBox("Backup mit Passwort schützen")
+        protect = QCheckBox(f"{label} mit Passwort schützen")
         layout.addWidget(protect)
         fields = QWidget(dialog)
         form = QFormLayout(fields)
@@ -5855,9 +6006,7 @@ class Window(QMainWindow):
             raise ValueError("Dieser Formularlauf ist bereits in einem anderen Fenster geöffnet.")
         try:
             run = FormRun.load(journal)
-            recent = self.favorite_settings.value("form-export/runs", [], list)
-            self.favorite_settings.setValue("form-export/runs", list(dict.fromkeys([str(journal), *recent]))[:200])
-            self.favorite_settings.sync()
+            self.remember_form_run(journal)
             if original is None:
                 source = Path(run.data["source"])
                 original = self.form_source_bytes(source)
@@ -5875,6 +6024,11 @@ class Window(QMainWindow):
             self.review_form_fill(original, plan, run, completed)
         finally:
             lock.unlock()
+
+    def remember_form_run(self, journal):
+        recent = self.favorite_settings.value("form-export/runs", [], list)
+        self.favorite_settings.setValue("form-export/runs", list(dict.fromkeys([str(journal), *recent]))[:200])
+        self.favorite_settings.sync()
 
     def review_form_fill(self, original, plan, run, completed):
         def filled(path):
@@ -8075,8 +8229,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Ordner und offene Formularläufe sichern "
-                         "und nach einem Umzug neu zuordnen.")
+                         "Neu in dieser Version: Formularläufe und Scan-Entwürfe "
+                         "mit dem Umzugsassistenten auf einen anderen PC mitnehmen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
