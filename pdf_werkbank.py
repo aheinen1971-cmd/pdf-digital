@@ -10,7 +10,7 @@ import tempfile
 import unicodedata
 import uuid
 from collections import Counter
-from datetime import date
+from datetime import date, datetime
 from difflib import SequenceMatcher
 from itertools import zip_longest
 from pathlib import Path
@@ -40,9 +40,9 @@ from assistants import (add_suggested_field, append_scan, clean_hidden, form_can
                         scan_quality, similar_scan, text_changes)
 from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
-from filing import filename_hint, folder_matches
+from filing import clear_index, filename_hint, folder_matches, indexed_matches, scan_breaks, scan_ranges
 
-VERSION = (1, 10, 0)
+VERSION = (1, 11, 0)
 POINTS_PER_MM = 72 / 25.4
 
 STYLE = """
@@ -1534,6 +1534,7 @@ class Window(QMainWindow):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         choose = buttons.addButton("Archivordner wählen", QDialogButtonBox.ButtonRole.ActionRole)
         archive = buttons.addButton("Prüfen und archivieren", QDialogButtonBox.ButtonRole.ActionRole)
+        split = buttons.addButton("Stapel aufteilen", QDialogButtonBox.ButtonRole.ActionRole)
         discard = buttons.addButton("Entwurf löschen", QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(buttons)
         buttons.rejected.connect(dialog.reject)
@@ -1546,6 +1547,7 @@ class Window(QMainWindow):
                 rows.addItem(f"{path.name[:10]} · Scan {len(drafts) - index}")
             rows.setCurrentRow(0)
             archive.setEnabled(bool(drafts))
+            split.setEnabled(bool(drafts))
             discard.setEnabled(bool(drafts))
 
         def suggest(index):
@@ -1606,12 +1608,123 @@ class Window(QMainWindow):
                 except OSError as exc:
                     self.error(exc)
 
+        def split_selected():
+            index = rows.currentRow()
+            if index >= 0:
+                try:
+                    if self.split_scan_draft(drafts[index]):
+                        refresh()
+                except Exception as exc:
+                    self.error(exc)
+
         rows.currentRowChanged.connect(suggest)
         choose.clicked.connect(select_base)
         archive.clicked.connect(archive_draft)
+        split.clicked.connect(split_selected)
         discard.clicked.connect(discard_draft)
         refresh()
         dialog.exec()
+
+    def split_scan_draft(self, original):
+        with tempfile.TemporaryDirectory(dir=original.parent) as folder:
+            with pdf.open(original) as doc:
+                if len(doc) < 2:
+                    QMessageBox.information(self, "Stapel aufteilen", "Der Entwurf enthält nur eine Seite.")
+                    return []
+                ranges = self.review_scan_breaks(doc)
+                if len(ranges) < 2:
+                    return []
+                parts = []
+                for first, end in ranges:
+                    name = f"{original.name[:10]}-{uuid.uuid4().hex}.pdf"
+                    path = Path(folder) / name
+                    with pdf.open() as part:
+                        part.insert_pdf(doc, from_page=first, to_page=end - 1)
+                        save_copy(part, path)
+                    parts.append(path)
+            promoted = []
+            try:
+                for part in parts:
+                    target = original.parent / part.name
+                    part.rename(target)
+                    promoted.append(target)
+                original.unlink()
+            except Exception:
+                for target in promoted:
+                    target.unlink(missing_ok=True)
+                raise
+        self.statusBar().showMessage(f"{len(promoted)} einzelne Entwürfe liegen zum Archivieren bereit.", 8000)
+        return promoted
+
+    def review_scan_breaks(self, doc):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Scan-Stapel aufteilen")
+        dialog.resize(940, 640)
+        layout = QVBoxLayout(dialog)
+        notice = QLabel("Markiere jede Seite, auf der ein neues Dokument beginnt. Alle Seiten bleiben erhalten. "
+                        "Die einzelnen Entwürfe kannst du anschließend im Posteingang prüfen und archivieren.")
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        pane = QSplitter()
+        layout.addWidget(pane, 1)
+        rows = QListWidget()
+        pane.addWidget(rows)
+        previews = QWidget()
+        sides = QHBoxLayout(previews)
+        images = []
+        for _ in range(2):
+            image = QLabel()
+            image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            sides.addWidget(image, 1)
+            images.append(image)
+        pane.addWidget(previews)
+        pane.setStretchFactor(1, 3)
+        suggested = set(scan_breaks(doc))
+        for index in range(len(doc)):
+            item = QListWidgetItem()
+            if index:
+                item.setCheckState(Qt.CheckState.Checked if index in suggested else Qt.CheckState.Unchecked)
+            rows.addItem(item)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        apply = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        apply.setText("Einzelne Entwürfe erstellen")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def ranges():
+            return scan_ranges(len(doc), [index for index in range(1, len(doc))
+                                          if rows.item(index).checkState() == Qt.CheckState.Checked])
+
+        def label_groups():
+            rows.blockSignals(True)
+            try:
+                groups = ranges()
+                for number, (start, end) in enumerate(groups, 1):
+                    for index in range(start, end):
+                        label = f"Seite {index + 1} · Dokument {number}"
+                        if index == start:
+                            label += " · Anfang"
+                        if index in suggested:
+                            label += " · Vorschlag"
+                        rows.item(index).setText(label)
+                apply.setEnabled(len(groups) > 1)
+            finally:
+                rows.blockSignals(False)
+
+        def preview(index):
+            for image, page_index in zip(images, (index - 1, index)):
+                if page_index < 0:
+                    image.setText("Keine vorherige Seite")
+                else:
+                    page = doc[page_index]
+                    image.setPixmap(pixmap(page, min(300 / page.rect.width, 490 / page.rect.height)))
+
+        rows.itemChanged.connect(lambda _: label_groups())
+        rows.currentRowChanged.connect(preview)
+        rows.setCurrentRow(min(suggested) if suggested else 0)
+        label_groups()
+        return ranges() if dialog.exec() == QDialog.DialogCode.Accepted else []
 
     def bookmarks(self):
         session = self.current
@@ -3456,12 +3569,10 @@ class Window(QMainWindow):
                                                    settings.value("search/folder", "", str))
         if not folder:
             return
-        query, ok = QInputDialog.getText(self, "Ordnersuche", "Name, Nummer oder Text")
-        if not ok or not query.strip():
+        options = self.folder_search_options(Path(folder))
+        if options is None:
             return
-        recursive = QMessageBox.question(self, "Ordnersuche", "Auch Unterordner durchsuchen?",
-                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                                          ) == QMessageBox.StandardButton.Yes
+        query, recursive, database, filters = options
         settings.setValue("search/folder", folder)
         progress = QProgressDialog("PDF-Dateien werden durchsucht …", "Abbrechen", 0, 0, self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
@@ -3474,7 +3585,10 @@ class Window(QMainWindow):
             return not progress.wasCanceled()
 
         try:
-            hits, skipped, scanned, state = folder_matches(Path(folder), query, recursive, tick)
+            if database:
+                hits, skipped, scanned, state = indexed_matches(database, Path(folder), query, recursive, tick, filters=filters)
+            else:
+                hits, skipped, scanned, state = folder_matches(Path(folder), query, recursive, tick, filters=filters)
         except Exception as exc:
             self.error(exc)
             return
@@ -3484,7 +3598,8 @@ class Window(QMainWindow):
         dialog.setWindowTitle("Suchtreffer im Ordner")
         dialog.resize(820, 460)
         layout = QVBoxLayout(dialog)
-        stats = f"{len(hits)} Trefferseiten in {scanned} geprüften PDFs · {skipped} übersprungen"
+        action = "PDFs im Index neu eingelesen" if database else "PDFs eingelesen"
+        stats = f"{len(hits)} Trefferseiten · {scanned} {action} · {skipped} übersprungen"
         if state:
             stats += " · " + state
         layout.addWidget(QLabel(stats))
@@ -3513,6 +3628,55 @@ class Window(QMainWindow):
         self.search_text = query.strip()
         self.thumbs.setCurrentRow(page)
         self.go_page(page)
+
+    def folder_search_options(self, folder):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Ordnersuche")
+        form = QFormLayout(dialog)
+        query = QLineEdit()
+        name = QLineEdit()
+        directory = QLineEdit()
+        since = QLineEdit()
+        since.setPlaceholderText("TT.MM.JJJJ")
+        recursive = QCheckBox("Unterordner einbeziehen")
+        recursive.setChecked(True)
+        indexed = QCheckBox("Lokalen Suchindex verwenden")
+        indexed.setChecked(True)
+        notice = QLabel("Der Index speichert auslesbaren PDF-Text lokal auf diesem PC. "
+                        "Für vertrauliche Ordner kannst du ohne Index suchen.")
+        notice.setWordWrap(True)
+        form.addRow("Ordner", QLabel(str(folder)))
+        for label, field in (("Suchtext", query), ("Dateiname enthält", name),
+                             ("Unterordner enthält", directory), ("Geändert seit", since)):
+            form.addRow(label, field)
+        for widget in (recursive, indexed, notice):
+            form.addRow(widget)
+        database = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Suchindex" / "ordner-v1.sqlite"
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        reset = buttons.addButton("Index für diesen Ordner löschen", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Suchen")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+
+        def clear():
+            try:
+                clear_index(database, folder)
+                indexed.setChecked(False)
+                notice.setText("Der gespeicherte Index dieses Ordners wurde gelöscht. Die PDF-Dateien bleiben erhalten.")
+            except Exception as exc:
+                self.error(exc)
+
+        reset.clicked.connect(clear)
+        while dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                if not query.text().strip():
+                    raise ValueError("Bitte einen Suchtext eingeben.")
+                cutoff = datetime.strptime(since.text().strip(), "%d.%m.%Y").timestamp() if since.text().strip() else 0
+                return (query.text().strip(), recursive.isChecked(), database if indexed.isChecked() else None,
+                        (name.text().strip(), directory.text().strip(), round(cutoff * 1_000_000_000)))
+            except ValueError:
+                notice.setText("Bitte einen Suchtext und ein Datum im Format TT.MM.JJJJ eingeben oder das Datum leer lassen.")
 
     def undo(self):
         if self.current:

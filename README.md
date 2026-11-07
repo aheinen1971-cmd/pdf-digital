@@ -1,11 +1,11 @@
-# PDF Werkbank 1.10.0 für Windows
+# PDF Werkbank 1.11.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.10.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.11.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.10.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.11.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -60,6 +60,10 @@ vorhandene passende Modelldatei wird verwendet.
   aus dem Text oder vom Eingang des Scans. Nach erfolgreicher PDF/A-Prüfung
   und bestätigter Vorschau wird das Archiv gespeichert und der Entwurf
   aus dem Posteingang entfernt.
+- **Stapel aufteilen** schlägt Dokumentanfänge anhand von Seitenzahlen,
+  Überschriften und Leerseiten vor. In der Vorschau lassen sich die
+  Trennstellen korrigieren. Die Werkbank erstellt einzelne Entwürfe zur
+  Archivierung und behält alle Seiten in ihrer ursprünglichen Reihenfolge.
 
 ## Versand, Schwärzungsprüfung und Druckprofile
 
@@ -102,8 +106,11 @@ vorhandene passende Modelldatei wird verwendet.
   Rückgängigmachen einer Verschiebung beide PDFs geöffnet lassen.
 - **Start → Ordner durchsuchen** sucht in vorhandenen Textebenen, optional
   auch in Unterordnern. Die Trefferliste öffnet die Fundseite. Gesperrte
-  oder beschädigte Dateien werden übersprungen. Es wird kein Suchindex
-  angelegt.
+  oder beschädigte Dateien werden übersprungen. Der optionale lokale
+  Suchindex speichert extrahierten Text und liest beim nächsten Durchlauf
+  nur neue oder geänderte PDFs ein. Filter greifen auf Dateiname,
+  Unterordner und Änderungsdatum. Der Index kann für den gewählten Ordner
+  gelöscht werden.
 - **Formular** erstellt und füllt Textfelder, Kontrollkästchen und Dropdowns.
   „Felder vorschlagen“ sucht nach Kästchen und Eingabelinien in PDF-Seiten
   und in klaren Scans. Vorschläge lassen sich einzeln prüfen und auswählen.
