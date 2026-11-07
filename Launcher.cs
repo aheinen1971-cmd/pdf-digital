@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.26.0";
+    private const string Version = "1.27.0";
     private const string Title = "PDF Werkbank";
     private const string UpdatePublicModulus = "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp";
 
@@ -47,7 +47,7 @@ internal static class Launcher
             string cached = Path.Combine(UpdateRoot(), "PDF-Werkbank-" + Version + ".exe");
             string executable = Assembly.GetExecutingAssembly().Location;
             bool fromCache = String.Equals(cached, executable, StringComparison.OrdinalIgnoreCase);
-            string digest = fromCache ? VerifiedDigest(Version) ?? MigrateSignedMarker(executable) : null;
+            string digest = fromCache ? VerifiedDigest(Version) : null;
             if (fromCache && digest == null)
                 throw new IOException("Die Projektsignatur des Updates fehlt oder ist ungültig.");
             if (digest != null && IsFailed(Version, digest) && StartFallback())
@@ -91,6 +91,12 @@ internal static class Launcher
                 }
                 return 0;
             }
+            catch (UpdateBackupException blocked)
+            {
+                bool recovered = digest != null && StartFallback();
+                Notify(blocked.Message + (recovered ? "\nDie frühere Version wurde geöffnet." : ""));
+                return recovered ? 0 : 23;
+            }
             catch (Exception startup)
             {
                 if (digest != null)
@@ -131,6 +137,11 @@ internal static class Launcher
             MessageBox.Show(message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
+    private sealed class UpdateBackupException : IOException
+    {
+        internal UpdateBackupException() : base("Update zurückgestellt. Die automatische Sicherung konnte nicht erstellt werden.") { }
+    }
+
     private static void StartAndWait(ProcessStartInfo run)
     {
         string marker = Path.Combine(Path.GetTempPath(), "pdf-werkbank-start-" + Guid.NewGuid().ToString("N"));
@@ -148,6 +159,8 @@ internal static class Launcher
                     {
                         if (File.Exists(marker))
                             return;
+                        if (process.ExitCode == 23)
+                            throw new UpdateBackupException();
                         throw new IOException("Die Anwendung endete während des Starts. Rückgabecode " + process.ExitCode + ".");
                     }
                 }
@@ -221,41 +234,6 @@ internal static class Launcher
         catch (FormatException) { return null; }
         catch (CryptographicException) { return null; }
     }
-
-    private static string MigrateSignedMarker(string exe)
-    {
-        // The previous updater staged only a hash marker. Authenticate this bridge build before starting its UI.
-        string marker = Path.Combine(UpdateRoot(), Version + ".json");
-        if (Version != "1.26.0" || !File.Exists(marker) || new FileInfo(marker).Length > 8192
-            || File.ReadAllText(marker).Contains("\"signature\""))
-            return null;
-        try
-        {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(12), MaxResponseContentBufferSize = 8192 })
-            {
-                string url = "https://github.com/aheinen1971-cmd/pdf-werkbank/releases/download/v" + Version
-                    + "/PDF-Werkbank-" + Version + "-Signatur.json";
-                string json = client.GetStringAsync(url).GetAwaiter().GetResult();
-                string digest = VerifyManifest(json, Version, exe);
-                if (digest == null)
-                    return null;
-                string temporary = marker + "." + Guid.NewGuid().ToString("N") + ".tmp";
-                try
-                {
-                    File.WriteAllText(temporary, json);
-                    File.Replace(temporary, marker, null);
-                }
-                finally { if (File.Exists(temporary)) File.Delete(temporary); }
-                return digest;
-            }
-        }
-        catch (IOException) { return null; }
-        catch (HttpRequestException) { return null; }
-        catch (UnauthorizedAccessException) { return null; }
-        catch (TaskCanceledException) { return null; }
-    }
-
 
     private static bool IsFailed(string version, string digest)
     {

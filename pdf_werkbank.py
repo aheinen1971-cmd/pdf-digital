@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
 from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 
 from online_updates import ReleaseCheck
-from update_worker import SIGNER, digest_file, prepared_update, verified_launcher
+from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
 
 from office_export import export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
@@ -52,14 +52,15 @@ from document_review import attachments, comments, insert_labels, label_conflict
 from filing import archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches, pdf_files, scan_breaks, scan_ranges
 from preferences import DEFAULT_FAVORITES, GROUPS, export_package, import_groups, read_package
 from archive_run import ArchiveRun
-from work_backup import BACKUP_GROUPS, read_backup, restore_backup, write_backup
+from work_backup import (BACKUP_GROUPS, app_backup_root, archive_remap, automatic_backup,
+                         backup_preview, read_backup, restore_backup, write_backup)
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
                           alignment, decode_project, encode_project, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 26, 0)
+VERSION = (1, 27, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -697,6 +698,7 @@ class Session:
         self.recovery_path = self.path.resolve()
         self.recovery_dirty = True
         self.plan_measurements = {}
+        self.measure_undo = {}
         self.measure_geometry = {}
         self.plan_saved_token = None
         self.plan_source_stamp = file_signature(self.path) if snapshot is None else None
@@ -862,7 +864,8 @@ class Window(QMainWindow):
                         ("Fläche abschließen", self.finish_area), ("Letzte Messung entfernen", self.remove_measurement),
                         ("Messliste", self.measurement_list), ("PDF mit Maßen", self.export_measurements),
                         ("Messoptionen", self.measurement_options), ("Pläne überlagern", self.plan_overlay),
-                        ("Aufmaß", self.takeoff_tools), ("Messpunkt verschieben", lambda: self.start_measure("Messpunkt verschieben"))]),
+                        ("Aufmaß", self.takeoff_tools), ("Messpunkt verschieben", lambda: self.start_measure("Messpunkt verschieben")),
+                        ("Messpunkt zurücksetzen", self.undo_measure_point)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
                               ("Samsung → Posteingang", self.quick_samsung_scan),
@@ -1542,30 +1545,114 @@ class Window(QMainWindow):
                         os.replace(temporary, target)
                     self.statusBar().showMessage(f"Arbeitsstand gesichert: {target.name}", 8000)
                 return
-            name, _ = QFileDialog.getOpenFileName(self, action, "", kind)
+            name, _ = QFileDialog.getOpenFileName(self, action, str(app_backup_root()), kind)
             if not name:
                 return
-            data = read_backup(name)
-            dialog = QDialog(self)
-            dialog.setWindowTitle(action)
-            layout = QVBoxLayout(dialog)
-            layout.addWidget(QLabel("Wähle aus, was übernommen werden soll. Geöffnete PDFs zum Laden der Messlisten erneut öffnen."))
-            checks = {key: QCheckBox(label) for key, label in BACKUP_GROUPS.items()}
-            for box in checks.values():
-                box.setChecked(True)
-                layout.addWidget(box)
-            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-            buttons.accepted.connect(dialog.accept)
-            buttons.rejected.connect(dialog.reject)
-            layout.addWidget(buttons)
-            if dialog.exec() != QDialog.DialogCode.Accepted:
-                return
-            conflicts = restore_backup(data, {key for key, box in checks.items() if box.isChecked()},
-                                       settings, self.measurement_store())
-            self.refresh_favorites()
-            self.statusBar().showMessage(f"Backup übernommen. Beibehaltene lokale Messlisten: {conflicts}.", 10000)
+            self.restore_backup_dialog(read_backup(name), settings)
         except Exception as exc:
             self.error(exc)
+
+    def restore_backup_dialog(self, data, settings):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Backup prüfen und wiederherstellen")
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Wähle die Gruppen für die Wiederherstellung. Abweichende lokale Messlisten bleiben erhalten.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        checks = {key: QCheckBox(label) for key, label in BACKUP_GROUPS.items()}
+        choices = QHBoxLayout()
+        for box in checks.values():
+            box.setChecked(True)
+            choices.addWidget(box)
+        layout.addLayout(choices)
+        table = QTableWidget(0, 3)
+        table.setHorizontalHeaderLabels(["Gruppe", "Eintrag", "Geplante Aktion"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        table.setColumnWidth(0, 150)
+        table.setColumnWidth(2, 290)
+        layout.addWidget(table)
+        base_rows = backup_preview(data, settings, self.measurement_store())
+        mapped = {}
+        remap_rows = []
+        new_archive = None
+        remap = QPushButton("Archivordner neu zuordnen")
+        remap.setEnabled(any("/archived" in key for key in data["archive"]))
+        layout.addWidget(remap)
+
+        def show_rows():
+            rows = []
+            for entry in base_rows + remap_rows:
+                group = {"Einstellungen": "settings", "Messlisten": "plans"}.get(entry[0], "archive")
+                if checks[group].isChecked():
+                    rows.append(entry)
+            table.setRowCount(len(rows))
+            for row, values in enumerate(rows):
+                for column, value in enumerate(values):
+                    item = QTableWidgetItem(value)
+                    item.setToolTip(value)
+                    table.setItem(row, column, item)
+
+        def choose_archive():
+            nonlocal new_archive
+            old, ok = QInputDialog.getText(dialog, "Archivordner neu zuordnen", "Bisheriger Archivordner",
+                                            text=data.get("archive_root", ""))
+            if not ok or not old.strip():
+                return
+            new = QFileDialog.getExistingDirectory(dialog, "Neuen Archivordner auswählen")
+            if not new:
+                return
+            try:
+                updated, report = archive_remap(data["archive"], old.strip(), new)
+            except (OSError, ValueError) as exc:
+                self.error(exc)
+                return
+            mapped.clear()
+            mapped.update(updated)
+            remap_rows[:] = report or [("Archivzuordnung", new, "Keine passenden Einträge für den bisherigen Pfad")]
+            new_archive = new if updated else None
+            show_rows()
+
+        remap.clicked.connect(choose_archive)
+        for box in checks.values():
+            box.toggled.connect(show_rows)
+        show_rows()
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Ausgewählte Gruppen übernehmen")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(1000, 560)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        selection = {key for key, box in checks.items() if box.isChecked()}
+        conflicts = restore_backup(data, selection, settings, self.measurement_store(), mapped)
+        if "archive" in selection and new_archive:
+            settings.setValue("invoice-watch/archive", new_archive)
+            settings.sync()
+        self.refresh_favorites()
+        self.statusBar().showMessage(f"Backup übernommen. Beibehaltene lokale Messlisten: {conflicts}.", 10000)
+
+    def undo_measure_point(self):
+        session = self.current
+        plan = self.current_plan()
+        if not session or not plan:
+            return
+        history = session.measure_undo.get(plan_page_key(session.doc[session.page]), [])
+        while history:
+            index, before, after = history.pop()
+            if index >= len(plan.marks):
+                continue
+            current = plan.marks[index]
+            if replace(current, name=after.name) != after:
+                continue
+            plan.marks[index] = replace(before, name=current.name)
+            self.clear_measure_draft()
+            self.canvas.update()
+            self.statusBar().showMessage("Messpunkt zurückgesetzt · " + plan.marks[index].caption(plan.scale), 8000)
+            return
+        self.statusBar().showMessage("Keine passende Messpunktkorrektur zum Rückgängigmachen.", 6500)
+
 
     def edit_measure_point(self, point):
         plan = self.current_plan()
@@ -1592,6 +1679,11 @@ class Window(QMainWindow):
         except ValueError as exc:
             self.statusBar().showMessage(str(exc), 10000)
             return
+        session = self.current
+        key = plan_page_key(session.doc[session.page])
+        history = session.measure_undo.setdefault(key, [])
+        history.append((index, plan.marks[index], changed))
+        del history[:-30]
         plan.marks[index] = changed
         self.clear_measure_draft()
         self.canvas.update()
@@ -1724,6 +1816,7 @@ class Window(QMainWindow):
                         QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                     return False
                 session.plan_measurements = plans
+                session.measure_undo.clear()
                 self.clear_measure_draft()
                 self.render()
                 self.statusBar().showMessage("Messprojekt geladen. Mit „Messliste speichern“ lokal übernehmen.", 7500)
@@ -4164,6 +4257,8 @@ class Window(QMainWindow):
                 record = records[path]
                 source = record.source
                 history = settings.value(archive_setting_key(path), "", str).partition("|")
+                if not (history[0] == source.digest and history[2] and Path(history[2]).is_file()):
+                    history = settings.value("invoice-watch/archived-digest/" + source.digest, "", str).partition("|")
                 archived = history[0] == source.digest and history[2] and Path(history[2]).is_file()
                 checked = settings.value("invoice-watch/reviewed/" + source.digest, False, bool)
                 problem = (record.validation and record.validation.status != "passed") or source.problem or (
@@ -6790,11 +6885,29 @@ def main():
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("pdf-werkbank.ico"))))
     settings = QSettings("PDF Werkbank", "PDF Werkbank")
     folder = settings.value("updates", "", str)
+    label = ".".join(map(str, VERSION))
+    active = settings.value("update/last-active-version", "", str)
+    active_version = version_tuple(active)
+    if active_version is None and VERSION == (1, 27, 0) and runtime_ready("1.26.0"):
+        active, active_version = "1.26.0", (1, 26, 0)
+    measurements = app_backup_root().with_name("Messungen")
+    backup_problem = ""
+
+    def secure_switch(target):
+        nonlocal backup_problem
+        if active_version is not None and version_tuple(target) <= active_version:
+            return True
+        try:
+            automatic_backup(settings, measurements, label, target, refresh=True)
+            return True
+        except Exception as exc:
+            backup_problem = f"Update zurückgestellt. Automatische Sicherung fehlgeschlagen: {exc}"
+            return False
     forwarded = os.environ.pop("PDF_WERKBANK_UPDATE_FORWARDED", "")
     launcher = os.environ.get("PDF_WERKBANK_LAUNCHER")
     if launcher and not forwarded:
         update = prepared_update(VERSION)
-        if update:
+        if update and secure_switch(update.stem.removeprefix("PDF-Werkbank-")):
             try:
                 child = subprocess.Popen([str(update), *sys.argv[1:]])
                 try:
@@ -6809,7 +6922,8 @@ def main():
     if folder and not forwarded and (launcher or getattr(sys, "frozen", False)):
         try:
             update = find_update(folder)
-            if update and update.resolve() != Path(launcher or sys.executable).resolve():
+            if (update and update.resolve() != Path(launcher or sys.executable).resolve()
+                    and secure_switch(update.stem.removeprefix("PDF-Werkbank-"))):
                 env = os.environ.copy()
                 env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
                 env["PDF_WERKBANK_UPDATE_FORWARDED"] = "1"
@@ -6820,10 +6934,25 @@ def main():
                 return 0
         except OSError:
             pass
+    if active_version is not None and active_version < VERSION:
+        try:
+            automatic_backup(settings, measurements, active, label)
+        except Exception:
+            # The native starter keeps the last working version available.
+            if launcher:
+                return 23
+            QMessageBox.warning(None, "Update zurückgestellt", "Die automatische Sicherung konnte nicht erstellt werden.")
+            return 23
     window = Window()
     window.show()
     def load_initial_documents():
+        if active_version is None or active_version <= VERSION:
+            settings.setValue("update/last-active-version", label)
+            settings.sync()
         signal_startup_ready()
+        if backup_problem:
+            window.update_result = backup_problem
+            window.statusBar().showMessage(backup_problem, 15000)
         window.start_recovery(Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Wiederherstellung")
         arguments = sys.argv[1:]
         if arguments and arguments[0] in EXPLORER_COMMANDS:
