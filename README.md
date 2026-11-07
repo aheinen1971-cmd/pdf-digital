@@ -1,11 +1,11 @@
-# PDF Werkbank 1.13.0 für Windows
+# PDF Werkbank 1.14.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.13.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.14.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256.
@@ -13,7 +13,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.13.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.14.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -72,9 +72,18 @@ vorhandene passende Modelldatei wird verwendet.
 ## Favoriten
 
 Über **Favoriten** oberhalb der Registerkarten lassen sich häufige
-Funktionen anheften oder ausblenden. Scannen, Ordnersuche und
-Samsung-Duplex sind voreingestellt. Die Auswahl bleibt beim Neustart
-erhalten.
+Funktionen anheften oder ausblenden. Scannen, Samsung → Posteingang,
+Ordnersuche und Samsung-Duplex sind voreingestellt. Eigene Auswahlen
+bleiben beim Neustart erhalten.
+
+- **Strg+K** öffnet die Befehlssuche. Mit Pfeiltasten und Eingabe lässt
+  sich eine Funktion aus den Registerkarten starten.
+- **Samsung → Posteingang** liest beim Start eine Seite über Windows WIA
+  ein. Danach können weitere Seiten aufgenommen und mit den gespeicherten
+  A4- und OCR-Einstellungen im Posteingang abgelegt werden.
+- **Strg+G** springt zu einer Seitennummer. Bei großen PDFs zeichnet
+  die Werkbank zuerst die aktuelle Seite. Sichtbare Miniaturen werden
+  danach geladen. Zuletzt gezeigte Seiten bleiben kurz im Arbeitsspeicher.
 
 ## Versand, Schwärzungsprüfung und Druckprofile
 
@@ -161,6 +170,10 @@ erhalten.
   gespeichert. Verschlüsselte Kopien behalten ihren Passwortschutz. Beim
   Wiederöffnen wird das Passwort erneut abgefragt. Die Originaldateien
   werden dafür nicht überschrieben.
+- **Datei → Arbeitsmappe speichern** speichert bewusst einen benannten
+  Vorgang mit PDF-Pfaden und zuletzt angezeigten Seiten. Geänderte PDFs
+  werden vorher als Kopie gespeichert. **Arbeitsmappe öffnen** ergänzt
+  die benötigten Tabs und meldet verschobene oder fehlende Dateien.
 - **Export & Schutz → Gespeicherte Abläufe** speichert kombinierte
   Vorlagen. Die Schritte laufen in der Reihenfolge Texterkennung, Drehen,
   Verkleinern. Zielordner wird pro Lauf gewählt. Vorhandene Ausgabedateien

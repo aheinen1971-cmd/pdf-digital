@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unicodedata
 import uuid
-from collections import Counter
+from collections import Counter, OrderedDict
 from datetime import date, datetime
 from difflib import SequenceMatcher
 from itertools import zip_longest
@@ -43,8 +43,10 @@ from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
 from filing import archive_target, clear_index, filename_hint, folder_matches, indexed_matches, scan_breaks, scan_ranges
 
-VERSION = (1, 13, 0)
+VERSION = (1, 14, 0)
 POINTS_PER_MM = 72 / 25.4
+THUMB_HEIGHT = 122
+RENDER_BUDGET = 64 * 1024 * 1024
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
@@ -703,7 +705,8 @@ class Window(QMainWindow):
         self.scale = 1.0
         self.mode = "Lesen"
         self.search_text = ""
-        self.thumb_index = 0
+        self.thumb_icons = OrderedDict()
+        self.page_cache = OrderedDict()
         self.setWindowTitle("PDF Werkbank " + ".".join(map(str, VERSION)))
         self.release_check = ReleaseCheck(VERSION, self)
         self.release_check.finished.connect(self.show_online_update)
@@ -726,10 +729,12 @@ class Window(QMainWindow):
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
                        ("Broschürendruck", self.booklet_dialog),
+                       ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
                        ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
             ("Start", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
+                         ("Zu Seite springen", self.jump_to_page),
                          ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid)]),
             ("Kommentar", [("Lesen", lambda: self.set_mode("Lesen")), ("Text markieren", lambda: self.set_mode("Markieren")),
                             ("Notiz setzen", lambda: self.set_mode("Notiz")), ("Kommentarübersicht", self.review_comments)]),
@@ -744,6 +749,7 @@ class Window(QMainWindow):
                            ("Versandcheck", self.dispatch_check), ("Schwärzung prüfen", self.verify_redaction)]),
             ("Verbessern", [("Scan lesbarer machen", self.scan_cleanup), ("KI-Textvorschläge", self.ai_text)]),
             ("Bilder & Scan", [("Vom Scanner einlesen", self.scan_from_device), ("Mehrseitig scannen", self.scan_stack),
+                              ("Samsung → Posteingang", self.quick_samsung_scan),
                               ("Scan-Posteingang", self.scan_inbox), ("Seite zuschneiden", lambda: self.set_mode("Zuschneiden")),
                               ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen")),
                               ("Bild positionieren", lambda: self.set_mode("Bild positionieren"))]),
@@ -783,6 +789,8 @@ class Window(QMainWindow):
         self.splitter = QSplitter()
         self.thumbs = QListWidget()
         self.thumbs.setIconSize(QSize(85, 110))
+        self.thumbs.setUniformItemSizes(True)
+        self.thumbs.setGridSize(QSize(130, THUMB_HEIGHT))
         self.thumbs.currentRowChanged.connect(self.go_page)
         self.splitter.addWidget(self.thumbs)
         self.scroll = QScrollArea()
@@ -808,6 +816,9 @@ class Window(QMainWindow):
 
         self.thumbnails = QTimer(self)
         self.thumbnails.timeout.connect(self.next_thumbnail)
+        self.thumbs.verticalScrollBar().valueChanged.connect(self.schedule_thumbnails)
+        self.thumbs.verticalScrollBar().rangeChanged.connect(self.schedule_thumbnails)
+        self.splitter.splitterMoved.connect(self.schedule_thumbnails)
         self.status = QLabel("Bereit")
         self.statusBar().addWidget(self.status, 1)
         for label, callback in [("‹", lambda: self.turn(-1)), ("›", lambda: self.turn(1)),
@@ -816,6 +827,8 @@ class Window(QMainWindow):
             button.clicked.connect(callback)
             self.statusBar().addPermanentWidget(button)
         for key, callback in [("Ctrl+O", self.open_files), ("Ctrl+S", self.save), ("Ctrl+P", self.print_dialog),
+                              ("Ctrl+K", self.command_palette),
+                              ("Ctrl+G", self.jump_to_page),
                               ("Ctrl+Z", self.undo), ("Ctrl+F", self.search), ("PgUp", lambda: self.turn(-1)),
                               ("PgDown", lambda: self.turn(1)), ("Escape", lambda: self.set_mode("Lesen"))]:
             action = QAction(self)
@@ -831,6 +844,7 @@ class Window(QMainWindow):
     def setup_favorites(self):
         self.favorite_commands = {
             "scan": ("Scannen", self.scan_stack),
+            "quick-scan": ("Samsung → Posteingang", self.quick_samsung_scan),
             "inbox": ("Scan-Posteingang", self.scan_inbox),
             "folder": ("Ordnersuche", self.search_folder),
             "duplex": ("Samsung-Duplex", lambda: self.print_dialog(samsung=True)),
@@ -841,7 +855,7 @@ class Window(QMainWindow):
             "compare": ("PDFs vergleichen", self.compare),
         }
         self.favorite_settings = QSettings("PDF Werkbank", "PDF Werkbank")
-        defaults = ["scan", "folder", "duplex"]
+        defaults = ["scan", "quick-scan", "folder", "duplex"]
         saved = self.favorite_settings.value("toolbar/favorites", defaults)
         if not isinstance(saved, list):
             saved = defaults
@@ -884,6 +898,146 @@ class Window(QMainWindow):
             action = self.favorite_toolbar.addAction(label)
             action.triggered.connect(lambda _=False, run=callback: run())
             self.favorite_actions.append(action)
+
+    def command_palette(self):
+        aliases = {"Samsung → Posteingang": "schnellscan wia scanner",
+                   "Ordner durchsuchen": "ordnersuche index finden",
+                   "Broschürendruck": "heft falten duplex",
+                   "Arbeitsmappe öffnen": "projekt vorgang tabs",
+                   "Arbeitsmappe speichern": "projekt vorgang tabs"}
+
+        def key(text):
+            return "".join(char for char in unicodedata.normalize("NFKD", text.casefold())
+                           if not unicodedata.combining(char))
+
+        commands = [(label, group, callback, key(f"{label} {group} {aliases.get(label, '')}"))
+                    for group, actions in self.groups for label, callback in actions]
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Befehl suchen")
+        dialog.resize(630, 450)
+        layout = QVBoxLayout(dialog)
+        query = QLineEdit()
+        query.setPlaceholderText("Befehl eingeben, z. B. Scan, Broschüre oder Schwärzen")
+        layout.addWidget(query)
+        results = QListWidget()
+        layout.addWidget(results, 1)
+        selected = []
+
+        def filter_commands():
+            phrase = key(query.text().strip())
+            terms = phrase.split()
+            selected[:] = sorted((entry for entry in commands if all(term in entry[3] for term in terms)),
+                                 key=lambda entry: (not key(entry[0]).startswith(phrase), entry[0].casefold()))
+            results.clear()
+            results.addItems([f"{label} · {group}" for label, group, _, _ in selected])
+            results.setCurrentRow(0)
+
+        def accept():
+            if results.currentRow() >= 0:
+                dialog.accept()
+
+        for shortcut, step in (("Down", 1), ("Up", -1)):
+            action = QAction(dialog)
+            action.setShortcut(shortcut)
+            action.setShortcutContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+            action.triggered.connect(lambda _=False, step=step: results.setCurrentRow(
+                max(0, min(results.count() - 1, results.currentRow() + step))) if results.count() else None)
+            dialog.addAction(action)
+        query.textChanged.connect(lambda _: filter_commands())
+        query.returnPressed.connect(accept)
+        results.itemActivated.connect(lambda _: accept())
+        filter_commands()
+        query.setFocus()
+        if dialog.exec() == QDialog.DialogCode.Accepted and results.currentRow() >= 0:
+            selected[results.currentRow()][2]()
+
+    @staticmethod
+    def workspaces(settings):
+        value = json.loads(settings.value("workspace/maps", "{}", str))
+        if not isinstance(value, dict):
+            raise ValueError("Die gespeicherten Arbeitsmappen konnten nicht gelesen werden.")
+        return value
+
+    def save_workspace(self):
+        if not self.sessions:
+            self.error("Öffne zuerst die PDFs für deine Arbeitsmappe.")
+            return
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        try:
+            maps = self.workspaces(settings)
+            name, ok = QInputDialog.getText(self, "Arbeitsmappe speichern", "Name der Arbeitsmappe")
+            name = name.strip()
+            if not ok or not name:
+                return
+            if name in maps and QMessageBox.question(self, "Arbeitsmappe aktualisieren",
+                                                       f"„{name}“ mit den jetzt geöffneten PDFs aktualisieren?"
+                                                       ) != QMessageBox.StandardButton.Yes:
+                return
+            active = self.tabs.currentIndex()
+            if any(session.changed for session in self.sessions):
+                choice = QMessageBox.question(self, "Bearbeitete PDFs speichern",
+                                              "Für die Arbeitsmappe werden geänderte PDFs zuerst als Kopien gespeichert. Fortfahren?")
+                if choice != QMessageBox.StandardButton.Yes:
+                    return
+                try:
+                    for index, session in enumerate(self.sessions):
+                        if session.changed:
+                            self.tabs.setCurrentIndex(index)
+                            if not self.save():
+                                return
+                finally:
+                    self.tabs.setCurrentIndex(active)
+            maps[name] = [{"path": str(session.recovery_path), "page": session.page, "active": index == active}
+                          for index, session in enumerate(self.sessions)]
+            settings.setValue("workspace/maps", json.dumps(maps, ensure_ascii=False))
+            settings.sync()
+            if settings.status() != QSettings.Status.NoError:
+                raise OSError("Die Arbeitsmappe konnte nicht lokal gespeichert werden.")
+            self.statusBar().showMessage(f"Arbeitsmappe „{name}“ gespeichert.", 6500)
+        except (OSError, ValueError) as exc:
+            self.error(exc)
+
+    def open_workspace(self):
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        try:
+            maps = self.workspaces(settings)
+            if not maps:
+                QMessageBox.information(self, "Arbeitsmappen", "Es sind noch keine Arbeitsmappen gespeichert.")
+                return
+            name, ok = QInputDialog.getItem(self, "Arbeitsmappe öffnen", "Arbeitsmappe", sorted(maps), editable=False)
+            if not ok:
+                return
+            records = maps[name]
+            if not isinstance(records, list) or any(not isinstance(entry, dict)
+                    or not isinstance(entry.get("path"), str) or not isinstance(entry.get("page"), int)
+                    for entry in records):
+                raise ValueError("Diese Arbeitsmappe enthält ungültige Einträge.")
+            opened = {path.resolve(): session for session in self.sessions
+                      for path in (session.path, session.recovery_path)}
+            active, missing = None, []
+            for entry in records:
+                path = Path(entry["path"])
+                if not path.is_absolute() or not path.is_file():
+                    missing.append(path.name)
+                    continue
+                session = opened.get(path.resolve())
+                if session:
+                    session.page = max(0, min(entry["page"], len(session.doc) - 1))
+                else:
+                    session = self.open_path(str(path), page=entry["page"])
+                    if session:
+                        opened[path.resolve()] = session
+                if session and entry.get("active"):
+                    active = session
+            if active:
+                self.tabs.setCurrentIndex(self.sessions.index(active))
+            self.switch_doc(self.tabs.currentIndex())
+            self.write_recovery()
+            if missing:
+                QMessageBox.information(self, "Dateien fehlen", "Diese PDFs wurden verschoben oder gelöscht:\n"
+                                        + "\n".join(missing))
+        except (OSError, ValueError) as exc:
+            self.error(exc)
 
     def error(self, exc):
         QMessageBox.warning(self, "PDF Werkbank", str(exc))
@@ -988,34 +1142,69 @@ class Window(QMainWindow):
         self.search_text = ""
         self.mode = "Lesen"
         self.canvas.setCursor(Qt.CursorShape.ArrowCursor)
-        self.refresh_thumbs()
         self.render()
+        self.refresh_thumbs()
 
     def refresh_thumbs(self):
         self.thumbnails.stop()
+        self.thumb_icons.clear()
         self.thumbs.blockSignals(True)
         self.thumbs.clear()
         session = self.current
         if session:
             self.thumbs.addItems([f"Seite {index + 1}" for index in range(len(session.doc))])
             self.thumbs.setCurrentRow(session.page)
-            self.thumb_index = 0
-            if not self.thumbs.isHidden():
-                self.thumbnails.start(8)
         self.thumbs.blockSignals(False)
+        self.schedule_thumbnails()
+
+    def schedule_thumbnails(self, *_):
+        if self.current and not self.thumbs.isHidden() and not self.thumbnails.isActive():
+            self.thumbnails.start(12)
 
     def next_thumbnail(self):
         session = self.current
-        if not session or self.thumb_index >= len(session.doc):
+        if not session or not self.thumbs.count() or self.thumbs.isHidden():
             self.thumbnails.stop()
             return
-        page = session.doc[self.thumb_index]
+        viewport = self.thumbs.viewport()
+        top = self.thumbs.indexAt(QPoint(viewport.width() // 2, 6)).row()
+        if top < 0:
+            top = max(0, self.thumbs.indexAt(QPoint(8, 6)).row())
+        bottom = min(len(session.doc), top + viewport.height() // THUMB_HEIGHT + 4)
+        wanted = list(dict.fromkeys([session.page, *range(max(0, top - 1), bottom)]))
+        for index in wanted:
+            if index in self.thumb_icons:
+                self.thumb_icons.move_to_end(index)
+        index = next((value for value in wanted if value not in self.thumb_icons), None)
+        if index is None:
+            self.thumbnails.stop()
+            return
+        page = session.doc[index]
         try:
             small = pixmap(page, min(85 / page.rect.width, 106 / page.rect.height))
-            self.thumbs.item(self.thumb_index).setIcon(QIcon(small))
+            self.thumbs.item(index).setIcon(QIcon(small))
         except (ValueError, RuntimeError):
             pass
-        self.thumb_index += 1
+        self.thumb_icons[index] = None
+        if len(self.thumb_icons) > 96:
+            old, _ = self.thumb_icons.popitem(last=False)
+            self.thumbs.item(old).setIcon(QIcon())
+
+    def clear_page_cache(self, session):
+        for key in [key for key in self.page_cache if key[0] == session.recovery_id]:
+            self.page_cache.pop(key)
+
+    def displayed_page(self, session, page):
+        key = (session.recovery_id, page.number, self.scale)
+        image = self.page_cache.get(key)
+        if image is None:
+            image = pixmap(page, self.scale)
+            self.page_cache[key] = image
+            while len(self.page_cache) > 1 and sum(p.width() * p.height() * 4 for p in self.page_cache.values()) > RENDER_BUDGET:
+                self.page_cache.popitem(last=False)
+        else:
+            self.page_cache.move_to_end(key)
+        return image
 
     def render(self):
         session = self.current
@@ -1027,8 +1216,9 @@ class Window(QMainWindow):
         page = session.doc[session.page]
         try:
             self.scale = min(self.zoom, 4096 / max(page.rect.width, page.rect.height))
-            image = pixmap(page, self.scale)
+            image = self.displayed_page(session, page)
             if self.search_text or self.grid_mm:
+                image = QPixmap(image)
                 painter = QPainter(image)
                 for result in page.search_for(self.search_text) if self.search_text else ():
                     rect = result * page.rotation_matrix * pdf.Matrix(self.scale, self.scale)
@@ -1057,10 +1247,18 @@ class Window(QMainWindow):
             self.current.page = index
             self.render()
             self.scroll.verticalScrollBar().setValue(0)
+            self.schedule_thumbnails()
 
     def turn(self, delta):
         if self.current:
             self.thumbs.setCurrentRow(max(0, min(len(self.current.doc) - 1, self.current.page + delta)))
+
+    def jump_to_page(self):
+        if self.current:
+            page, ok = QInputDialog.getInt(self, "Zu Seite springen", "Seite", self.current.page + 1,
+                                            1, len(self.current.doc))
+            if ok:
+                self.thumbs.setCurrentRow(page - 1)
 
     def change_zoom(self, delta):
         self.zoom = max(0.2, min(4, self.zoom + delta))
@@ -1077,8 +1275,8 @@ class Window(QMainWindow):
         self.thumbs.setHidden(hidden)
         if hidden:
             self.thumbnails.stop()
-        elif self.current:
-            self.thumbnails.start(8)
+        else:
+            self.schedule_thumbnails()
 
     def set_mode(self, mode):
         self.mode = mode
@@ -1270,8 +1468,8 @@ class Window(QMainWindow):
             return
         self.changed()
 
-    def acquire_scan(self, scan, device_id="", feeder=0):
-        command, env = scan_command(scan, device_id, feeder)
+    def acquire_scan(self, scan, device_id="", feeder=0, samsung=False):
+        command, env = scan_command(scan, device_id, feeder, samsung)
         return self.acquire_command(command, env, "Scanner liest Seiten ein …" if feeder else "Scanner liest die Seite ein …")
 
     def acquire_command(self, command, env, label):
@@ -1312,8 +1510,8 @@ class Window(QMainWindow):
             return None
         return process.wait()
 
-    def scan_device(self, scan, feeder=0):
-        acquired = self.acquire_scan(scan, feeder=feeder)
+    def scan_device(self, scan, feeder=0, samsung=False):
+        acquired = self.acquire_scan(scan, feeder=feeder, samsung=samsung)
         if acquired is None:
             return None
         status, stdout = acquired
@@ -1327,17 +1525,18 @@ class Window(QMainWindow):
             choice, ok = QInputDialog.getItem(self, "Scanner auswählen", "Gerät", names, editable=False)
             if not ok:
                 return None
-            acquired = self.acquire_scan(scan, devices[names.index(choice)]["id"], feeder=feeder)
+            acquired = self.acquire_scan(scan, devices[names.index(choice)]["id"], feeder=feeder, samsung=samsung)
             if acquired is None:
                 return None
             status, stdout = acquired
         if status == 3:
-            self.error("Windows meldet keinen WIA-Scanner. Prüfe den Anschluss und den Scannertreiber.")
+            self.error("Windows meldet keinen Samsung-Scanner über WIA." if samsung
+                       else "Windows meldet keinen WIA-Scanner. Prüfe den Anschluss und den Scannertreiber.")
             return None
         return status, stdout
 
-    def scan_page(self, scan):
-        acquired = self.scan_device(scan)
+    def scan_page(self, scan, samsung=False):
+        acquired = self.scan_device(scan, samsung=samsung)
         if acquired is None or acquired[0] == 2:
             return None
         status, stdout = acquired
@@ -1445,12 +1644,16 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
-    def scan_stack(self):
+    def quick_samsung_scan(self):
+        self.scan_stack(quick=True)
+
+    def scan_stack(self, quick=False):
         with tempfile.TemporaryDirectory() as folder, pdf.open() as document:
             dialog = QDialog(self)
-            dialog.setWindowTitle("Scanassistent")
+            dialog.setWindowTitle("Samsung → Posteingang" if quick else "Scanassistent")
             layout = QVBoxLayout(dialog)
-            layout.addWidget(QLabel("Lege eine Seite auf und klicke auf „Seite scannen“. Ziehe die Miniaturen zum Sortieren."))
+            layout.addWidget(QLabel("Die erste Seite wird über Windows WIA gescannt. Lege danach bei Bedarf die nächste Seite auf."
+                                    if quick else "Lege eine Seite auf und klicke auf „Seite scannen“. Ziehe die Miniaturen zum Sortieren."))
             settings = QSettings("PDF Werkbank", "PDF Werkbank")
             a4 = QCheckBox("Samsung-Profil · Seiten auf A4 einpassen")
             a4.setChecked(settings.value("scan/a4", False, type=bool))
@@ -1471,6 +1674,8 @@ class Window(QMainWindow):
             row.addWidget(add)
             row.addWidget(feeder)
             row.addWidget(twain)
+            feeder.setVisible(not quick)
+            twain.setVisible(not quick)
             row.addWidget(remove)
             layout.addLayout(row)
             ocr = QCheckBox("Scan-PDF durchsuchbar machen (Deutsch und Englisch)")
@@ -1480,11 +1685,15 @@ class Window(QMainWindow):
             layout.addWidget(archive)
             inbox = QCheckBox("Im Scan-Posteingang ablegen")
             layout.addWidget(inbox)
+            if quick:
+                inbox.setChecked(True)
+                inbox.hide()
+                archive.hide()
             inbox.toggled.connect(lambda checked: archive.setChecked(False) if checked else None)
             archive.toggled.connect(lambda checked: inbox.setChecked(False) if checked else None)
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
             save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
-            save_button.setText("Als eine PDF speichern")
+            save_button.setText("In den Posteingang" if quick else "Als eine PDF speichern")
             save_button.setEnabled(False)
             buttons.accepted.connect(dialog.accept)
             buttons.rejected.connect(dialog.reject)
@@ -1529,12 +1738,18 @@ class Window(QMainWindow):
                     pages.takeItem(pages.currentRow())
                 save_button.setEnabled(pages.count() > 0)
 
-            add.clicked.connect(lambda: capture(lambda location: self.scan_page(location / "scan.png")))
+            def capture_glass():
+                capture(lambda location: self.scan_page(location / "scan.png", samsung=True)
+                        if quick else self.scan_page(location / "scan.png"))
+
+            add.clicked.connect(capture_glass)
             feeder.clicked.connect(lambda: capture(self.scan_feeder))
             twain.clicked.connect(lambda: capture(self.scan_twain))
             remove.clicked.connect(discard)
             pages.currentRowChanged.connect(lambda index: remove.setEnabled(index >= 0))
             dialog.resize(620, 575)
+            if quick:
+                QTimer.singleShot(0, dialog, capture_glass)
             if dialog.exec() != QDialog.DialogCode.Accepted or not pages.count():
                 return
             settings.setValue("scan/a4", a4.isChecked())
@@ -1548,7 +1763,10 @@ class Window(QMainWindow):
                     if ocr.isChecked():
                         count, failures = self.send_ocr(result, range(len(result)), "deu+eng")
                         if count is None:
-                            return
+                            if not quick:
+                                return
+                            QMessageBox.information(self, "Texterkennung abgebrochen",
+                                                    "Die gescannten Seiten werden im Posteingang behalten.")
                         if failures:
                             QMessageBox.information(self, "Texterkennung", "Ohne neue Textebene: Seite " +
                                                     ", ".join(map(str, failures)))
@@ -3622,6 +3840,7 @@ class Window(QMainWindow):
         self.render()
 
     def mark_changed(self, session):
+        self.clear_page_cache(session)
         session.changed = True
         session.recovery_dirty = True
         self.tabs.setTabText(self.sessions.index(session), session.path.name + " *")
@@ -3930,6 +4149,7 @@ class Window(QMainWindow):
                         break
             for session in sessions:
                 session.undo()
+                self.clear_page_cache(session)
                 marker = " *" if session.changed else ""
                 self.tabs.setTabText(self.sessions.index(session), session.path.name + marker)
             self.write_recovery()
@@ -3976,7 +4196,9 @@ class Window(QMainWindow):
 
     def close_tab(self, index):
         if self.confirm_close(index):
-            self.sessions.pop(index).doc.close()
+            session = self.sessions.pop(index)
+            self.clear_page_cache(session)
+            session.doc.close()
             self.tabs.removeTab(index)
             self.switch_doc(self.tabs.currentIndex())
             self.write_recovery()

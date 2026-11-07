@@ -131,13 +131,16 @@ def edit_image(page, selected, offset=None, replacement=None):
         raise ValueError("Die Bildänderung konnte nicht eindeutig geprüft werden.")
 
 
-def scan_command(path, device_id="", feeder=0):
+def scan_command(path, device_id="", feeder=0, samsung=False):
     script = r"""
 $ErrorActionPreference = 'Stop'
 try {
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     $manager = New-Object -ComObject WIA.DeviceManager
     $scanners = @($manager.DeviceInfos | Where-Object { $_.Type -eq 1 })
+    if ($env:PDF_WERKBANK_SAMSUNG -eq '1') {
+        $scanners = @($scanners | Where-Object { $_.Properties.Item('Name').Value -match 'Samsung|CLX[- ]?3300' })
+    }
     if ($env:PDF_WERKBANK_SCAN_ID) {
         $scanners = @($scanners | Where-Object { $_.DeviceID -eq $env:PDF_WERKBANK_SCAN_ID })
     }
@@ -209,7 +212,7 @@ try {
     command = [str(shell), "-NoLogo", "-NoProfile", "-Sta", "-EncodedCommand",
                base64.b64encode(script.encode("utf-16-le")).decode("ascii")]
     return command, dict(os.environ, PDF_WERKBANK_SCAN_FILE=str(path), PDF_WERKBANK_SCAN_ID=device_id,
-                         PDF_WERKBANK_FEEDER=str(feeder))
+                         PDF_WERKBANK_FEEDER=str(feeder), PDF_WERKBANK_SAMSUNG=str(int(samsung)))
 
 
 def twain_command(executable, output=None, device=None, feeder=True):

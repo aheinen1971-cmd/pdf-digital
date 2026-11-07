@@ -25,11 +25,11 @@ previous = {key: settings.value(key) for key in keys}
 try:
     settings.remove("toolbar/favorites")
     window = Window()
-    assert [action.text() for action in window.favorite_actions] == ["Scannen", "Ordnersuche", "Samsung-Duplex"]
+    assert [action.text() for action in window.favorite_actions] == ["Scannen", "Samsung → Posteingang", "Ordnersuche", "Samsung-Duplex"]
     window.pin_favorite("duplex", False)
     window.pin_favorite("inbox", True)
     reopened = Window()
-    assert [action.text() for action in reopened.favorite_actions] == ["Scannen", "Ordnersuche", "Scan-Posteingang"]
+    assert [action.text() for action in reopened.favorite_actions] == ["Scannen", "Samsung → Posteingang", "Ordnersuche", "Scan-Posteingang"]
     for key in list(reopened.favorite_keys):
         reopened.pin_favorite(key, False)
     assert not Window().favorite_actions

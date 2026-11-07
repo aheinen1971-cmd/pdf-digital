@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.13.0";
+    private const string Version = "1.14.0";
     private const string Title = "PDF Werkbank";
 
     [STAThread]
