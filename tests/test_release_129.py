@@ -12,7 +12,7 @@ import pymupdf as pdf
 from PySide6.QtCore import QItemSelectionModel
 from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QFileDialog, QLabel, QPlainTextEdit, QPushButton, QTableWidget
 
-from pdf_werkbank import Window
+from pdf_werkbank import VERSION, Window
 from plan_measure import CountedSymbol, Measurement, add_cutout, decode_plans, encode_plans, measurement_group_totals, polygon_area
 
 
@@ -105,19 +105,27 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as temporary:
     assert window.current_plan().symbols[-1].room == "Flur"
     assert source.read_bytes() == original
 
-    action = next(action for action in window.favorite_toolbar.actions() if action.text() == "Info")
+    tabs = [window.tools.tabText(index) for index in range(window.tools.count())]
+    index = tabs.index("Formular") + 1
+    assert tabs[index] == "Info" and tabs.count("Info") == 1
+    assert all(action.text() != "Info" for action in window.favorite_toolbar.actions())
+    window.tools.setCurrentIndex(index)
+    widgets = [window.ribbon.itemAt(row).widget() for row in range(window.ribbon.count())]
+    version = ".".join(map(str, VERSION))
+    assert any(isinstance(widget, QLabel) and version in widget.text() for widget in widgets)
+    button = next(widget for widget in widgets if isinstance(widget, QPushButton) and widget.text() == "Info zu PDF Werkbank")
     visited = []
     def info_dialog(dialog):
         visited.append(dialog.windowTitle())
         if dialog.windowTitle() == "Info zu PDF Werkbank":
-            assert any("1.29.0" in label.text() for label in dialog.findChildren(QLabel))
+            assert any(version in label.text() for label in dialog.findChildren(QLabel))
             assert any(button.text() == "Update-Info" for button in dialog.findChildren(QPushButton))
             next(button for button in dialog.findChildren(QPushButton) if button.text() == "Lizenz anzeigen").click()
         else:
             assert "GNU AFFERO GENERAL PUBLIC LICENSE" in dialog.findChild(QPlainTextEdit).toPlainText()
         return QDialog.DialogCode.Rejected
     with patch.object(QDialog, "exec", info_dialog):
-        action.trigger()
+        button.click()
     assert visited == ["Info zu PDF Werkbank", "Lizenz · PDF Werkbank"]
     window.close_tab(0)
 

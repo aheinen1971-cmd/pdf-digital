@@ -62,7 +62,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 29, 0)
+VERSION = (1, 29, 1)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -889,6 +889,7 @@ class Window(QMainWindow):
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
+            ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
         ]
         for name, _ in self.groups:
             self.tools.addTab(name)
@@ -1001,7 +1002,6 @@ class Window(QMainWindow):
         self.favorite_menu = QMenu(button)
         button.setMenu(self.favorite_menu)
         self.favorite_toolbar.addWidget(button)
-        self.favorite_toolbar.addAction("Info", self.show_program_info)
         self.populate_favorite_menu()
         self.refresh_favorites()
 
@@ -1259,7 +1259,10 @@ class Window(QMainWindow):
             item = self.ribbon.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-        for name, callback in self.groups[index][1]:
+        group, commands = self.groups[index]
+        if group == "Info":
+            self.ribbon.addWidget(QLabel("PDF Werkbank " + ".".join(map(str, VERSION))))
+        for name, callback in commands:
             button = QPushButton(name)
             button.clicked.connect(lambda checked=False, run=callback: run())
             self.ribbon.addWidget(button)
@@ -7039,7 +7042,7 @@ class Window(QMainWindow):
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
                          "Neu in dieser Version: Räume und Gewerke in der Messliste, getrennte "
-                         "Gruppensummen in Excel und dieser Info-Bereich.")
+                         "Gruppensummen in Excel und der Info-Bereich direkt hinter Formular.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
