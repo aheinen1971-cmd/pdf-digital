@@ -148,8 +148,8 @@ internal static class Launcher
                         throw new IOException("Im Zielordner liegt bereits eine unvollständige Einrichtung. " +
                                               "Bitte benenne diesen Ordner um und starte erneut:\n" + root);
                     Directory.CreateDirectory(staging);
-                    if (!ReuseRuntime(parent, staging, progress, cancellation))
-                        DownloadAll(staging, progress, cancellation).GetAwaiter().GetResult();
+                    int installedPackages = ReuseRuntime(parent, staging, progress, cancellation);
+                    DownloadPackages(staging, installedPackages, progress, cancellation).GetAwaiter().GetResult();
                     cancellation.ThrowIfCancellationRequested();
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
@@ -179,11 +179,17 @@ internal static class Launcher
         }
     }
 
-    private static bool ReuseRuntime(string parent, string staging, IProgress<string> progress, CancellationToken cancellation)
+    private static string[] PackageRows(string manifest)
     {
-        string expected;
+        return manifest.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(line => !String.IsNullOrWhiteSpace(line) && !line.StartsWith("#")).ToArray();
+    }
+
+    private static int ReuseRuntime(string parent, string staging, IProgress<string> progress, CancellationToken cancellation)
+    {
+        string[] expected;
         using (var reader = new StreamReader(Resource("DEPENDENCIES.tsv"), Encoding.UTF8))
-            expected = reader.ReadToEnd();
+            expected = PackageRows(reader.ReadToEnd());
         var installed = Directory.GetDirectories(parent)
             .Select(path =>
             {
@@ -200,15 +206,19 @@ internal static class Launcher
             string manifest = Path.Combine(source, "app", "DEPENDENCIES.tsv");
             string[] parts = { "python", @"app\tessdata", @"app\ki" };
             if (!File.Exists(Path.Combine(source, "ready-" + Path.GetFileName(source)))
-                || !File.Exists(manifest) || File.ReadAllText(manifest, Encoding.UTF8) != expected
+                || !File.Exists(manifest)
                 || !parts.All(part => Directory.Exists(Path.Combine(source, part))))
+                continue;
+            string[] previous = PackageRows(File.ReadAllText(manifest, Encoding.UTF8));
+            if (previous.Length == 0 || !expected.Take(previous.Length).SequenceEqual(previous)
+                || !expected.Skip(previous.Length).All(row => row.Split('\t')[1] == "wheel"))
                 continue;
             progress.Report("Übernehme vorhandene Laufzeitpakete …");
             foreach (string part in parts)
                 CopyTree(Path.Combine(source, part), Path.Combine(staging, part), cancellation);
-            return true;
+            return previous.Length;
         }
-        return false;
+        return 0;
     }
 
     private static void CopyTree(string source, string target, CancellationToken cancellation)
@@ -228,7 +238,7 @@ internal static class Launcher
     }
 
 
-    private static async Task DownloadAll(string staging, IProgress<string> progress, CancellationToken cancellation)
+    private static async Task DownloadPackages(string staging, int installedPackages, IProgress<string> progress, CancellationToken cancellation)
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         string app = Path.Combine(staging, "app");
@@ -237,11 +247,8 @@ internal static class Launcher
         using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
         using (var reader = new StreamReader(Resource("DEPENDENCIES.tsv"), Encoding.UTF8))
         {
-            string line;
-            while ((line = reader.ReadLine()) != null)
+            foreach (string line in PackageRows(reader.ReadToEnd()).Skip(installedPackages))
             {
-                if (String.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
-                    continue;
                 string[] fields = line.Split('\t');
                 string description = fields[0], kind = fields[1], name = fields[2], expected = fields[3], url = fields[4];
                 progress.Report("Lade " + description + " …");
@@ -277,11 +284,11 @@ internal static class Launcher
                 }
                 cancellation.ThrowIfCancellationRequested();
                 if (kind == "python")
-                    ZipFile.ExtractToDirectory(download, runtime);
+                    ExtractPackage(download, runtime, description);
                 else if (kind == "wheel")
-                    ZipFile.ExtractToDirectory(download, Path.Combine(runtime, "Lib", "site-packages"));
+                    ExtractPackage(download, Path.Combine(runtime, "Lib", "site-packages"), description);
                 else if (kind == "engine")
-                    ZipFile.ExtractToDirectory(download, Path.Combine(app, "ki", "runtime"));
+                    ExtractPackage(download, Path.Combine(app, "ki", "runtime"), description);
                 else if (kind == "data")
                 {
                     string data = Path.Combine(app, "tessdata");
@@ -293,6 +300,40 @@ internal static class Launcher
                 if (File.Exists(download))
                     File.Delete(download);
             }
+        }
+    }
+
+    private static void ExtractPackage(string archive, string target, string description)
+    {
+        try
+        {
+            Directory.CreateDirectory(target);
+            using (var input = File.OpenRead(archive))
+            using (var zip = new ZipArchive(input, ZipArchiveMode.Read))
+            {
+                foreach (var entry in zip.Entries)
+                {
+                    string name = entry.FullName.Replace('/', '\\');
+                    string[] parts = name.TrimEnd('\\').Split('\\');
+                    if (parts.Any(part => part.Length == 0 || part.EndsWith(".") || part.EndsWith(" ")
+                        || part.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+                        throw new InvalidDataException("Ungültiger Paketpfad: " + entry.FullName);
+                    string path = Path.Combine(target, String.Join("\\", parts));
+                    if (name.EndsWith("\\"))
+                        Directory.CreateDirectory(path);
+                    else
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(path));
+                        using (var source = entry.Open())
+                        using (var destination = new FileStream(path, FileMode.CreateNew))
+                            source.CopyTo(destination);
+                    }
+                }
+            }
+        }
+        catch (IOException error)
+        {
+            throw new IOException("Paket konnte nicht entpackt werden: " + description, error);
         }
     }
 }
