@@ -3,6 +3,7 @@ import os
 import posixpath
 import re
 from collections import Counter
+from itertools import zip_longest
 from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, fromstring, tostring
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -40,6 +41,8 @@ def workbook_parts(archive):
             strings = name
     sheets = {}
     for sheet in book.findall("{*}sheets/{*}sheet"):
+        if sheet.get("state", "visible") != "visible":
+            continue
         relation = next((value for key, value in sheet.attrib.items() if key.endswith("}id")), None)
         if relation in parts:
             sheets[sheet.attrib["name"]] = parts[relation]
@@ -124,7 +127,8 @@ def form_row_plan(doc, columns, rows, target, source):
                     values[name] = value
         if not values:
             issues.append("Keine Formularwerte zugeordnet")
-        filename = row.get("Dateiname", "").strip() or f"{source.stem}-{line:03d}"
+        filename = next((value.strip() for name, value in row.items() if name.casefold() == "dateiname"), "")
+        filename = filename or f"{source.stem}-{line:03d}"
         if not filename.lower().endswith(".pdf"):
             filename += ".pdf"
         if len(filename) > 180 or os.path.isreserved(filename) or re.search(r'[<>:"/\\|?*\x00-\x1f]', filename):
@@ -169,6 +173,37 @@ def fill_form(doc, values):
                 raise ValueError(f"Nicht unterstützter PDF-Feldtyp: {name}")
             field.field_value = value
             field.update()
+
+
+def form_entry_columns(doc, mappings):
+    choices = {}
+    for page in doc:
+        for field in page.widgets():
+            if field.field_flags & pdf.PDF_FIELD_IS_READ_ONLY:
+                continue
+            if field.field_type == pdf.PDF_WIDGET_TYPE_CHECKBOX:
+                options = ["Ja", "Nein"] if field.on_state() else []
+            elif field.field_type in (pdf.PDF_WIDGET_TYPE_COMBOBOX, pdf.PDF_WIDGET_TYPE_LISTBOX):
+                options = [value for value in (field.choice_values or []) if isinstance(value, str) and value.strip()]
+            else:
+                continue
+            choices.setdefault(field.field_name, []).append(options)
+    columns = []
+    for heading, aliases, required in mappings:
+        groups = [options for alias in aliases for options in choices.get(alias, [])]
+        common = list(dict.fromkeys(value for value in groups[0] if all(value in group for group in groups))) if groups else []
+        columns.append((heading, required, common))
+    if all(heading.casefold() != "dateiname" for heading, _, _ in columns):
+        columns.append(("Dateiname", False, []))
+    return columns
+
+
+def export_form_entry(path, columns):
+    lists = [options for _, _, options in columns]
+    lookup = list(zip_longest(*lists, fillvalue=None)) if any(lists) else []
+    extra = (("_Auswahl", [""] * len(columns), [25] * len(columns), lookup, None),) if lookup else ()
+    export_linked_sheet([], path, "Eingabe", [heading for heading, _, _ in columns], [28] * len(columns),
+                        extra_sheets=extra, entry_columns=columns)
 
 
 def form_fields(page):
@@ -236,6 +271,9 @@ def package(path, main, mime, contents):
         if name.startswith("xl/worksheets/") and name.endswith(".xml"):
             SubElement(ct, "Override", PartName="/" + name,
                        ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")
+    if "xl/styles.xml" in contents:
+        SubElement(ct, "Override", PartName="/xl/styles.xml",
+                   ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml")
     links = Element("Relationships", xmlns="http://schemas.openxmlformats.org/package/2006/relationships")
     SubElement(links, "Relationship", Id="rId1", Target=main,
                Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
@@ -440,23 +478,38 @@ def export_invoices(rows, path):
                         (24, 18, 22, 65, 42), 4)
 
 
-def export_linked_sheet(rows, path, title, header, widths, source_column=None, extra_sheets=()):
+def export_linked_sheet(rows, path, title, header, widths, source_column=None, extra_sheets=(), entry_columns=None):
     namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     workbook = Element("workbook", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
     sheets = SubElement(workbook, "sheets")
     links = Element("Relationships", xmlns=REL_NS)
     name = "xl/workbook.xml"
     contents = {name: workbook, "xl/_rels/workbook.xml.rels": links}
+    if entry_columns:
+        contents["xl/styles.xml"] = form_entry_styles(namespace)
+        SubElement(links, "Relationship", Id="rIdStyles", Target="styles.xml", Type=OFFICE_NS + "/styles")
+        if any(options for _, _, options in entry_columns):
+            names = SubElement(workbook, "definedNames")
+            for index, (_, _, options) in enumerate(entry_columns, 1):
+                if options:
+                    column = column_name(index)
+                    SubElement(names, "definedName", name=f"Auswahl_{index}").text = (
+                        f"'_Auswahl'!${column}$2:${column}${len(options) + 1}")
     specifications = ((title, header, widths, rows, source_column), *extra_sheets)
     for number, (title, header, widths, rows, source_column) in enumerate(specifications, 1):
         ref = f"rId{number}"
         filename = f"worksheets/sheet{number}.xml"
-        SubElement(sheets, "sheet", {"name": title, "sheetId": str(number), "r:id": ref})
+        metadata = {"name": title, "sheetId": str(number), "r:id": ref}
+        if entry_columns and number > 1:
+            metadata["state"] = "hidden"
+        SubElement(sheets, "sheet", metadata)
         SubElement(links, "Relationship", Id=ref, Target=filename, Type=OFFICE_NS + "/worksheet")
         sheet = Element("worksheet", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
         columns = SubElement(sheet, "cols")
         for index, width in enumerate(widths, 1):
-            SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
+            column = SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
+            if entry_columns and number == 1:
+                column.set("style", "1")
         data = SubElement(sheet, "sheetData")
         hyperlinks = None
         sources = Element("Relationships", xmlns=REL_NS)
@@ -468,6 +521,8 @@ def export_linked_sheet(rows, path, title, header, widths, source_column=None, e
                     SubElement(SubElement(row, "c", r=address, t="n"), "v").text = str(value)
                 elif value is not None:
                     cell = SubElement(row, "c", r=address, t="inlineStr")
+                    if entry_columns and number == 1 and index == 1:
+                        cell.set("s", "2" if entry_columns[column - 1][1] else "3")
                     SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
             if source_column and index > 1 and values[source_column - 1]:
                 if hyperlinks is None:
@@ -477,7 +532,58 @@ def export_linked_sheet(rows, path, title, header, widths, source_column=None, e
                 SubElement(hyperlinks, "hyperlink", {"ref": f"{column}{index}", "r:id": key})
                 SubElement(sources, "Relationship", Id=key, Target=Path(values[source_column - 1]).resolve().as_uri(),
                            TargetMode="External", Type=OFFICE_NS + "/hyperlink")
+        if entry_columns and number == 1:
+            add_entry_validation(sheet, entry_columns)
         contents["xl/" + filename] = sheet
         if hyperlinks is not None:
             contents[f"xl/worksheets/_rels/sheet{number}.xml.rels"] = sources
     package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", contents)
+
+
+def form_entry_styles(namespace):
+    styles = Element("styleSheet", xmlns=namespace)
+    fonts = SubElement(styles, "fonts", count="2")
+    for bold in (False, True):
+        font = SubElement(fonts, "font")
+        if bold:
+            SubElement(font, "b")
+        SubElement(font, "sz", val="11")
+        SubElement(font, "name", val="Calibri")
+    fills = SubElement(styles, "fills", count="3")
+    for pattern in ("none", "gray125", "solid"):
+        fill = SubElement(SubElement(fills, "fill"), "patternFill", patternType=pattern)
+        if pattern == "solid":
+            SubElement(fill, "fgColor", rgb="FFFFE1A2")
+            SubElement(fill, "bgColor", indexed="64")
+    border = SubElement(SubElement(styles, "borders", count="1"), "border")
+    for side in ("left", "right", "top", "bottom", "diagonal"):
+        SubElement(border, side)
+    base = {"numFmtId": "0", "fontId": "0", "fillId": "0", "borderId": "0"}
+    SubElement(SubElement(styles, "cellStyleXfs", count="1"), "xf", base)
+    formats = SubElement(styles, "cellXfs", count="4")
+    SubElement(formats, "xf", {**base, "xfId": "0"})
+    SubElement(formats, "xf", {**base, "xfId": "0", "numFmtId": "49", "applyNumberFormat": "1"})
+    for fill in ("2", "0"):
+        SubElement(formats, "xf", {**base, "xfId": "0", "fontId": "1", "applyFont": "1",
+                                    "fillId": fill, "applyFill": "1"})
+    SubElement(SubElement(styles, "cellStyles", count="1"), "cellStyle", name="Normal", xfId="0", builtinId="0")
+    return styles
+
+
+def add_entry_validation(sheet, columns):
+    rules = SubElement(sheet, "dataValidations")
+    for index, (_, required, options) in enumerate(columns, 1):
+        if not required and not options:
+            continue
+        column = column_name(index)
+        rule = SubElement(rules, "dataValidation", type="list" if options else "custom",
+                          sqref=f"{column}2:{column}{MAX_FORM_ROWS + 1}", allowBlank="0" if required else "1",
+                          showInputMessage="1", showErrorMessage="1", errorStyle="stop",
+                          promptTitle="Pflichtangabe" if required else "Auswahl",
+                          prompt="Bitte einen gültigen Wert eingeben.",
+                          error="Bitte einen zulässigen Wert eingeben.")
+        SubElement(rule, "formula1").text = f"Auswahl_{index}" if options else f"LEN(TRIM({column}2))>0"
+    if len(rules):
+        rules.set("count", str(len(rules)))
+    else:
+        sheet.remove(rules)

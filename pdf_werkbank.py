@@ -37,8 +37,8 @@ from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
 
-from office_export import (export_word, export_word_layout, export_excel, export_invoices, export_linked_sheet,
-                           fill_form, form_fields, form_row_plan, map_form_values, read_form_sheet,
+from office_export import (export_word, export_word_layout, export_excel, export_form_entry, export_invoices, export_linked_sheet,
+                           fill_form, form_entry_columns, form_fields, form_row_plan, map_form_values, read_form_sheet,
                            read_form_values, workbook_sheets)
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
@@ -67,7 +67,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 34, 0)
+VERSION = (1, 35, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -898,6 +898,7 @@ class Window(QMainWindow):
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
                           ("Formulare aus Excel füllen", self.fill_form_batch),
+                          ("Excel-Eingabevorlage erstellen", self.create_form_entry),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
             ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
         ]
@@ -5544,6 +5545,29 @@ class Window(QMainWindow):
         self.form_preview = dialog
         dialog.show()
 
+    def create_form_entry(self):
+        try:
+            templates = form_templates(self.favorite_settings)
+            if not templates:
+                raise ValueError("Lege zuerst unter „Excel-Formularvorlagen“ eine Feldzuordnung an.")
+            mapping, ok = QInputDialog.getItem(self, "Excel-Eingabevorlage", "Gespeicherte Feldzuordnung",
+                                               sorted(templates, key=str.casefold), editable=False)
+            if not ok:
+                return
+            source, _ = QFileDialog.getOpenFileName(self, "PDF-Formular für die Auswahllisten wählen", "", "PDF (*.pdf)")
+            if not source:
+                return
+            with pdf.open(source) as document:
+                if document.needs_pass or not document.is_pdf:
+                    raise ValueError("Bitte eine lesbare PDF-Formularvorlage ohne Passwort wählen.")
+                columns = form_entry_columns(document, templates[mapping])
+            name, _ = QFileDialog.getSaveFileName(self, "Excel-Eingabevorlage speichern",
+                                                 "Formulareingabe.xlsx", "Excel (*.xlsx)")
+            if name and self.save_workbook(name, lambda path: export_form_entry(path, columns)):
+                self.statusBar().showMessage("Excel-Vorlage gespeichert. Orange Spaltenüberschriften markieren Pflichtangaben.", 8500)
+        except Exception as exc:
+            self.error(exc)
+
     def fill_form_batch(self):
         try:
             templates = form_templates(self.favorite_settings)
@@ -7763,8 +7787,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: PDF-Formulare aus Excel befüllen "
-                         "und die ausgefüllten Kopien vor dem Speichern prüfen.")
+                         "Neu in dieser Version: Excel-Eingabevorlagen mit Pflichtspalten "
+                         "und Auswahllisten aus PDF-Formularen erstellen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
