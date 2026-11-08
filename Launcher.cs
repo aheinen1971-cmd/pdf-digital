@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.41.0";
+    private const string Version = "1.42.0";
     private const string Title = "PDF Werkbank";
     private const string UpdatePublicModulus = "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp";
 
@@ -424,6 +424,7 @@ internal static class Launcher
                     CopyResource("project_move.py", Path.Combine(app, "project_move.py"));
                     CopyResource("offline_tools.py", Path.Combine(app, "offline_tools.py"));
                     CopyResource("offline_tools_catalog.json", Path.Combine(app, "offline_tools_catalog.json"));
+                    CopyResource("offline_readiness.py", Path.Combine(app, "offline_readiness.py"));
                     CopyResource("office_export.py", Path.Combine(app, "office_export.py"));
                     CopyResource("intake.py", Path.Combine(app, "intake.py"));
                     CopyResource("invoice_validation.py", Path.Combine(app, "invoice_validation.py"));

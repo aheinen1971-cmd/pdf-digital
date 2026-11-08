@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
 from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
 from offline_tools import (PACKAGE_NAME, TOOLS, export_tools, install_tools, package_size, read_selection,
                            tool_status)
+from offline_readiness import PROBES, USB, check_invoice, check_ocr, check_pdfa, run_probe
 
 from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
@@ -79,7 +80,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 41, 0)
+VERSION = (1, 42, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -916,7 +917,8 @@ class Window(QMainWindow):
                           ("Formularlauf fortsetzen", self.resume_form_fill),
                           ("Excel-Eingabevorlage erstellen", self.create_form_entry),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
-            ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info)]),
+            ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info),
+                      ("Offline-Bereitschaft prüfen", self.offline_readiness_dialog)]),
         ]
         for name, _ in self.groups:
             self.tools.addTab(name)
@@ -1569,6 +1571,106 @@ class Window(QMainWindow):
                  "Feld": "Einen Bereich für das neue Formularfeld aufziehen.", "Link": "Einen Bereich für den Link aufziehen.", "Stempel": "Auf die Stelle für den Stempel klicken."}
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
+
+    def offline_readiness_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Offline-Bereitschaft prüfen")
+        dialog.resize(920, 350)
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Die Werkbank testet mit eigenen Beispielen. Dafür werden keine Dateien heruntergeladen "
+                      "und keine offenen Dokumente verwendet.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        table = QTableWidget(len(PROBES), 4)
+        table.setHorizontalHeaderLabels(["Funktion", "Status", "Ergebnis", "USB-Paket bei Bedarf"])
+        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        table.setColumnWidth(0, 105)
+        table.setColumnWidth(1, 105)
+        table.setColumnWidth(3, 275)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        def record(row, status, detail="", package=None):
+            for column, value in enumerate((PROBES[row], status, detail, package or
+                                           (USB[PROBES[row]] if status in ("Fehlt", "Startfehler") else ""))):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, column, item)
+
+        for row in range(len(PROBES)):
+            record(row, "Wartet")
+        root = Path(__file__).parent
+        tools = app_backup_root().with_name("Prüfwerkzeuge")
+        settings = self.favorite_settings
+        bundled_java = tools / "Java/bin/java.exe"
+        pdf_java = Path(settings.value("standards/java", "", str) or bundled_java)
+        invoice_java = Path(settings.value("einvoice/java", "", str) or pdf_java)
+        jars = sorted((tools / "veraPDF/bin").glob("cli-*.jar"))
+        pdf_jar = Path(settings.value("standards/jar", "", str) or (jars[0] if jars else tools / "veraPDF/bin/cli.jar"))
+        kosit = tools / KOSIT_FOLDER
+        tests = ((check_pdfa, pdf_java, pdf_jar), (check_invoice, invoice_java, kosit / "validator.jar", kosit / "rules"),
+                 (check_ocr, root / "tessdata"))
+        worker = ThreadPoolExecutor(max_workers=1)
+        timer = QTimer(dialog, interval=100)
+        timeout = QTimer(dialog, singleShot=True)
+        model = model_path()
+        runtime = root / "ki/runtime/llama-server.exe"
+        engine = LocalTextEngine(runtime, model, dialog)
+        pending = None
+        index = 0
+
+        def ai_finished(status, detail, package=None):
+            timeout.stop()
+            engine.stop()
+            record(3, status, detail, package)
+
+        def start_ai():
+            if not runtime.is_file():
+                record(3, "Fehlt", "Der lokale KI-Motor fehlt.", "USB-Offline-Installation (KI-Motor)")
+                return
+            if not model_ready(model):
+                record(3, "Fehlt", "Das lokale Sprachmodell fehlt oder ist unvollständig.")
+                return
+            record(3, "Läuft", "Kleine Testanfrage an die lokale KI …")
+            timeout.start(120_000)
+            engine.generate("WERKBANK", "Kopiere das einzelne Testwort genau. Antworte nur mit diesem Wort.", max_tokens=24)
+
+        def advance():
+            nonlocal pending, index
+            if pending is not None:
+                if not pending.done():
+                    return
+                record(index, *pending.result())
+                pending = None
+                index += 1
+            if index == len(tests):
+                timer.stop()
+                start_ai()
+            else:
+                record(index, "Läuft")
+                pending = worker.submit(run_probe, *tests[index])
+
+        def ai_response(text, _):
+            if re.search(r"\bWERKBANK\b", text, re.IGNORECASE):
+                ai_finished("Bereit", "Das lokale Modell hat auf die Testanfrage geantwortet.")
+            else:
+                ai_finished("Startfehler", "Die Testantwort entsprach nicht der erwarteten Antwort.")
+
+        timeout.timeout.connect(lambda: ai_finished("Startfehler", "Die lokale KI hat das Zeitlimit überschritten."))
+        engine.finished.connect(ai_response)
+        engine.failed.connect(lambda detail: ai_finished("Startfehler", detail))
+        timer.timeout.connect(advance)
+        timer.start()
+        try:
+            dialog.exec()
+        finally:
+            timer.stop()
+            timeout.stop()
+            engine.stop()
+            worker.shutdown(wait=False, cancel_futures=True)
 
     def offline_tools_dialog(self):
         base = app_backup_root().with_name("Prüfwerkzeuge")
