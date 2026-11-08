@@ -26,6 +26,10 @@ asset = {"name": f"PDF-Werkbank-{version}-Windows.zip", "state": "uploaded", "si
          "browser_download_url": updates.package_url(version), "digest": "sha256:" + checksum}
 release = {"tag_name": "v" + version, "assets": [asset]}
 assert updates.available_release(release, (1, 4, 1)) == (version, checksum, len(data))
+renamed = dict(asset, browser_download_url=asset["browser_download_url"].replace("/pdf-werkbank/", "/pdf-digital/"))
+assert updates.available_release(dict(release, assets=[renamed]), (1, 4, 1)) == (version, checksum, len(data))
+foreign = dict(renamed, browser_download_url=renamed["browser_download_url"].replace("/aheinen1971-cmd/", "/other/"))
+assert updates.available_release(dict(release, assets=[foreign]), (1, 4, 1)) is None
 assert updates.available_release(release, (1, 10, 0)) is None
 assert updates.available_release(dict(release, prerelease=True), (1, 4, 1)) is None
 assert updates.available_release(dict(release, draft=True), (1, 4, 1)) is None

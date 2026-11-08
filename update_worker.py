@@ -14,8 +14,10 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from zipfile import ZipFile
 
 REPOSITORY = "aheinen1971-cmd/pdf-werkbank"
-LATEST = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
+REPOSITORY_ID = 1449472766
+LATEST = f"https://api.github.com/repositories/{REPOSITORY_ID}/releases/latest"
 RELEASES = f"https://github.com/{REPOSITORY}/releases"
+RENAMED_RELEASES = "https://github.com/aheinen1971-cmd/pdf-digital/releases"
 MAX_PACKAGE = 20 * 1024 * 1024
 VERSION_PATTERN = r"(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})"
 SHA_PATTERN = r"[a-f0-9]{64}"
@@ -91,9 +93,10 @@ def available_release(data, current):
     version = version_tuple(label)
     if version is None or version <= current or not isinstance(data.get("assets"), list):
         return None
+    expected_urls = (package_url(label), f"{RENAMED_RELEASES}/download/v{label}/PDF-Werkbank-{label}-Windows.zip")
     for asset in data["assets"]:
         if (isinstance(asset, dict) and asset.get("name") == f"PDF-Werkbank-{label}-Windows.zip"
-                and asset.get("state") == "uploaded" and asset.get("browser_download_url") == package_url(label)):
+                and asset.get("state") == "uploaded" and asset.get("browser_download_url") in expected_urls):
             digest, size = asset.get("digest"), asset.get("size")
             if (isinstance(digest, str) and re.fullmatch("sha256:" + SHA_PATTERN, digest)
                     and type(size) is int and 0 < size <= MAX_PACKAGE):
