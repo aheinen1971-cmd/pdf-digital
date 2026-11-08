@@ -1,3 +1,4 @@
+from platform_support import IS_LINUX
 # SPDX-License-Identifier: AGPL-3.0-only
 import base64
 import hashlib
@@ -126,6 +127,8 @@ def failed_update(version, digest):
 
 
 def prepared_update(current):
+    if IS_LINUX:
+        return None
     try:
         root = update_root()
         candidates = []

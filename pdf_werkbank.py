@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import hashlib
+from platform_support import IS_LINUX, LINUX_NOTICE, data_root, windows_feature
 import json
 import os
 import re
@@ -1267,6 +1268,9 @@ class Window(QMainWindow):
         for key in self.favorite_keys:
             label, callback = self.favorite_commands[key]
             action = self.favorite_toolbar.addAction(self.ui(label))
+            if IS_LINUX and getattr(callback, "windows_only", False):
+                action.setEnabled(False)
+                action.setToolTip(LINUX_NOTICE)
             action.triggered.connect(lambda _=False, run=callback: run())
             self.favorite_actions.append(action)
 
@@ -1354,7 +1358,8 @@ class Window(QMainWindow):
 
         commands = [(self.ui(label), self.ui(group), callback,
                      key(f"{self.ui(label)} {self.ui(group)} {label} {group} {aliases.get(label, '')}"))
-                    for group, actions in self.groups for label, callback in actions]
+                    for group, actions in self.groups for label, callback in actions
+                    if not (IS_LINUX and getattr(callback, "windows_only", False))]
         dialog = QDialog(self)
         dialog.setWindowTitle(self.ui("Befehl suchen"))
         dialog.resize(630, 450)
@@ -1496,6 +1501,9 @@ class Window(QMainWindow):
             self.ribbon.addWidget(QLabel(f"{APP_TITLE} · {self.ui(APP_SLOGAN)}"))
         for name, callback in commands:
             button = QPushButton(self.ui(name))
+            if IS_LINUX and getattr(callback, "windows_only", False):
+                button.setEnabled(False)
+                button.setToolTip(LINUX_NOTICE)
             button.clicked.connect(lambda checked=False, run=callback: run())
             self.ribbon.addWidget(button)
         self.ribbon.addStretch()
@@ -1774,6 +1782,7 @@ class Window(QMainWindow):
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
 
+    @windows_feature
     def offline_readiness_dialog(self):
         dialog = QDialog(self)
         dialog.setWindowTitle(self.ui("Offline-Bereitschaft prüfen"))
@@ -1874,6 +1883,7 @@ class Window(QMainWindow):
             engine.stop()
             worker.shutdown(wait=False, cancel_futures=True)
 
+    @windows_feature
     def offline_tools_dialog(self):
         base = app_backup_root().with_name("Prüfwerkzeuge")
         model = model_path()
@@ -2694,7 +2704,7 @@ class Window(QMainWindow):
 
 
     def measurement_store(self):
-        return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Messungen"
+        return data_root() / "Messungen"
 
     def restore_measurements(self, session):
         path = store_path(self.measurement_store(), session.recovery_path, session.plan_source_stamp)
@@ -3283,7 +3293,7 @@ class Window(QMainWindow):
 
     def wait_for_scanner(self, command, env, label, output, errors):
         try:
-            process = subprocess.Popen(command, env=env, creationflags=subprocess.CREATE_NO_WINDOW,
+            process = subprocess.Popen(command, env=env, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                                        stdout=output, stderr=errors)
         except OSError as exc:
             self.error(exc)
@@ -3431,6 +3441,7 @@ class Window(QMainWindow):
         save_copy(document, path)
         self.open_path(str(path))
 
+    @windows_feature
     def scan_from_device(self):
         try:
             with tempfile.TemporaryDirectory() as folder:
@@ -3441,9 +3452,11 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    @windows_feature
     def quick_samsung_scan(self):
         self.scan_stack(quick=True)
 
+    @windows_feature
     def scan_stack(self, quick=False):
         with tempfile.TemporaryDirectory() as folder, pdf.open() as document:
             dialog = QDialog(self)
@@ -4846,11 +4859,11 @@ class Window(QMainWindow):
 
     def invoice_java(self, parent):
         settings = self.favorite_settings
-        tools = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
+        tools = data_root() / "Prüfwerkzeuge"
         java = Path(settings.value("einvoice/java", "", str) or settings.value("standards/java", "", str)
-                    or tools / "Java/bin/java.exe")
+                    or (shutil.which("java") if IS_LINUX else None) or tools / "Java/bin/java.exe")
         if not java.is_file():
-            selected, _ = QFileDialog.getOpenFileName(parent, self.ui("Java 11 oder neuer auswählen"), "", "Java (java.exe)")
+            selected, _ = QFileDialog.getOpenFileName(parent, self.ui("Java 11 oder neuer auswählen"), "", ("Java (java)" if IS_LINUX else "Java (java.exe)"))
             if not selected:
                 return None
             java = Path(selected)
@@ -5150,7 +5163,7 @@ class Window(QMainWindow):
         last_day = date.today()
         timer = QTimer(dialog)
         executor = ThreadPoolExecutor(max_workers=1)
-        tools = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
+        tools = data_root() / "Prüfwerkzeuge"
         statuses = {"passed": "Bestanden", "rejected": "Fehler gefunden", "unsupported": "Profil nicht unterstützt"}
 
         def selected():
@@ -5347,7 +5360,7 @@ class Window(QMainWindow):
                 path = next((path for path in stable if path not in records and retry.get(path, 0) <= now), None)
                 if path is not None:
                     java = Path(settings.value("einvoice/java", "", str) or settings.value("standards/java", "", str)
-                                or tools / "Java/bin/java.exe")
+                                or (shutil.which("java") if IS_LINUX else None) or tools / "Java/bin/java.exe")
                     directory = tools / KOSIT_FOLDER
                     jar, rules = directory / "validator.jar", directory / "rules"
                     installed = (java, jar, rules) if java.is_file() and jar.is_file() and (rules / "scenarios.xml").is_file() else None
@@ -5685,6 +5698,7 @@ class Window(QMainWindow):
             self.scroll.ensureVisible(round(box.x0 * self.scale), round(box.y0 * self.scale), 20, 60)
             self.statusBar().showMessage(self.ui_format('Pflichtfeld: {0}', missing[rows.currentRow()][2]), 7500)
 
+    @windows_feature
     def configure_explorer(self):
         launcher = os.environ.get("PDF_WERKBANK_ENTRYPOINT") or os.environ.get("PDF_WERKBANK_LAUNCHER")
         if not launcher:
@@ -8022,12 +8036,12 @@ class Window(QMainWindow):
 
     def standard_tools(self):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
-        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Prüfwerkzeuge"
+        base = data_root() / "Prüfwerkzeuge"
         jars = sorted((base / "veraPDF" / "bin").glob("cli-*.jar"))
-        java = settings.value("standards/java", "", str) or str(base / "Java" / "bin" / "java.exe")
+        java = settings.value("standards/java", "", str) or (shutil.which("java") if IS_LINUX else None) or str(base / "Java" / "bin" / "java.exe")
         jar = settings.value("standards/jar", "", str) or (str(jars[0]) if jars else "")
         if not Path(java).is_file():
-            java, _ = QFileDialog.getOpenFileName(self, self.ui("Java für veraPDF auswählen"), "", "Java (java.exe)")
+            java, _ = QFileDialog.getOpenFileName(self, self.ui("Java für veraPDF auswählen"), "", ("Java (java)" if IS_LINUX else "Java (java.exe)"))
         if not java:
             return
         if not jar or not Path(jar).is_file():
@@ -8448,6 +8462,7 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    @windows_feature
     def ai_text(self):
         session = self.current
         if not session:
@@ -9328,7 +9343,7 @@ class Window(QMainWindow):
             form.addRow(label, field)
         for widget in (recursive, indexed, fuzzy, notice):
             form.addRow(widget)
-        database = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Suchindex" / "ordner-v1.sqlite"
+        database = data_root() / "Suchindex" / "ordner-v1.sqlite"
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         reset = buttons.addButton(self.ui("Index für diesen Ordner löschen"), QDialogButtonBox.ButtonRole.ActionRole)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Suchen"))
@@ -9812,6 +9827,7 @@ class Window(QMainWindow):
         dialog.exec()
 
 
+    @windows_feature
     def usb_update_dialog(self):
         name, _ = QFileDialog.getOpenFileName(self, self.ui("Signiertes USB-Update wählen"), "", "Windows-Update (*-Windows.zip)")
         if not name:
@@ -9837,6 +9853,7 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    @windows_feature
     def usb_update_export(self):
         folder = QFileDialog.getExistingDirectory(self, self.ui("USB-Stick oder Zielordner auswählen"))
         if not folder:
@@ -9866,6 +9883,7 @@ class Window(QMainWindow):
                 timer.stop()
                 progress.close()
 
+    @windows_feature
     def update_info(self):
         label = ".".join(map(str, VERSION))
         launcher = os.environ.get("PDF_WERKBANK_LAUNCHER")
@@ -9886,6 +9904,7 @@ class Window(QMainWindow):
                                 + "\nWindows-Herausgebersignatur und Virenscan sind separate Prüfungen.")
 
 
+    @windows_feature
     def check_online(self):
         self.statusBar().showMessage(self.ui("Suche nach Updates …"), 6000)
         self.release_check.check(manual=True)
@@ -9910,7 +9929,7 @@ class Window(QMainWindow):
         try:
             self.update_process = subprocess.Popen(
                 [sys.executable, str(worker), version, digest, str(size)],
-                creationflags=subprocess.CREATE_NO_WINDOW)
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         except OSError:
             self.statusBar().showMessage(self.ui("Das Update konnte nicht vorbereitet werden."), 8000)
             return
@@ -9937,6 +9956,7 @@ class Window(QMainWindow):
         self.statusBar().showMessage(message, 10000)
 
 
+    @windows_feature
     def register_pdf_app(self):
         import winreg
 
@@ -9965,6 +9985,7 @@ class Window(QMainWindow):
             self.error(exc)
 
 
+    @windows_feature
     def choose_update_folder(self):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         folder = QFileDialog.getExistingDirectory(self, self.ui("Vertrauenswürdigen Update-Ordner auswählen"),
@@ -10037,7 +10058,7 @@ def main():
             return False
     forwarded = os.environ.pop("PDF_WERKBANK_UPDATE_FORWARDED", "")
     launcher = os.environ.get("PDF_WERKBANK_LAUNCHER")
-    if launcher and not forwarded:
+    if not IS_LINUX and launcher and not forwarded:
         update = prepared_update(VERSION)
         if update and secure_switch(update.stem.removeprefix("PDF-Werkbank-")):
             try:
@@ -10051,7 +10072,7 @@ def main():
                     return 0
             except OSError:
                 pass
-    if folder and not forwarded and (launcher or getattr(sys, "frozen", False)):
+    if not IS_LINUX and folder and not forwarded and (launcher or getattr(sys, "frozen", False)):
         try:
             update = find_update(folder)
             if (update and update.resolve() != Path(launcher or sys.executable).resolve()
@@ -10085,7 +10106,7 @@ def main():
         if backup_problem:
             window.update_result = backup_problem
             window.statusBar().showMessage(backup_problem, 15000)
-        window.start_recovery(Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Wiederherstellung")
+        window.start_recovery(data_root() / "Wiederherstellung")
         arguments = sys.argv[1:]
         if arguments and arguments[0] in EXPLORER_COMMANDS:
             window.explorer_action(arguments[0], arguments[1:])
@@ -10099,7 +10120,7 @@ def main():
     QTimer.singleShot(0, load_initial_documents)
     if settings.value("invoice-watch/folder", "", str):
         QTimer.singleShot(0, lambda: window.invoice_folder(show=False))
-    if os.environ.get("PDF_WERKBANK_OFFLINE") != "1":
+    if not IS_LINUX and os.environ.get("PDF_WERKBANK_OFFLINE") != "1":
         QTimer.singleShot(1200, window.release_check.check)
     return app.exec()
 

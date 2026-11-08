@@ -1,3 +1,4 @@
+from platform_support import data_root
 # SPDX-License-Identifier: AGPL-3.0-only
 import io
 import json
@@ -371,7 +372,7 @@ def restore_backup(data, selection, settings, root, mapped=None):
 
 
 def app_backup_root():
-    return Path(os.environ["LOCALAPPDATA"]) / "PDF Werkbank" / "Sicherungen"
+    return data_root() / "Sicherungen"
 
 
 def automatic_backup(settings, measurements, source, target, root=None, refresh=False):
