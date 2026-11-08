@@ -70,6 +70,8 @@ from preferences import (DEFAULT_FAVORITES, FORM_RULES, FORM_TEMPLATES, GROUPS, 
                          read_package, validate_form_templates)
 from archive_run import ArchiveRun
 from form_run import FormRun
+from scan_form import (SCAN_FORM_TEMPLATES, apply_scan_fields, capture_scan_fields, check_scan_target,
+                       scan_form_templates, validate_scan_templates)
 from project_move import (MAX_PROJECT, import_project, project_sources, read_project, scan_destinations,
                           write_project)
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
@@ -82,7 +84,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 45, 0)
+VERSION = (1, 46, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -816,6 +818,61 @@ class Canvas(QLabel):
         super().keyPressEvent(event)
 
 
+class ScanFieldPreview(QLabel):
+    def __init__(self, fields, select):
+        super().__init__()
+        self.fields, self.select = fields, select
+        self.page, self.selected, self.drag = -1, None, None
+        self.setCursor(Qt.CursorShape.OpenHandCursor)
+
+    def bounds(self, field):
+        x0, y0, x1, y1 = field["box"]
+        return QRectF(x0 * self.width(), y0 * self.height(),
+                      (x1 - x0) * self.width(), (y1 - y0) * self.height())
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter(self)
+        for index, field in enumerate(self.fields):
+            if field["page"] != self.page:
+                continue
+            box = self.bounds(field)
+            active = index == self.selected
+            painter.fillRect(box, QColor(255, 157, 42, 115) if active else QColor(52, 131, 213, 75))
+            painter.setPen(QPen(QColor("#9a4900" if active else "#20558c"), 2))
+            painter.drawRect(box)
+            painter.drawText(box.adjusted(3, 0, -3, 0), Qt.AlignmentFlag.AlignVCenter, field["name"])
+        painter.end()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            order = [i for i, field in enumerate(self.fields) if field["page"] == self.page]
+            if self.selected in order:
+                order.remove(self.selected)
+                order.append(self.selected)
+            for index in reversed(order):
+                if self.bounds(self.fields[index]).contains(event.position()):
+                    self.select(index)
+                    self.drag = index, event.position(), self.fields[index]["box"][:]
+                    self.setCursor(Qt.CursorShape.ClosedHandCursor)
+                    break
+
+    def mouseMoveEvent(self, event):
+        if self.drag:
+            index, origin, (x0, y0, x1, y1) = self.drag
+            delta = event.position() - origin
+            dx = min(1 - x1, max(-x0, delta.x() / self.width()))
+            dy = min(1 - y1, max(-y0, delta.y() / self.height()))
+            self.fields[index]["box"] = [x0 + dx, y0 + dy, x1 + dx, y1 + dy]
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.drag:
+            self.mouseMoveEvent(event)
+            self.drag = None
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+
+
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -912,6 +969,7 @@ class Window(QMainWindow):
                                 ("Lesereihenfolge & Bildbeschreibungen", self.accessible_copy)]),
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
+                          ("Feldvorlage speichern", self.save_scan_field_template), ("Feldvorlage anwenden", self.use_scan_field_template),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
@@ -6485,6 +6543,145 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    def save_scan_field_template(self):
+        session = self.current
+        if not session:
+            return
+        try:
+            fields = capture_scan_fields(session.doc)
+            settings = self.favorite_settings
+            templates = scan_form_templates(settings)
+            name, ok = QInputDialog.getText(self, "Feldvorlage speichern", "Name", text=session.path.stem)
+            name = name.strip()
+            if not ok or not name:
+                return
+            if name in templates and QMessageBox.question(
+                    self, "Feldvorlage ersetzen", f"„{name}“ ersetzen?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+            templates[name] = fields
+            validate_scan_templates(templates)
+            settings.setValue(SCAN_FORM_TEMPLATES, json.dumps(templates, ensure_ascii=False))
+            settings.sync()
+            if settings.status() != QSettings.Status.NoError:
+                raise OSError("Die Feldvorlage konnte nicht dauerhaft gespeichert werden.")
+            self.statusBar().showMessage(f"Feldvorlage mit {len(fields)} Feld(ern) gespeichert.", 8500)
+        except Exception as exc:
+            self.error(exc)
+
+    def use_scan_field_template(self):
+        session = self.current
+        if not session:
+            return
+        try:
+            templates = scan_form_templates(self.favorite_settings)
+            if not templates:
+                raise ValueError("Speichere zuerst eine PDF mit ausfüllbaren Feldern als Feldvorlage.")
+            name, ok = QInputDialog.getItem(self, "Feldvorlage anwenden", "Vorlage",
+                                           sorted(templates, key=str.casefold), editable=False)
+            if not ok:
+                return
+            fields = templates[name]
+            check_scan_target(session.doc, fields)
+            adjusted = self.preview_scan_field_template(session.doc, fields)
+            if adjusted is None:
+                return
+            validate_scan_templates({name: adjusted})
+            session.checkpoint("Scan-Feldvorlage anwenden")
+            try:
+                apply_scan_fields(session.doc, adjusted)
+            except Exception:
+                session.undo()
+                raise
+            self.changed()
+            self.statusBar().showMessage("Felder übernommen. Speichere eine PDF-Kopie für den Excel-Serienlauf.", 10000)
+        except Exception as exc:
+            self.error(exc)
+
+    def preview_scan_field_template(self, doc, template):
+        fields = [{**field, "box": field["box"][:]} for field in template]
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Feldvorlage auf dem Scan ausrichten")
+        dialog.resize(960, 740)
+        layout = QVBoxLayout(dialog)
+        hint = QLabel("Ziehe die Felder mit der Maus an die passende Stelle. "
+                      "Die Vorlage folgt der sichtbaren Seitenausrichtung. Drehe falsch ausgerichtete Scans vorab.")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+        pages = QComboBox()
+        page_numbers = sorted({field["page"] for field in fields})
+        for index in page_numbers:
+            pages.addItem(f"Seite {index + 1}", index)
+        layout.addWidget(pages)
+        split = QSplitter()
+        listing = QListWidget()
+        split.addWidget(listing)
+        scroll = QScrollArea()
+        scroll.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        def select(index):
+            for row in range(listing.count()):
+                if listing.item(row).data(Qt.ItemDataRole.UserRole) == index:
+                    listing.setCurrentRow(row)
+                    break
+
+        image = ScanFieldPreview(fields, select)
+        scroll.setWidget(image)
+        split.addWidget(scroll)
+        split.setStretchFactor(1, 4)
+        layout.addWidget(split, 1)
+        required = QCheckBox("Ausgewähltes Feld ist ein Pflichtfeld")
+        layout.addWidget(required)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Felder übernehmen")
+        reset = buttons.addButton("Positionen auf dieser Seite zurücksetzen", QDialogButtonBox.ButtonRole.ActionRole)
+        layout.addWidget(buttons)
+
+        def show_field():
+            item = listing.currentItem()
+            image.selected = item.data(Qt.ItemDataRole.UserRole) if item else None
+            required.blockSignals(True)
+            required.setEnabled(image.selected is not None)
+            required.setChecked(image.selected is not None and fields[image.selected]["required"])
+            required.blockSignals(False)
+            image.update()
+
+        def show_page():
+            image.page = pages.currentData()
+            image.drag = None
+            page = doc[image.page]
+            rendered = pixmap(page, min(640 / page.rect.width, 710 / page.rect.height))
+            image.setPixmap(rendered)
+            image.resize(rendered.size())
+            listing.clear()
+            for index, field in enumerate(fields):
+                if field["page"] == image.page:
+                    item = QListWidgetItem(field["name"])
+                    item.setToolTip(field["kind"])
+                    item.setData(Qt.ItemDataRole.UserRole, index)
+                    listing.addItem(item)
+            listing.setCurrentRow(0)
+
+        def reset_page():
+            for field, initial in zip(fields, template):
+                if field["page"] == image.page:
+                    field["box"] = initial["box"][:]
+            image.update()
+
+        def set_required(enabled):
+            if image.selected is not None:
+                fields[image.selected]["required"] = enabled
+
+        listing.currentRowChanged.connect(show_field)
+        pages.currentIndexChanged.connect(show_page)
+        required.toggled.connect(set_required)
+        reset.clicked.connect(reset_page)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        show_page()
+        return fields if dialog.exec() == QDialog.DialogCode.Accepted else None
+
     def suggest_fields(self):
         session = self.current
         if not session:
@@ -8529,8 +8726,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Fehlerhafte Formularzeilen als Excel-Korrekturliste "
-                         "exportieren und mit Änderungsvorschau wieder übernehmen.")
+                         "Neu in dieser Version: Ausfüllbare Scan-Felder als Vorlage speichern "
+                         "und in der Vorschau auf weiteren Scans ausrichten.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
@@ -8647,14 +8844,15 @@ class Window(QMainWindow):
         self.release_check.check(manual=True)
 
     def show_online_update(self, update, success, manual):
-        self.update_result = ("Update-Suche abgeschlossen." if success else "Die Update-Suche ist fehlgeschlagen.")
+        failure = (self.release_check.error_detail or "Die Update-Suche ist fehlgeschlagen.") + (
+            " Versuche es später erneut oder nutze „Info → Update vom USB-Stick“.")
+        self.update_result = "Update-Suche abgeschlossen." if success else failure
         if prepared_update(VERSION):
             self.statusBar().showMessage("Ein Update ist bereit und startet beim nächsten Öffnen.", 8000)
             return
         if not update:
             if manual:
-                message = ("Du hast die aktuelle Version." if success
-                           else "Die Update-Suche war gerade nicht erreichbar. Bitte versuche es später erneut.")
+                message = "Du hast die aktuelle Version." if success else failure
                 self.statusBar().showMessage(message, 8000)
             return
         if self.update_process is not None:

@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 from plan_measure import MAX_PLAN_BYTES
 from form_run import FormRun
+from scan_form import SCAN_FORM_TEMPLATES, scan_form_templates, validate_scan_templates
 from filing import file_signature
 from preferences import (FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
                          validate_form_templates, validate_groups)
@@ -213,6 +214,7 @@ def write_backup(target, settings, root, password=None):
         plan_times[relative] = path.stat().st_mtime_ns
     entries["meta.json"] = json.dumps({"plan_times": plan_times, "reminders": reminders,
                                       "form_templates": form_templates(settings),
+                                      "scan_form_templates": scan_form_templates(settings),
                                       "locations": capture_locations(settings),
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
@@ -316,17 +318,23 @@ def read_backup_zip(source):
         if not isinstance(archive_root, str) or len(archive_root) > 4096:
             raise ValueError("Ungültiger Archivpfad im Backup.")
         templates = validate_form_templates(metadata.get("form_templates", {}))
+        scan_templates = validate_scan_templates(metadata.get("scan_form_templates", {}))
         locations = validate_locations(metadata.get("locations", {}))
     return {"settings": groups, "plans": plans, "archive": history, "plan_times": times,
-            "archive_root": archive_root, "form_templates": templates, "locations": locations}
+            "archive_root": archive_root, "form_templates": templates, "scan_form_templates": scan_templates,
+            "locations": locations}
 
 
 def restore_backup(data, selection, settings, root, mapped=None):
     if "settings" in selection:
         templates = data.get("form_templates")
+        scan_templates = data.get("scan_form_templates")
+        merged_scan = validate_scan_templates({**scan_form_templates(settings), **scan_templates}) if scan_templates else None
         if templates:
             merged = validate_form_templates({**form_templates(settings), **templates})
             settings.setValue(FORM_TEMPLATES, json.dumps(merged, ensure_ascii=False))
+        if merged_scan is not None:
+            settings.setValue(SCAN_FORM_TEMPLATES, json.dumps(merged_scan, ensure_ascii=False))
         import_groups(settings, data["settings"])
     if "archive" in selection:
         for key, value in data["archive"].items():
@@ -396,6 +404,12 @@ def backup_preview(data, settings, root):
     rows = [("Einstellungen", GROUPS[key], "Bereits gleich" if value == local_groups.get(key)
              else "Übernehmen – ersetzt die lokalen Einstellungen dieser Gruppe")
             for key, value in data["settings"].items()]
+    if data.get("scan_form_templates"):
+        local_scans = scan_form_templates(settings)
+        for name, fields in data["scan_form_templates"].items():
+            state = ("Bereits gleich" if local_scans.get(name) == fields else
+                     "Übernehmen – ersetzt die gleichnamige Vorlage" if name in local_scans else "Übernehmen")
+            rows.append(("Einstellungen", f"Scan-Feldvorlage · {name}", state))
     if data.get("form_templates"):
         local_templates = form_templates(settings)
         for name, columns in data["form_templates"].items():
@@ -436,6 +450,7 @@ def reminder_date(value):
 def backup_check_rows(data):
     rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
     rows.extend(("Excel-Formularvorlage", name, "Lesbar") for name in data.get("form_templates", {}))
+    rows.extend(("Scan-Feldvorlage", name, "Lesbar") for name in data.get("scan_form_templates", {}))
     _, _, paths = location_plan(data.get("locations", {"folders": {}, "runs": {}}), {})
     rows.extend((group, name, status.replace("Übernehmen", "Erreichbar").replace("Lauf übernehmen", "Laufdaten lesbar"))
                 for group, name, status in paths)
