@@ -4,6 +4,7 @@ import json
 import os
 import posixpath
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
@@ -332,6 +333,32 @@ def form_row_plan(doc, columns, rows, target, source):
         if path is not None and counts[name.casefold()] > 1:
             issues.append("Doppelter Dateiname")
     return plan
+
+
+def scan_row_index(rows, heading):
+    index = defaultdict(list)
+    for line, row, _ in rows:
+        value = row.get(heading, "").strip()
+        if value:
+            index[unicodedata.normalize("NFKC", value).casefold()].append(line)
+    return dict(index)
+
+
+def scan_keys(text, index, label):
+    text = unicodedata.normalize("NFKC", text).casefold()
+    words = unicodedata.normalize("NFKC", label).casefold().split()
+    if words:
+        prefix = r"[ \t]+".join(map(re.escape, words))
+        pattern = rf"(?<!\w){prefix}(?!\w)[ \t]*[:#=–-]?[ \t]*(?:\r?\n[ \t]*)?([\w][\w./-]{{0,79}})(?![\w/-])"
+        return list(dict.fromkeys(key.rstrip(".") for key in re.findall(pattern, text)
+                                  if any(char.isdigit() for char in key)))
+    keys = {key for key in index if 4 <= len(key) <= 80 and any(char.isdigit() for char in key)
+            and re.fullmatch(r"[\w./-]+", key)}
+    if not keys:
+        return []
+    pattern = "|".join(re.escape(key) for key in sorted(keys, key=lambda key: (-len(key), key)))
+    token = rf"(?<![\w/-])({pattern})(?![\w/-]|\.[\w])"
+    return list(dict.fromkeys(re.findall(token, text)))
 
 
 def fill_form(doc, values):

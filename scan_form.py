@@ -176,6 +176,23 @@ def match_scan_templates(doc, templates):
     return matches
 
 
+def read_scan_text(doc, tessdata):
+    if len(doc) > 20:
+        raise ValueError("Mehr als 20 Seiten. Die Excel-Zeile bitte von Hand zuordnen.")
+    texts = []
+    for page in doc:
+        text = page.get_text(sort=True)
+        if not text.strip():
+            if not any((tessdata / f"{language}.traineddata").is_file() for language in ("deu", "eng")):
+                raise ValueError("OCR-Sprachdaten fehlen. Die Excel-Zeile bitte von Hand zuordnen.")
+            language = "+".join(language for language in ("deu", "eng")
+                                if (tessdata / f"{language}.traineddata").is_file())
+            recognized = page.get_textpage_ocr(language=language, dpi=160, full=True, tessdata=str(tessdata))
+            text = page.get_text(sort=True, textpage=recognized)
+        texts.append(text)
+    return "\n".join(texts)
+
+
 def validate_scan_templates(templates):
     if not isinstance(templates, dict) or len(templates) > 50:
         raise ValueError("Es können bis zu 50 Scan-Feldvorlagen gespeichert werden.")

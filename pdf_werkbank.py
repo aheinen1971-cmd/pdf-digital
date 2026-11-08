@@ -50,7 +50,7 @@ from update_worker import (SIGNER, digest_file, export_usb_update, prepared_upda
 from office_export import (export_word, export_word_layout, export_excel, export_form_entry, export_invoices, export_linked_sheet,
                            corrected_form_rows, correction_changes, export_corrections,
                            fill_form, form_entry_columns, form_fields, form_row_plan, map_form_values, read_form_sheet,
-                           read_form_values, workbook_sheets)
+                           read_form_values, scan_keys, scan_row_index, workbook_sheets)
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
                     install_explorer_commands, invoice_match_key, invoice_xml, merge_pdfs, read_invoice)
 from invoice_validation import KOSIT_FOLDER, RULES_VERSION, ensure_validator, validate_invoice_xml, xml_root
@@ -71,7 +71,7 @@ from preferences import (DEFAULT_FAVORITES, FORM_RULES, FORM_TEMPLATES, GROUPS, 
 from archive_run import ArchiveRun
 from form_run import FormRun
 from scan_form import (SCAN_FORM_TEMPLATES, aligned_boxes, anchor_image, apply_scan_fields, capture_anchor,
-                       capture_scan_fields, check_scan_target, detect_scan_page, match_scan_templates, scan_form_templates,
+                       capture_scan_fields, check_scan_target, detect_scan_page, match_scan_templates, read_scan_text, scan_form_templates,
                        validate_scan_templates)
 from project_move import (MAX_PROJECT, import_project, project_sources, read_project, scan_destinations,
                           write_project)
@@ -85,7 +85,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 48, 0)
+VERSION = (1, 49, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -985,6 +985,7 @@ class Window(QMainWindow):
                           ("Feldvorlage speichern", self.save_scan_field_template), ("Feldvorlage anwenden", self.use_scan_field_template),
                           ("Ausrichtpunkte speichern", self.set_scan_template_anchors),
                           ("Scan-Stapel mit Feldvorlagen", self.scan_field_batch),
+                          ("Scans mit Excel-Zeilen füllen", self.scan_excel_batch),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
@@ -6614,6 +6615,264 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    def scan_excel_batch(self):
+        try:
+            mappings = form_templates(self.favorite_settings)
+            if not mappings:
+                raise ValueError("Speichere zuerst eine Feldzuordnung unter „Excel-Formularvorlagen“.")
+            names, _ = QFileDialog.getOpenFileNames(self, "Scans für die Excel-Zuordnung auswählen", "", "PDF (*.pdf)")
+            if not names:
+                return
+            paths = list(dict.fromkeys(Path(name).resolve() for name in names))
+            if len(paths) > 60:
+                raise ValueError("Bitte höchstens 60 Scans auf einmal auswählen.")
+            name, _ = QFileDialog.getOpenFileName(self, "Excel-Liste auswählen", "", "Excel (*.xlsx)")
+            if not name:
+                return
+            workbook = Path(name).resolve()
+            stamp = file_signature(workbook)
+            sheets = workbook_sheets(workbook)
+            sheet = sheets[0]
+            if len(sheets) > 1:
+                sheet, ok = QInputDialog.getItem(self, "Excel-Liste", "Tabellenblatt", sheets, editable=False)
+                if not ok:
+                    return
+            rows = read_form_sheet(workbook, sheet)
+            if file_signature(workbook) != stamp:
+                raise ValueError("Die Excel-Datei wurde beim Einlesen geändert.")
+            headings = sorted(rows.columns, key=lambda heading: ("kundennummer" not in heading.casefold(), heading.casefold()))
+            key, ok = QInputDialog.getItem(self, "Excel-Zeilen zuordnen", "Excel-Spalte mit der Kennung", headings, editable=False)
+            if not ok:
+                return
+            label, ok = QInputDialog.getText(self, "Kennung im Scan",
+                                             "Gedruckte Bezeichnung vor der Kennung, z. B. Kundennummer. Leer sucht im ganzen Scan.",
+                                             text=key)
+            if not ok:
+                return
+            mapping, ok = QInputDialog.getItem(self, "Feldzuordnung", "Excel-Formularvorlage",
+                                               sorted(mappings, key=str.casefold), editable=False)
+            if not ok:
+                return
+            folder = QFileDialog.getExistingDirectory(self, "Zielordner für ausgefüllte PDF-Kopien wählen", str(workbook.parent))
+            if folder:
+                self.review_scan_excel_batch(paths, workbook, stamp, rows, key, label.strip(), mappings[mapping], Path(folder))
+        except Exception as exc:
+            self.error(exc)
+
+    def review_scan_excel_batch(self, paths, workbook, workbook_stamp, rows, key, label, mapping, folder):
+        index = scan_row_index(rows, key)
+        if not index:
+            raise ValueError("Die ausgewählte Excel-Spalte enthält keine Kennungen.")
+        templates = scan_form_templates(self.favorite_settings)
+        tessdata = Path(__file__).with_name("tessdata")
+        details, chosen = {}, {}
+        row_values = {line: row for line, row, _ in rows}
+
+        def fill(document, plan):
+            _, _, _, values, issues = plan
+            if issues:
+                raise ValueError(" · ".join(issues))
+            fill_form(document, values)
+            missing = missing_required_fields(document)
+            if missing:
+                raise ValueError("PDF-Pflichtfelder fehlen: " + ", ".join(name for _, _, name in missing))
+
+        def inspect(path):
+            try:
+                stamp = file_signature(path)
+                with pdf.open(path) as document:
+                    if (not document.is_pdf or document.needs_pass or document.is_encrypted
+                            or not document.permissions & pdf.PDF_PERM_FORM or document.get_sigflags() > 0):
+                        raise ValueError("Bitte eine ungeschützte, unsignierte PDF verwenden.")
+                    issue = ""
+                    try:
+                        keys = scan_keys(read_scan_text(document, tessdata), index, label)
+                    except (RuntimeError, ValueError) as exc:
+                        keys, issue = [], str(exc)
+                    added = []
+                    if not any(list(page.widgets()) for page in document):
+                        matches = match_scan_templates(document, templates)
+                        if len(matches) != 1:
+                            return (stamp, keys, {}, [], "Feldvorlage zuerst anwenden")
+                        added = next(iter(matches.values()))
+                        apply_scan_fields(document, added)
+                    plans = {entry[0]: entry for entry in form_row_plan(document, mapping, rows, folder, path)}
+                    candidates = [line for identifier in keys for line in index.get(identifier, [])]
+                    if len(keys) == len(candidates) == 1:
+                        plan = plans[candidates[0]]
+                        try:
+                            fill(document, plan)
+                            chosen[path] = plan
+                        except (RuntimeError, ValueError) as exc:
+                            issue = str(exc)
+                if file_signature(path) != stamp:
+                    raise ValueError("Der Scan wurde beim Einlesen geändert.")
+                return stamp, keys, plans, added, issue
+            except (OSError, RuntimeError, ValueError) as exc:
+                chosen.pop(path, None)
+                return None, [], {}, [], str(exc)
+
+        outcomes = self.inspect_pdfs(paths, "Scans werden gelesen und mit Excel verglichen …", inspect)
+        if len(outcomes) != len(paths):
+            return
+        details.update(outcomes)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Zuordnung von Scans und Excel-Zeilen prüfen")
+        dialog.resize(960, 520)
+        layout = QVBoxLayout(dialog)
+        info = QLabel(f"Schlüsselspalte: {key}. Eindeutige Zuordnungen sind vorausgewählt. "
+                      "Wähle unklare Zeilen von Hand und kontrolliere die PDF bei Bedarf in der Vorschau.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        table = QTableWidget(len(paths), 6)
+        table.setHorizontalHeaderLabels(["Speichern", "Scan", "Gelesene Kennung", "Excel-Zeile", "Ergebnis", "Zieldatei"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(table)
+        notice = QLabel()
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        manual = buttons.addButton("Excel-Zeile zuordnen", QDialogButtonBox.ButtonRole.ActionRole)
+        preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton("Auswahl als PDF-Kopien speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        layout.addWidget(buttons)
+
+        def set_row(row, message, checked=False):
+            path = paths[row]
+            plan = chosen.get(path)
+            mark = QTableWidgetItem()
+            if plan is None:
+                mark.setFlags(mark.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+            mark.setCheckState(Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
+            table.setItem(row, 0, mark)
+            for column, value in enumerate((path.name, ", ".join(details[path][1]), str(plan[0]) if plan else "",
+                                             message, plan[1] if plan else ""), 1):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, column, item)
+
+        def conflicts(selected_paths):
+            lines = Counter(chosen[path][0] for path in selected_paths)
+            names = Counter(chosen[path][1].casefold() for path in selected_paths)
+            return {path for path in selected_paths if lines[chosen[path][0]] > 1 or names[chosen[path][1].casefold()] > 1}
+
+        initial_conflicts = conflicts(chosen)
+        for row, path in enumerate(paths):
+            _, keys, _, _, issue = details[path]
+            count = sum(len(index.get(identifier, [])) for identifier in keys)
+            if path in initial_conflicts:
+                message = "Excel-Zeile oder Zielname mehrfach zugeordnet"
+            elif path in chosen:
+                message = "Eindeutig zugeordnet"
+            else:
+                message = issue or ("Mehrere Kennungen oder Excel-Zeilen" if len(keys) > 1 or count > 1
+                                    else "Keine passende Excel-Zeile erkannt")
+            set_row(row, message, path in chosen and path not in initial_conflicts)
+
+        def selection():
+            return [path for row, path in enumerate(paths) if path in chosen
+                    and table.item(row, 0).checkState() == Qt.CheckState.Checked]
+
+        def refresh(*_):
+            row = table.currentRow()
+            current = paths[row] if row >= 0 else None
+            manual.setEnabled(current is not None and bool(details[current][2]))
+            preview.setEnabled(current in chosen)
+            selected = selection()
+            clash = conflicts(selected)
+            notice.setText("Eine Excel-Zeile und ein Zielname dürfen je Auswahl nur einmal vorkommen." if clash else "")
+            save.setEnabled(bool(selected) and not clash)
+
+        def filled(path, plan):
+            stamp, _, _, added, _ = details[path]
+            if file_signature(path) != stamp:
+                raise ValueError("Der Scan wurde geändert. Starte die Prüfung erneut.")
+            document = pdf.open(path)
+            try:
+                if added:
+                    apply_scan_fields(document, added)
+                fill(document, plan)
+                return document
+            except Exception:
+                document.close()
+                raise
+
+        def assign(row, *_):
+            if row < 0:
+                return
+            path = paths[row]
+            plans = details[path][2]
+            if not plans:
+                return
+            labels = {f"Zeile {line} · {row_values[line].get(key, '')}": line for line in plans}
+            value, ok = QInputDialog.getItem(dialog, "Excel-Zeile zuordnen", path.name, list(labels), editable=False)
+            if not ok:
+                return
+            plan = plans[labels[value]]
+            try:
+                with filled(path, plan):
+                    pass
+                chosen[path] = plan
+                set_row(row, "Von Hand bestätigt", True)
+                refresh()
+            except Exception as exc:
+                self.error(exc)
+
+        def show_preview():
+            path = paths[table.currentRow()]
+            try:
+                with filled(path, chosen[path]) as document:
+                    self.preview_send(document, f"Ausgefüllt aus Excel-Zeile {chosen[path][0]}.", "PDF-Kopie ansehen", review_only=True)
+            except Exception as exc:
+                self.error(exc)
+
+        table.cellDoubleClicked.connect(assign)
+        table.currentCellChanged.connect(refresh)
+        table.itemChanged.connect(refresh)
+        manual.clicked.connect(lambda: assign(table.currentRow()))
+        preview.clicked.connect(show_preview)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        table.setCurrentCell(0, 1)
+        refresh()
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        selected = selection()
+        if conflicts(selected):
+            raise ValueError("Die Auswahl enthält doppelte Excel-Zeilen oder Zielnamen.")
+        if file_signature(workbook) != workbook_stamp:
+            raise ValueError("Die Excel-Datei wurde geändert. Starte die Prüfung erneut.")
+
+        def store(path):
+            plan = chosen[path]
+            target = plan[2]
+            try:
+                with filled(path, plan) as document, tempfile.TemporaryDirectory(dir=folder) as work:
+                    candidate = Path(work) / target.name
+                    save_copy(document, candidate)
+                    if file_signature(path) != details[path][0] or file_signature(workbook) != workbook_stamp:
+                        raise ValueError("Scan oder Excel-Datei wurde beim Speichern geändert.")
+                    if os.name == "nt":
+                        candidate.rename(target)
+                    else:
+                        os.link(candidate, target)
+                return ""
+            except FileExistsError:
+                return "Zieldatei existiert bereits."
+            except Exception as exc:
+                return str(exc)
+
+        saved = self.inspect_pdfs(selected, "Ausgefüllte Scan-Kopien werden gespeichert …", store)
+        report = QMessageBox(self)
+        report.setWindowTitle("Scans mit Excel-Zeilen füllen")
+        report.setText(f"{sum(not issue for _, issue in saved)} von {len(selected)} gewählten PDF-Kopien gespeichert.")
+        failures = [f"{path.name}: {issue}" for path, issue in saved if issue]
+        if failures:
+            report.setDetailedText("\n".join(failures))
+        report.exec()
+
     def scan_field_batch(self):
         try:
             templates = scan_form_templates(self.favorite_settings)
@@ -9067,8 +9326,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Feldvorlagen in gemischten Scan-Stapeln "
-                         "erkennen, prüfen und als ausfüllbare Kopien speichern.")
+                         "Neu in dieser Version: Scans anhand gelesener Kennungen mit Excel-Zeilen "
+                         "verbinden und ausgefüllte PDF-Kopien speichern.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
