@@ -215,6 +215,7 @@ def write_backup(target, settings, root, password=None):
     entries["meta.json"] = json.dumps({"plan_times": plan_times, "reminders": reminders,
                                       "form_templates": form_templates(settings),
                                       "scan_form_templates": scan_form_templates(settings),
+                                      "dark_mode": settings.value("view/dark-mode", False, bool),
                                       "locations": capture_locations(settings),
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
@@ -319,10 +320,13 @@ def read_backup_zip(source):
             raise ValueError("Ungültiger Archivpfad im Backup.")
         templates = validate_form_templates(metadata.get("form_templates", {}))
         scan_templates = validate_scan_templates(metadata.get("scan_form_templates", {}))
+        dark_mode = metadata.get("dark_mode")
+        if dark_mode is not None and type(dark_mode) is not bool:
+            raise ValueError("Ungültige Darstellungseinstellung im Backup.")
         locations = validate_locations(metadata.get("locations", {}))
     return {"settings": groups, "plans": plans, "archive": history, "plan_times": times,
             "archive_root": archive_root, "form_templates": templates, "scan_form_templates": scan_templates,
-            "locations": locations}
+            "locations": locations, "dark_mode": dark_mode}
 
 
 def restore_backup(data, selection, settings, root, mapped=None):
@@ -335,6 +339,8 @@ def restore_backup(data, selection, settings, root, mapped=None):
             settings.setValue(FORM_TEMPLATES, json.dumps(merged, ensure_ascii=False))
         if merged_scan is not None:
             settings.setValue(SCAN_FORM_TEMPLATES, json.dumps(merged_scan, ensure_ascii=False))
+        if data.get("dark_mode") is not None:
+            settings.setValue("view/dark-mode", data["dark_mode"])
         import_groups(settings, data["settings"])
     if "archive" in selection:
         for key, value in data["archive"].items():

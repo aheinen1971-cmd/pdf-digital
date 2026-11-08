@@ -28,13 +28,13 @@ if os.name == "nt":
 
 import pymupdf as pdf
 from PySide6.QtCore import QDate, QEventLoop, QItemSelectionModel, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateEdit, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout,
     QHBoxLayout, QInputDialog, QLabel, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem, QMainWindow,
     QHeaderView, QMenu, QMessageBox, QProgressDialog, QPushButton, QRubberBand, QScrollArea, QSplitter,
-    QSlider, QSpinBox, QTabBar, QTableWidget, QTableWidgetItem, QToolBar, QToolButton,
+    QSlider, QSpinBox, QStyleFactory, QTabBar, QTableWidget, QTableWidgetItem, QToolBar, QToolButton,
     QVBoxLayout, QWidget,
 )
 
@@ -85,7 +85,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 49, 0)
+VERSION = (1, 50, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -106,6 +106,44 @@ QScrollArea { background: #dce5ef; border: 0; }
 QSplitter::handle { background: #cfdbe9; width: 3px; }
 QStatusBar { background: #f4f7fb; color: #36516d; }
 """
+
+DARK_STYLE = """
+QMainWindow, QWidget#shell, QDialog { background: #181d25; color: #edf3fa; }
+QTabBar::tab { padding: 8px 15px; color: #c2d0de; background: #222b36; }
+QTabBar::tab:selected { background: #303f51; color: #cbe6ff; }
+QWidget#ribbon { background: #222b36; border-bottom: 1px solid #45546a; }
+QPushButton { padding: 7px 12px; border: 1px solid #52637a; border-radius: 5px;
+              background: #293444; color: #edf3fa; }
+QPushButton:hover { background: #354964; }
+QPushButton:pressed { background: #405979; }
+QPushButton:focus { border-color: #8ec8ff; }
+QPushButton:disabled { background: #222932; color: #909eae; border-color: #394557; }
+QListWidget { border: 0; background: #202832; color: #edf3fa; padding: 4px; }
+QListWidget::item { padding: 5px; }
+QListWidget::item:selected { background: #36587e; color: #ffffff; }
+QScrollArea { background: #121820; border: 0; }
+QSplitter::handle { background: #45546a; width: 3px; }
+QStatusBar { background: #181d25; color: #c2d0de; }
+"""
+
+
+def dark_palette():
+    palette = QPalette()
+    roles = QPalette.ColorRole
+    colors = {
+        roles.Window: "#181d25", roles.WindowText: "#edf3fa", roles.Base: "#202832",
+        roles.AlternateBase: "#293444", roles.Text: "#edf3fa", roles.Button: "#293444",
+        roles.ButtonText: "#edf3fa", roles.ToolTipBase: "#293444", roles.ToolTipText: "#edf3fa",
+        roles.Highlight: "#36587e", roles.HighlightedText: "#ffffff", roles.Link: "#9bceff",
+        roles.LinkVisited: "#d4b9ff", roles.PlaceholderText: "#aab8c7", roles.BrightText: "#ffffff",
+        roles.Light: "#62758c", roles.Midlight: "#52637a", roles.Mid: "#45546a",
+        roles.Dark: "#161c24", roles.Shadow: "#0d1117",
+    }
+    for role, value in colors.items():
+        palette.setColor(role, QColor(value))
+    for role in (roles.Text, roles.WindowText, roles.ButtonText):
+        palette.setColor(QPalette.ColorGroup.Disabled, role, QColor("#909eae"))
+    return palette
 
 
 def plan_difference(first, second):
@@ -918,8 +956,8 @@ class Window(QMainWindow):
         self.update_timer.timeout.connect(self.finish_online_update)
         self.resize(1200, 820)
         self.setMinimumSize(820, 500)
-        self.setStyleSheet(STYLE)
         self.setup_favorites()
+        self.apply_appearance(self.favorite_settings.value("view/dark-mode", False, bool))
         shell = QWidget(objectName="shell")
         self.setCentralWidget(shell)
         layout = QVBoxLayout(shell)
@@ -942,7 +980,8 @@ class Window(QMainWindow):
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
                          ("Zu Seite springen", self.jump_to_page),
-                         ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid)]),
+                         ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid),
+                         ("Dunkelmodus", self.choose_appearance)]),
             ("Kommentar", [("Lesen", lambda: self.set_mode("Lesen")), ("Text markieren", lambda: self.set_mode("Markieren")),
                             ("Notiz setzen", lambda: self.set_mode("Notiz")), ("Kommentarübersicht", self.review_comments)]),
             ("Seiten", [("Nach links drehen", lambda: self.edit_page("rotate", -90)),
@@ -1033,7 +1072,7 @@ class Window(QMainWindow):
         welcome = QVBoxLayout(self.welcome)
         welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title = QLabel("PDF Werkbank")
-        title.setStyleSheet("font-size: 32px; font-weight: 650; color: #193651;")
+        title.setStyleSheet("font-size: 32px; font-weight: 650;")
         welcome.addWidget(title, alignment=Qt.AlignmentFlag.AlignHCenter)
         welcome.addWidget(QLabel("PDFs öffnen, bearbeiten und drucken"), alignment=Qt.AlignmentFlag.AlignHCenter)
         start = QPushButton("PDF öffnen")
@@ -1077,6 +1116,31 @@ class Window(QMainWindow):
     def current(self):
         index = self.tabs.currentIndex()
         return self.sessions[index] if 0 <= index < len(self.sessions) else None
+
+    def apply_appearance(self, dark):
+        app = QApplication.instance()
+        if not hasattr(app, "_werkbank_default_style"):
+            app._werkbank_default_style = app.style().name()
+            app._werkbank_default_palette = QPalette(app.palette())
+        if getattr(app, "_werkbank_dark", False) != dark:
+            style = QStyleFactory.create("Fusion" if dark else app._werkbank_default_style)
+            if style is not None:
+                app.setStyle(style)
+            app.setPalette(dark_palette() if dark else app._werkbank_default_palette)
+            app._werkbank_dark = dark
+        self.dark_mode = dark
+        self.setStyleSheet(DARK_STYLE if dark else STYLE)
+
+    def choose_appearance(self):
+        choice, ok = QInputDialog.getItem(self, "Dunkelmodus", "Darstellung",
+                                          ("Hell", "Dunkel"), int(self.dark_mode), editable=False)
+        if ok:
+            enabled = choice == "Dunkel"
+            self.favorite_settings.setValue("view/dark-mode", enabled)
+            self.favorite_settings.sync()
+            self.apply_appearance(enabled)
+            if self.favorite_settings.status() != QSettings.Status.NoError:
+                self.error("Die Darstellung konnte für den nächsten Start nicht gespeichert werden.")
 
     def setup_favorites(self):
         self.favorite_commands = {
@@ -1367,6 +1431,7 @@ class Window(QMainWindow):
         while self.ribbon.count():
             item = self.ribbon.takeAt(0)
             if item.widget():
+                item.widget().hide()
                 item.widget().deleteLater()
         group, commands = self.groups[index]
         if group == "Info":
@@ -2205,6 +2270,8 @@ class Window(QMainWindow):
             return
         selection = {key for key, box in checks.items() if box.isChecked()}
         conflicts = restore_backup(data, selection, settings, self.measurement_store(), mapped)
+        if "settings" in selection and data.get("dark_mode") is not None:
+            self.apply_appearance(settings.value("view/dark-mode", False, bool))
         warnings = []
         if "locations" in selection:
             previous = settings.value("invoice-watch/folder", "", str)
@@ -5617,7 +5684,7 @@ class Window(QMainWindow):
             item.setToolTip(f"{path}\n{output}" + (f"\n{issue}" if issue else ""))
             item.setData(Qt.ItemDataRole.UserRole, (str(path), str(output), issue))
             if issue:
-                item.setForeground(QColor("#a53c12"))
+                item.setForeground(QColor("#ffba89" if self.dark_mode else "#a53c12"))
             rows.addItem(item)
         movement = QHBoxLayout()
 
@@ -5998,7 +6065,7 @@ class Window(QMainWindow):
                 item = QTableWidgetItem(display)
                 item.setToolTip(tooltip)
                 if problem or (value is None and not template):
-                    item.setForeground(QColor("#854720"))
+                    item.setForeground(QColor("#ffc99d" if self.dark_mode else "#854720"))
                 table.setItem(row, column, item)
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
@@ -9326,8 +9393,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Scans anhand gelesener Kennungen mit Excel-Zeilen "
-                         "verbinden und ausgefüllte PDF-Kopien speichern.")
+                         "Neu in dieser Version: Unter Ansicht zwischen heller und dunkler "
+                         "Darstellung umschalten.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
