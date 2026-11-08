@@ -20,6 +20,12 @@ from pathlib import Path
 from threading import Event
 from xml.etree import ElementTree
 
+# The packaged Qt wheel includes the C++ runtime needed by PyMuPDF on clean Windows.
+if os.name == "nt":
+    qt_runtime = Path(sys.executable).parent / "Lib" / "site-packages" / "PySide6"
+    if qt_runtime.is_dir():
+        os.add_dll_directory(str(qt_runtime))
+
 import pymupdf as pdf
 from PySide6.QtCore import QDate, QEventLoop, QItemSelectionModel, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPen, QPixmap, QPolygonF, QTransform
@@ -71,7 +77,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 39, 0)
+VERSION = (1, 40, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -8491,7 +8497,8 @@ def main():
     QTimer.singleShot(0, load_initial_documents)
     if settings.value("invoice-watch/folder", "", str):
         QTimer.singleShot(0, lambda: window.invoice_folder(show=False))
-    QTimer.singleShot(1200, window.release_check.check)
+    if os.environ.get("PDF_WERKBANK_OFFLINE") != "1":
+        QTimer.singleShot(1200, window.release_check.check)
     return app.exec()
 
 

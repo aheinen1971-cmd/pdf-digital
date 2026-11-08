@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.39.0";
+    private const string Version = "1.40.0";
     private const string Title = "PDF Werkbank";
     private const string UpdatePublicModulus = "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp";
 
@@ -26,7 +26,13 @@ internal static class Launcher
     {
         AppContext.SetSwitch("Switch.System.IO.UseLegacyPathHandling", false);
         AppContext.SetSwitch("Switch.System.IO.BlockLongPaths", false);
-        bool prepare = args.Length == 1 && args[0] == "--prepare-update";
+        string executable = Assembly.GetExecutingAssembly().Location;
+        string executableName = Path.GetFileNameWithoutExtension(executable);
+        bool offline = executableName.EndsWith("-Offline-Setup", StringComparison.OrdinalIgnoreCase)
+            || executableName.EndsWith("-Offline", StringComparison.OrdinalIgnoreCase);
+        string packages = offline ? Path.Combine(Path.GetDirectoryName(executable), "Pakete") : null;
+        bool installOnly = args.Length == 1 && args[0] == "--install-offline";
+        bool prepare = installOnly || (args.Length == 1 && args[0] == "--prepare-update");
         if (!prepare)
         {
             Application.EnableVisualStyles();
@@ -40,12 +46,15 @@ internal static class Launcher
                 : Path.GetFullPath(custom);
             if (prepare)
             {
+                if (installOnly && !offline)
+                    throw new IOException("Bitte den Starter aus dem Offline-Paket verwenden.");
                 if (!Ready(root))
-                    Install(root, new Progress<string>(), CancellationToken.None).GetAwaiter().GetResult();
+                    Install(root, new Progress<string>(), CancellationToken.None, packages).GetAwaiter().GetResult();
+                if (installOnly)
+                    InstallOfflineStarter(executable);
                 return Ready(root) ? 0 : 1;
             }
             string cached = Path.Combine(UpdateRoot(), "PDF-Werkbank-" + Version + ".exe");
-            string executable = Assembly.GetExecutingAssembly().Location;
             bool fromCache = String.Equals(cached, executable, StringComparison.OrdinalIgnoreCase);
             string digest = fromCache ? VerifiedDigest(Version) : null;
             if (fromCache && digest == null)
@@ -61,13 +70,14 @@ internal static class Launcher
                     return 0;
                 }
                 var answer = MessageBox.Show(
-                    "PDF Werkbank lädt beim ersten Start rund 140 MB direkt von Python.org, PyPI und GitHub. " +
-                    "Die Dateien werden lokal für dieses Windows-Konto gespeichert. Danach funktioniert die PDF-App offline.\n\n" +
-                    "Jetzt einrichten?", Title, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
+                    (offline ? "PDF Werkbank wird aus dem Ordner „Pakete“ eingerichtet. Dazu ist kein Internet nötig.\n\n"
+                    : "PDF Werkbank lädt beim ersten Start rund 140 MB direkt von Python.org, PyPI und GitHub. " +
+                    "Die Dateien werden lokal für dieses Windows-Konto gespeichert. Danach funktioniert die PDF-App offline.\n\n")
+                    + "Jetzt einrichten?", Title, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
                     MessageBoxDefaultButton.Button2);
                 if (answer != DialogResult.Yes)
                     return 0;
-                using (var setup = new SetupWindow(root))
+                using (var setup = new SetupWindow(root, packages))
                     if (setup.ShowDialog() != DialogResult.OK)
                         return 1;
             }
@@ -79,8 +89,13 @@ internal static class Launcher
                 WorkingDirectory = Environment.CurrentDirectory
             };
             run.EnvironmentVariables["PDF_WERKBANK_LAUNCHER"] = Assembly.GetExecutingAssembly().Location;
-            if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PDF_WERKBANK_ENTRYPOINT")))
-                run.EnvironmentVariables["PDF_WERKBANK_ENTRYPOINT"] = Assembly.GetExecutingAssembly().Location;
+            if (offline)
+            {
+                run.EnvironmentVariables["PDF_WERKBANK_OFFLINE"] = "1";
+                run.EnvironmentVariables["PDF_WERKBANK_ENTRYPOINT"] = InstallOfflineStarter(executable);
+            }
+            else if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PDF_WERKBANK_ENTRYPOINT")))
+                run.EnvironmentVariables["PDF_WERKBANK_ENTRYPOINT"] = executable;
             try
             {
                 StartAndWait(run);
@@ -122,6 +137,33 @@ internal static class Launcher
     {
         return Environment.GetEnvironmentVariable("LOCALAPPDATA")
             ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    }
+
+    private static string InstallOfflineStarter(string executable)
+    {
+        string folder = Path.Combine(LocalData(), Title, "Offline", Version);
+        Directory.CreateDirectory(folder);
+        string target = Path.Combine(folder, "PDF-Werkbank-Offline.exe");
+        if (!File.Exists(target))
+            File.Copy(executable, target, false);
+        string programs = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+        if (!String.IsNullOrEmpty(programs))
+        {
+            string link = Path.Combine(programs, "PDF Werkbank Offline.lnk");
+            if (!File.Exists(link))
+            {
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType != null)
+                {
+                    object shell = Activator.CreateInstance(shellType);
+                    object shortcut = shellType.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { link });
+                    Type shortcutType = shortcut.GetType();
+                    shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortcut, new object[] { target });
+                    shortcutType.InvokeMember("Save", BindingFlags.InvokeMethod, null, shortcut, null);
+                }
+            }
+        }
+        return target;
     }
 
     private static string UpdateRoot()
@@ -330,7 +372,8 @@ internal static class Launcher
         return @"\\?\" + path;
     }
 
-    internal static async Task Install(string root, IProgress<string> progress, CancellationToken cancellation)
+    internal static async Task Install(string root, IProgress<string> progress, CancellationToken cancellation,
+                                       string offlinePackages = null)
     {
         root = ExtendedPath(root);
         string parent = Path.GetDirectoryName(root);
@@ -359,9 +402,9 @@ internal static class Launcher
                         throw new IOException("Im Zielordner liegt bereits eine unvollständige Einrichtung. " +
                                               "Bitte benenne diesen Ordner um und starte erneut:\n" + root);
                     Directory.CreateDirectory(staging);
-                    int installedPackages = ReuseRuntime(parent, staging, progress, cancellation);
+                    int installedPackages = offlinePackages == null ? ReuseRuntime(parent, staging, progress, cancellation) : 0;
                     string cache = Path.Combine(parent, ".setup-cache-" + Version);
-                    DownloadPackages(staging, cache, installedPackages, progress, cancellation).GetAwaiter().GetResult();
+                    DownloadPackages(staging, cache, installedPackages, progress, cancellation, offlinePackages).GetAwaiter().GetResult();
                     cancellation.ThrowIfCancellationRequested();
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
@@ -465,13 +508,14 @@ internal static class Launcher
 
 
     private static async Task DownloadPackages(string staging, string cache, int installedPackages,
-                                               IProgress<string> progress, CancellationToken cancellation)
+                                               IProgress<string> progress, CancellationToken cancellation, string offlinePackages)
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         string app = Path.Combine(staging, "app");
         string runtime = Path.Combine(staging, "python");
         Directory.CreateDirectory(app);
-        Directory.CreateDirectory(cache);
+        if (offlinePackages == null)
+            Directory.CreateDirectory(cache);
         using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
         using (var reader = new StreamReader(Resource("DEPENDENCIES.tsv"), Encoding.UTF8))
         {
@@ -482,22 +526,37 @@ internal static class Launcher
                 string[] fields = packages[index].Split('\t');
                 string description = fields[0], kind = fields[1], name = fields[2], expected = fields[3], url = fields[4];
                 string label = String.Format("Paket {0}/{1}: {2}", index + 1, packages.Length, description);
-                string verified = Path.Combine(cache, expected.ToLowerInvariant() + ".pkg");
-                if (File.Exists(verified) && !PackageMatches(verified, expected))
-                    File.Delete(verified);
-                if (!File.Exists(verified))
+                string filename = expected.ToLowerInvariant() + ".pkg";
+                string verified = Path.Combine(cache, filename);
+                if (offlinePackages != null)
                 {
-                    string download = Path.Combine(staging, "download.tmp");
-                    progress.Report(label + "\nDownload startet …");
-                    await DownloadPackage(client, url, download, label, progress, cancellation);
-                    progress.Report(label + "\nPrüfsumme wird kontrolliert …");
-                    if (!PackageMatches(download, expected))
-                        throw new IOException("Die Prüfsumme für " + description + " stimmt nicht.");
-                    File.Move(download, verified);
-                    progress.Report(label + "\nGeprüft. Paket wird eingerichtet …");
+                    string supplied = Path.Combine(offlinePackages, filename);
+                    if (!File.Exists(supplied))
+                        throw new IOException("Im Offline-Paket fehlt: " + description);
+                    progress.Report(label + "\nPrüfe die Datei vom USB-Stick …");
+                    verified = Path.Combine(staging, "offline-package.tmp");
+                    File.Copy(supplied, verified, true);
+                    if (!PackageMatches(verified, expected))
+                        throw new IOException("Die Prüfsumme im Offline-Paket stimmt nicht: " + description);
                 }
                 else
-                    progress.Report(label + "\nGeprüftes Paket aus dem Zwischenspeicher wird verwendet …");
+                {
+                    if (File.Exists(verified) && !PackageMatches(verified, expected))
+                        File.Delete(verified);
+                    if (!File.Exists(verified))
+                    {
+                        string download = Path.Combine(staging, "download.tmp");
+                        progress.Report(label + "\nDownload startet …");
+                        await DownloadPackage(client, url, download, label, progress, cancellation);
+                        progress.Report(label + "\nPrüfsumme wird kontrolliert …");
+                        if (!PackageMatches(download, expected))
+                            throw new IOException("Die Prüfsumme für " + description + " stimmt nicht.");
+                        File.Move(download, verified);
+                        progress.Report(label + "\nGeprüft. Paket wird eingerichtet …");
+                    }
+                    else
+                        progress.Report(label + "\nGeprüftes Paket aus dem Zwischenspeicher wird verwendet …");
+                }
 
                 cancellation.ThrowIfCancellationRequested();
                 if (kind == "python")
@@ -514,6 +573,8 @@ internal static class Launcher
                 }
                 else
                     throw new InvalidDataException("Unbekannter Dateityp im Setup.");
+                if (offlinePackages != null)
+                    File.Delete(verified);
             }
         }
     }
@@ -613,7 +674,7 @@ internal sealed class SetupWindow : Form
     private readonly Label status = new Label();
     private readonly Button cancel = new Button();
 
-    internal SetupWindow(string root)
+    internal SetupWindow(string root, string offlinePackages)
     {
         Text = "PDF Werkbank einrichten";
         ClientSize = new Size(480, 153);
@@ -641,7 +702,7 @@ internal sealed class SetupWindow : Form
         {
             try
             {
-                await Launcher.Install(root, new Progress<string>(value => status.Text = value), cancellation.Token);
+                await Launcher.Install(root, new Progress<string>(value => status.Text = value), cancellation.Token, offlinePackages);
                 DialogResult = DialogResult.OK;
             }
             catch (OperationCanceledException)
