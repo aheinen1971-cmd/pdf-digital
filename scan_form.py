@@ -130,6 +130,52 @@ def aligned_boxes(fields, anchors, points, aspect):
     return boxes
 
 
+def detect_scan_page(page, fields, anchors, raster=None, cache=None):
+    raster = anchor_image(page) if raster is None else raster
+    points = []
+    for anchor in anchors:
+        key = (*anchor["point"], anchor["patch"])
+        if cache is None:
+            point = locate_anchor(raster, anchor)
+        else:
+            if key not in cache:
+                cache[key] = locate_anchor(raster, anchor)
+            point = cache[key]
+        if point is None:
+            raise ValueError("Mindestens ein Ausrichtpunkt war nicht eindeutig.")
+        points.append(point)
+    return aligned_boxes(fields, anchors, points, page.rect.width / page.rect.height), points
+
+
+def match_scan_templates(doc, templates):
+    rasters, caches, matches = {}, {}, {}
+    for name, fields in templates.items():
+        pages = {}
+        anchors = {}
+        for field in fields:
+            pages.setdefault(field["page"], []).append(field)
+            if "anchors" in field:
+                anchors[field["page"]] = field["anchors"]
+        if pages.keys() != anchors.keys() or max(pages) >= len(doc):
+            continue
+        try:
+            check_scan_target(doc, fields)
+            placed = {}
+            for index, items in pages.items():
+                page = doc[index]
+                if index not in rasters:
+                    rasters[index] = anchor_image(page)
+                    caches[index] = {}
+                boxes, _ = detect_scan_page(page, items, anchors[index], rasters[index], caches[index])
+                placed.update({field["name"]: box for field, box in zip(items, boxes)})
+        except (RuntimeError, ValueError):
+            continue
+        matches[name] = [{**field, "box": placed[field["name"]]} for field in fields]
+        if len(matches) > 1:
+            break
+    return matches
+
+
 def validate_scan_templates(templates):
     if not isinstance(templates, dict) or len(templates) > 50:
         raise ValueError("Es können bis zu 50 Scan-Feldvorlagen gespeichert werden.")

@@ -71,7 +71,7 @@ from preferences import (DEFAULT_FAVORITES, FORM_RULES, FORM_TEMPLATES, GROUPS, 
 from archive_run import ArchiveRun
 from form_run import FormRun
 from scan_form import (SCAN_FORM_TEMPLATES, aligned_boxes, anchor_image, apply_scan_fields, capture_anchor,
-                       capture_scan_fields, check_scan_target, locate_anchor, scan_form_templates,
+                       capture_scan_fields, check_scan_target, detect_scan_page, match_scan_templates, scan_form_templates,
                        validate_scan_templates)
 from project_move import (MAX_PROJECT, import_project, project_sources, read_project, scan_destinations,
                           write_project)
@@ -85,7 +85,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 47, 0)
+VERSION = (1, 48, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -984,6 +984,7 @@ class Window(QMainWindow):
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
                           ("Feldvorlage speichern", self.save_scan_field_template), ("Feldvorlage anwenden", self.use_scan_field_template),
                           ("Ausrichtpunkte speichern", self.set_scan_template_anchors),
+                          ("Scan-Stapel mit Feldvorlagen", self.scan_field_batch),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
@@ -6613,6 +6614,171 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    def scan_field_batch(self):
+        try:
+            templates = scan_form_templates(self.favorite_settings)
+            if not templates:
+                raise ValueError("Speichere zuerst mindestens eine Scan-Feldvorlage.")
+            names, _ = QFileDialog.getOpenFileNames(self, "Scans für Feldvorlagen auswählen", "", "PDF (*.pdf)")
+            if not names:
+                return
+            paths = list(dict.fromkeys(Path(name).resolve() for name in names))
+            if len(paths) > 60:
+                raise ValueError("Bitte höchstens 60 Scans pro Stapel auswählen.")
+            folder = QFileDialog.getExistingDirectory(self, "Zielordner für ausfüllbare Scan-Kopien wählen",
+                                                       str(paths[0].parent))
+            if folder:
+                self.review_scan_field_batch(paths, Path(folder), templates)
+        except Exception as exc:
+            self.error(exc)
+
+    def review_scan_field_batch(self, paths, folder, templates):
+        targets = {path: folder / f"{path.stem} - ausfüllbar.pdf" for path in paths}
+        counts = Counter(target.name.casefold() for target in targets.values())
+
+        def inspect(path):
+            target = targets[path]
+            if counts[target.name.casefold()] > 1 or target.exists() or target.is_symlink():
+                return None, {}, "Namenskonflikt im Zielordner"
+            try:
+                stamp = file_signature(path)
+                with pdf.open(path) as document:
+                    if document.needs_pass or not document.is_pdf or document.get_sigflags() > 0:
+                        return None, {}, "Bitte eine ungeschützte, unsignierte PDF verwenden"
+                    matches = match_scan_templates(document, templates)
+                if file_signature(path) != stamp:
+                    return None, {}, "Der Scan wurde beim Einlesen geändert"
+                return stamp, matches, ""
+            except (OSError, RuntimeError, ValueError) as exc:
+                return None, {}, str(exc)
+
+        results = self.inspect_pdfs(paths, "Scan-Stapel wird mit Feldvorlagen verglichen …", inspect)
+        if len(results) != len(paths):
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Feldvorlagen im Scan-Stapel prüfen")
+        dialog.resize(900, 500)
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Nur eindeutige Treffer sind vorausgewählt. Mit Doppelklick prüfst du die Positionen auf der PDF "
+                      "oder wählst bei einem unklaren Treffer eine Vorlage.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        table = QTableWidget(len(paths), 5)
+        table.setHorizontalHeaderLabels(["Speichern", "Scan", "Vorlage", "Ergebnis", "Zieldatei"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.horizontalHeader().setStretchLastSection(True)
+        for column, width in enumerate((80, 170, 145, 240)):
+            table.setColumnWidth(column, width)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+        preview = buttons.addButton("Vorlage wählen oder prüfen", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton("Auswahl als PDF-Kopien speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        layout.addWidget(buttons)
+        chosen = {}
+
+        def set_row(row, name, detail, enabled):
+            path, _ = results[row]
+            mark = QTableWidgetItem()
+            mark.setCheckState(Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked)
+            if not enabled:
+                mark.setFlags(mark.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+            table.setItem(row, 0, mark)
+            for col, value in enumerate((path.name, name, detail, targets[path].name), 1):
+                item = QTableWidgetItem(value)
+                item.setToolTip(str(path) if col == 1 else value)
+                table.setItem(row, col, item)
+
+        for row, (path, (stamp, matches, issue)) in enumerate(results):
+            if len(matches) == 1:
+                name, fields = next(iter(matches.items()))
+                chosen[path] = name, fields, False
+                set_row(row, name, "Eindeutiger Treffer", True)
+            else:
+                state = "Mehrere Vorlagen passen" if matches else "Keine eindeutige Vorlage gefunden"
+                set_row(row, "", issue or state, False)
+
+        def selected():
+            return [path for row, (path, _) in enumerate(results) if path in chosen
+                    and table.item(row, 0).checkState() == Qt.CheckState.Checked]
+
+        def refresh(*_):
+            row = table.currentRow()
+            preview.setEnabled(row >= 0 and results[row][1][0] is not None)
+            save.setEnabled(bool(selected()))
+
+        def choose(row, *_):
+            if row < 0:
+                return
+            path, (stamp, matches, _) = results[row]
+            if stamp is None:
+                return
+            options = list(dict.fromkeys([*matches, *sorted(templates, key=str.casefold)]))
+            name, initial, manual = chosen.get(path, (options[0], None, False))
+            name, ok = QInputDialog.getItem(dialog, "Feldvorlage für Scan", path.name, options,
+                                           current=options.index(name), editable=False)
+            if not ok:
+                return
+            try:
+                if file_signature(path) != stamp:
+                    raise ValueError("Der Scan wurde geändert. Starte die Stapelprüfung erneut.")
+                with pdf.open(path) as document:
+                    fields = templates[name]
+                    check_scan_target(document, fields)
+                    previous = chosen.get(path)
+                    adjusted = self.preview_scan_field_template(
+                        document, fields, initial=initial if manual and previous[0] == name else None)
+                if adjusted is not None:
+                    validate_scan_templates({name: adjusted})
+                    chosen[path] = name, adjusted, True
+                    set_row(row, name, "In Vorschau bestätigt", True)
+                    refresh()
+            except Exception as exc:
+                self.error(exc)
+
+        table.cellDoubleClicked.connect(choose)
+        table.currentCellChanged.connect(refresh)
+        table.itemChanged.connect(refresh)
+        preview.clicked.connect(lambda: choose(table.currentRow()))
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        table.setCurrentCell(0, 1)
+        refresh()
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        stamps = {path: values[0] for path, values in results}
+
+        def store(path):
+            target = targets[path]
+            try:
+                if file_signature(path) != stamps[path]:
+                    raise ValueError("Der Scan wurde geändert.")
+                with pdf.open(path) as document, tempfile.TemporaryDirectory(dir=folder) as work:
+                    candidate = Path(work) / target.name
+                    apply_scan_fields(document, chosen[path][1])
+                    save_copy(document, candidate)
+                    if file_signature(path) != stamps[path]:
+                        raise ValueError("Der Scan wurde beim Speichern geändert.")
+                    if os.name == "nt":
+                        candidate.rename(target)
+                    else:
+                        os.link(candidate, target)
+                return ""
+            except FileExistsError:
+                return "Zieldatei existiert bereits."
+            except Exception as exc:
+                return str(exc)
+
+        selected_paths = selected()
+        saved = self.inspect_pdfs(selected_paths, "Ausfüllbare Scan-Kopien werden gespeichert …", store)
+        report = QMessageBox(self)
+        report.setWindowTitle("Scan-Stapel mit Feldvorlagen")
+        report.setText(f"{sum(not issue for _, issue in saved)} von {len(selected_paths)} gewählten Kopien gespeichert.")
+        failures = [f"{path.name}: {issue}" for path, issue in saved if issue]
+        if failures:
+            report.setDetailedText("\n".join(failures))
+        report.exec()
+
     def set_scan_template_anchors(self):
         session = self.current
         if not session:
@@ -6640,8 +6806,8 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
-    def preview_scan_field_template(self, doc, template, capture=False):
-        fields = [{**field, "box": field["box"][:]} for field in template]
+    def preview_scan_field_template(self, doc, template, capture=False, initial=None):
+        fields = [{**field, "box": field["box"][:]} for field in (initial or template)]
         dialog = QDialog(self)
         dialog.setWindowTitle("Ausrichtpunkte im Referenzscan setzen" if capture else "Feldvorlage auf dem Scan ausrichten")
         dialog.resize(960, 740)
@@ -6697,7 +6863,7 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
         reference = {field["page"]: field["anchors"] for field in template if "anchors" in field}
         markers, messages = {}, {}
-        first_visit = set()
+        first_visit = {field["page"] for field in initial} if initial else set()
 
         def finish_pick():
             image.pick = None
@@ -6713,12 +6879,13 @@ class Window(QMainWindow):
                     sample.setPixmap(QPixmap.fromImage(patch).scaled(88, 88))
                     sample.setToolTip(f"Referenz für Punkt {index + 1}")
 
-        def align(points):
+        def align(points, boxes=None):
             index = image.page
             before = [field for field in template if field["page"] == index]
             after = [field for field in fields if field["page"] == index]
             page = doc[index].rect
-            boxes = aligned_boxes(before, reference[index], points, page.width / page.height)
+            if boxes is None:
+                boxes = aligned_boxes(before, reference[index], points, page.width / page.height)
             for field, box in zip(after, boxes):
                 field["box"] = box
             markers[index] = points
@@ -6729,11 +6896,9 @@ class Window(QMainWindow):
             finish_pick()
             index = image.page
             try:
-                raster = anchor_image(doc[index])
-                points = [locate_anchor(raster, anchor) for anchor in reference[index]]
-                if any(point is None for point in points):
-                    raise ValueError("Mindestens ein Ausrichtpunkt war nicht eindeutig.")
-                align(points)
+                before = [field for field in template if field["page"] == index]
+                boxes, points = detect_scan_page(doc[index], before, reference[index])
+                align(points, boxes)
                 messages[index] = "Automatisch ausgerichtet. Prüfe den Vorschlag vor dem Übernehmen."
             except (RuntimeError, ValueError) as exc:
                 messages[index] = f"{exc} Du kannst die Punkte von Hand setzen."
@@ -8902,8 +9067,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Scan-Feldvorlagen mit zwei Referenzpunkten "
-                         "automatisch oder von Hand ausrichten.")
+                         "Neu in dieser Version: Feldvorlagen in gemischten Scan-Stapeln "
+                         "erkennen, prüfen und als ausfüllbare Kopien speichern.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
