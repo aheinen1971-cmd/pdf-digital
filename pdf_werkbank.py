@@ -776,7 +776,19 @@ class Session:
         self.plan_source_stamp = file_signature(self.path) if snapshot is None else None
 
     def snapshot(self, label):
-        return [self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP), self.page, self.changed, label]
+        content = self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP)
+        if len(content) > 4 * 1024 * 1024:
+            # TemporaryFile is removed on close; retained undo states need not
+            # keep entire image-heavy documents in memory.
+            stored = tempfile.TemporaryFile(mode="w+b")
+            try:
+                stored.write(content)
+                stored.seek(0)
+            except Exception:
+                stored.close()
+                raise
+            content = stored
+        return [content, self.page, self.changed, label]
 
     def checkpoint(self, label="PDF bearbeiten"):
         self.history.append(self.snapshot(label))
@@ -787,7 +799,12 @@ class Session:
         if stack:
             content, page, changed, label = stack[-1]
             with_current = self.snapshot(label) if record else None
-            replacement = pdf.open(stream=content, filetype="pdf")
+            if hasattr(content, "read"):
+                content.seek(0)
+                restored = content.read()
+            else:
+                restored = content
+            replacement = pdf.open(stream=restored, filetype="pdf")
             if replacement.needs_pass and not replacement.authenticate(self.password):
                 replacement.close()
                 raise ValueError("Die gesicherte Änderung konnte nicht geöffnet werden.")
@@ -1346,7 +1363,12 @@ class Window(QMainWindow):
                    "Ordner durchsuchen": "ordnersuche index finden",
                    "Broschürendruck": "heft falten duplex",
                    "Arbeitsmappe öffnen": "projekt vorgang tabs",
-                   "Arbeitsmappe speichern": "projekt vorgang tabs"}
+                   "Arbeitsmappe speichern": "projekt vorgang tabs",
+                   "PDF anhängen": "zusammenfügen zusammenfuegen zusammenführen verbinden merge combine pdf",
+                   "Scan-PDF verkleinern": "komprimieren dateigröße dateigroesse reduzieren compress shrink pdf",
+                   "Seiten extrahieren": "aufteilen trennen split extract pdf",
+                   "Schwärzen": "unkenntlich entfernen redigieren redact",
+                   "OCR für das Dokument": "texterkennung durchsuchbar text recognition searchable pdf"}
 
         def key(text):
             return "".join(char for char in unicodedata.normalize("NFKD", text.casefold())
@@ -9474,6 +9496,10 @@ class Window(QMainWindow):
             session = self.sessions.pop(index)
             self.clear_page_cache(session)
             session.doc.close()
+            self.transfer_history[:] = [entry for entry in self.transfer_history
+                                        if entry[0] is not session and entry[2] is not session]
+            session.history.clear()
+            session.redo_stack.clear()
             self.tabs.removeTab(index)
             self.switch_doc(self.tabs.currentIndex())
             self.write_recovery()
@@ -9496,6 +9522,10 @@ class Window(QMainWindow):
             self.form_preview.reject()
         if self.open_work_dialog is not None:
             self.open_work_dialog.reject()
+        self.transfer_history.clear()
+        for session in self.sessions:
+            session.history.clear()
+            session.redo_stack.clear()
         event.accept()
 
     def booklet_dialog(self):

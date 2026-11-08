@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import json
 import os
+import base64
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 import pymupdf as pdf
 from PySide6.QtCore import QSettings
@@ -97,9 +100,16 @@ try:
         exe = update_root / "PDF-Werkbank-1.15.0.exe"
         exe.write_bytes(b"candidate")
         digest = digest_file(exe)
-        (update_root / "1.15.0.json").write_text(json.dumps({"sha256": digest}), encoding="utf-8")
+        private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        modulus = base64.b64encode(private.public_key().public_numbers().n.to_bytes(256, "big")).decode()
+        message = f"PDF-Werkbank-Update-v1\n1.15.0\n{digest}\n{exe.stat().st_size}\n{digest}\n".encode("ascii")
+        signature = private.sign(message, padding.PKCS1v15(), hashes.SHA256())
+        (update_root / "1.15.0.json").write_text(json.dumps({
+            "payload": base64.b64encode(message).decode(),
+            "signature": base64.b64encode(signature).decode(), "sha256": digest}), encoding="utf-8")
         with patch("update_worker.update_root", return_value=update_root), patch(
-                "update_worker.runtime_ready", return_value=True):
+                "update_worker.runtime_ready", return_value=True), patch(
+                "update_worker.PUBLIC_MODULUS", modulus):
             assert prepared_update((1, 14, 0)) == exe
             (update_root / "1.15.0.failed").write_text(digest, encoding="utf-8")
             assert failed_update("1.15.0", digest)

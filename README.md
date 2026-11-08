@@ -332,6 +332,13 @@ bleiben beim Neustart erhalten.
 
 - **Strg+K** öffnet die Befehlssuche. Mit Pfeiltasten und Eingabe lässt
   sich eine Funktion aus den Registerkarten starten.
+  Auch Begriffe wie „zusammenfügen“, „komprimieren“ und „aufteilen“
+  finden die passenden PDF-Werkzeuge.
+- Rückgängig/Wiederholen bewahrt bis zu acht Bearbeitungsstände.
+  Stände über 4 MiB werden in automatisch entfernten temporären Dateien
+  gehalten, um den dauerhaften Arbeitsspeicherbedarf zu reduzieren.
+  Dafür muss im Windows-Temporärordner genügend Speicherplatz frei sein.
+  Ein vorhandener PDF-Passwortschutz bleibt in diesen Ständen erhalten.
 - **Samsung → Posteingang** liest beim Start eine Seite über Windows WIA
   ein. Danach können weitere Seiten aufgenommen und mit den gespeicherten
   A4- und OCR-Einstellungen im Posteingang abgelegt werden.
