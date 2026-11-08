@@ -85,7 +85,9 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 50, 0)
+VERSION = (1, 51, 0)
+APP_TITLE = "PDF Digital"
+APP_SLOGAN = "Alles finden und bearbeiten"
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -948,7 +950,7 @@ class Window(QMainWindow):
         self.open_work_dialog = None
         self.thumb_icons = OrderedDict()
         self.page_cache = OrderedDict()
-        self.setWindowTitle("PDF Werkbank " + ".".join(map(str, VERSION)))
+        self.setWindowTitle(APP_TITLE + " " + ".".join(map(str, VERSION)))
         self.release_check = ReleaseCheck(VERSION, self)
         self.release_check.finished.connect(self.show_online_update)
         self.update_process = None
@@ -1425,7 +1427,7 @@ class Window(QMainWindow):
             self.error(exc)
 
     def error(self, exc):
-        QMessageBox.warning(self, "PDF Werkbank", str(exc))
+        QMessageBox.warning(self, APP_TITLE, str(exc))
 
     def update_ribbon(self, index):
         while self.ribbon.count():
@@ -1435,7 +1437,7 @@ class Window(QMainWindow):
                 item.widget().deleteLater()
         group, commands = self.groups[index]
         if group == "Info":
-            self.ribbon.addWidget(QLabel("PDF Werkbank " + ".".join(map(str, VERSION))))
+            self.ribbon.addWidget(QLabel(f"{APP_TITLE} · {APP_SLOGAN}"))
         for name, callback in commands:
             button = QPushButton(name)
             button.clicked.connect(lambda checked=False, run=callback: run())
@@ -3571,6 +3573,10 @@ class Window(QMainWindow):
         forget = QPushButton("Gespeicherten Lauf verwerfen")
         run_buttons.addWidget(resume)
         run_buttons.addWidget(forget)
+        scan_job = QPushButton("Excel-Scan-Auftrag prüfen")
+        configure_job = QPushButton("Excel-Scan-Auftrag einrichten")
+        run_buttons.addWidget(scan_job)
+        run_buttons.addWidget(configure_job)
         run_buttons.addStretch()
         layout.addLayout(run_buttons)
         drafts = []
@@ -3589,6 +3595,7 @@ class Window(QMainWindow):
             correct.setEnabled(bool(drafts))
             split.setEnabled(bool(drafts))
             discard.setEnabled(bool(drafts))
+            scan_job.setEnabled(bool(self.pending_scan_job(drafts)))
 
         def suggest(index):
             if index < 0:
@@ -3673,6 +3680,8 @@ class Window(QMainWindow):
         correct.clicked.connect(correct_selected)
         split.clicked.connect(split_selected)
         discard.clicked.connect(discard_draft)
+        scan_job.clicked.connect(lambda: (self.run_inbox_scan_job(), refresh()))
+        configure_job.clicked.connect(lambda: (self.configure_inbox_scan_job(), refresh()))
         refresh()
         if selected_path is not None:
             if selected_path not in drafts:
@@ -6282,6 +6291,10 @@ class Window(QMainWindow):
             if full:
                 scans = self.scan_drafts()
                 base[:] = self.open_form_runs()
+                pending = self.pending_scan_job(scans)
+                if pending:
+                    base.append(("Scan-Auftrag", "Excel-Zuordnung", f"{len(pending)} Scans warten auf Zuordnung oder Freigabe",
+                                 self.inbox_folder() / ".excel-scan-job"))
                 base.extend(("Scan", f"{path.name[:10]} · Scan {len(scans) - index}", "Wartet auf Prüfung oder Ablage", path)
                             for index, path in enumerate(scans))
             watcher = getattr(self, "_invoice_folder_window", None)
@@ -6316,6 +6329,8 @@ class Window(QMainWindow):
             try:
                 if kind == "Scan":
                     self.scan_inbox(selected_path=path)
+                elif kind == "Scan-Auftrag":
+                    self.run_inbox_scan_job()
                 else:
                     self.run_form_fill(path)
             except Exception as exc:
@@ -6682,17 +6697,88 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
-    def scan_excel_batch(self):
+    def scan_job_settings(self):
+        return self.favorite_settings.value("scan/excel-job", {})
+
+    def pending_scan_job(self, drafts):
+        job = self.scan_job_settings()
+        if not job:
+            return []
+        done = self.favorite_settings.value("scan/excel-job-completed", {})
+        pending = []
+        for path in drafts:
+            try:
+                if done.get(str(path)) != list(file_signature(path)):
+                    pending.append(path)
+            except OSError:
+                continue
+        return pending
+
+    def configure_inbox_scan_job(self):
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("Excel-Scan-Auftrag")
+        dialog.setText("Wähle eine Excel-Liste, die Kennung, eine Excel-Formularvorlage und einen Zielordner. "
+                       "Der Auftrag verwendet offene Entwürfe aus dem Scan-Posteingang. "
+                       "PDF-Kopien entstehen nach deiner Freigabe.")
+        configure = dialog.addButton("Auftrag einrichten", QMessageBox.ButtonRole.AcceptRole)
+        disable = None
+        if self.scan_job_settings():
+            disable = dialog.addButton("Auftrag deaktivieren", QMessageBox.ButtonRole.ActionRole)
+        dialog.addButton(QMessageBox.StandardButton.Cancel)
+        dialog.exec()
+        if dialog.clickedButton() is configure:
+            self.scan_excel_batch(configure_job=True)
+        elif disable is not None and dialog.clickedButton() is disable:
+            self.favorite_settings.remove("scan/excel-job")
+            self.favorite_settings.sync()
+
+    def run_inbox_scan_job(self):
+        try:
+            job = self.scan_job_settings()
+            drafts = self.scan_drafts()
+            paths = self.pending_scan_job(drafts)[-60:]
+            if not paths:
+                return
+            workbook, folder = Path(job["workbook"]), Path(job["folder"])
+            if not folder.is_dir():
+                raise ValueError("Der Zielordner fehlt. Richte den Excel-Scan-Auftrag im Scan-Posteingang neu ein.")
+            if folder.resolve() == self.inbox_folder().resolve():
+                raise ValueError("Wähle einen Zielordner außerhalb des Scan-Posteingangs.")
+            stamp = file_signature(workbook)
+            rows = read_form_sheet(workbook, job["sheet"])
+            if file_signature(workbook) != stamp:
+                raise ValueError("Die Excel-Datei wurde beim Einlesen geändert.")
+            if job["key"] not in rows.columns:
+                raise ValueError("Die gespeicherte Kennungsspalte fehlt in Excel.")
+            mapping = form_templates(self.favorite_settings).get(job["mapping"])
+            if mapping is None:
+                raise ValueError("Die gespeicherte Excel-Formularvorlage fehlt.")
+
+            def remember(path, signature):
+                done = self.favorite_settings.value("scan/excel-job-completed", {})
+                done[str(path)] = list(signature)
+                self.favorite_settings.setValue("scan/excel-job-completed", done)
+                self.favorite_settings.sync()
+                if self.favorite_settings.status() != QSettings.Status.NoError:
+                    raise OSError("Der Fortschritt des Scan-Auftrags konnte nicht gespeichert werden.")
+
+            self.review_scan_excel_batch(paths, workbook, stamp, rows, job["key"], job["label"], mapping, folder,
+                                         job["sheet"], on_saved=remember)
+        except Exception as exc:
+            self.error(exc)
+
+    def scan_excel_batch(self, *, configure_job=False):
         try:
             mappings = form_templates(self.favorite_settings)
             if not mappings:
                 raise ValueError("Speichere zuerst eine Feldzuordnung unter „Excel-Formularvorlagen“.")
-            names, _ = QFileDialog.getOpenFileNames(self, "Scans für die Excel-Zuordnung auswählen", "", "PDF (*.pdf)")
-            if not names:
-                return
-            paths = list(dict.fromkeys(Path(name).resolve() for name in names))
-            if len(paths) > 60:
-                raise ValueError("Bitte höchstens 60 Scans auf einmal auswählen.")
+            if not configure_job:
+                names, _ = QFileDialog.getOpenFileNames(self, "Scans für die Excel-Zuordnung auswählen", "", "PDF (*.pdf)")
+                if not names:
+                    return
+                paths = list(dict.fromkeys(Path(name).resolve() for name in names))
+                if len(paths) > 60:
+                    raise ValueError("Bitte höchstens 60 Scans auf einmal auswählen.")
             name, _ = QFileDialog.getOpenFileName(self, "Excel-Liste auswählen", "", "Excel (*.xlsx)")
             if not name:
                 return
@@ -6722,17 +6808,30 @@ class Window(QMainWindow):
                 return
             folder = QFileDialog.getExistingDirectory(self, "Zielordner für ausgefüllte PDF-Kopien wählen", str(workbook.parent))
             if folder:
-                self.review_scan_excel_batch(paths, workbook, stamp, rows, key, label.strip(), mappings[mapping], Path(folder))
+                if configure_job:
+                    if Path(folder).resolve() == self.inbox_folder().resolve():
+                        raise ValueError("Wähle einen Zielordner außerhalb des Scan-Posteingangs.")
+                    job = dict(workbook=str(workbook), sheet=sheet, key=key, label=label.strip(), mapping=mapping,
+                               folder=str(Path(folder).resolve()))
+                    self.favorite_settings.setValue("scan/excel-job", job)
+                    self.favorite_settings.sync()
+                    if self.favorite_settings.status() != QSettings.Status.NoError:
+                        raise OSError("Der Excel-Scan-Auftrag konnte nicht gespeichert werden.")
+                else:
+                    self.review_scan_excel_batch(paths, workbook, stamp, rows, key, label.strip(), mappings[mapping], Path(folder), sheet)
         except Exception as exc:
             self.error(exc)
 
-    def review_scan_excel_batch(self, paths, workbook, workbook_stamp, rows, key, label, mapping, folder):
+    def review_scan_excel_batch(self, paths, workbook, workbook_stamp, rows, key, label, mapping, folder, sheet,
+                                *, on_saved=None):
         index = scan_row_index(rows, key)
         if not index:
             raise ValueError("Die ausgewählte Excel-Spalte enthält keine Kennungen.")
         templates = scan_form_templates(self.favorite_settings)
         tessdata = Path(__file__).with_name("tessdata")
         details, chosen = {}, {}
+        manual_paths = set()
+        excerpts = {}
         row_values = {line: row for line, row, _ in rows}
 
         def fill(document, plan):
@@ -6753,7 +6852,14 @@ class Window(QMainWindow):
                         raise ValueError("Bitte eine ungeschützte, unsignierte PDF verwenden.")
                     issue = ""
                     try:
-                        keys = scan_keys(read_scan_text(document, tessdata), index, label)
+                        text = read_scan_text(document, tessdata)
+                        keys = scan_keys(text, index, label)
+                        lines = text.splitlines()
+                        hits = [number for number, line in enumerate(lines)
+                                if (label and label.casefold() in line.casefold())
+                                or any(key in line.casefold() for key in keys)]
+                        excerpts[path] = ("\n\n".join("\n".join(lines[max(0, hit - 1):hit + 3]) for hit in hits[:5])
+                                          if hits else text[:1600])
                     except (RuntimeError, ValueError) as exc:
                         keys, issue = [], str(exc)
                     added = []
@@ -6803,6 +6909,7 @@ class Window(QMainWindow):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
         manual = buttons.addButton("Excel-Zeile zuordnen", QDialogButtonBox.ButtonRole.ActionRole)
         preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
+        export = buttons.addButton("Zuordnungsprotokoll speichern", QDialogButtonBox.ButtonRole.ActionRole)
         save = buttons.addButton("Auswahl als PDF-Kopien speichern", QDialogButtonBox.ButtonRole.AcceptRole)
         layout.addWidget(buttons)
 
@@ -6842,6 +6949,50 @@ class Window(QMainWindow):
             return [path for row, path in enumerate(paths) if path in chosen
                     and table.item(row, 0).checkState() == Qt.CheckState.Checked]
 
+        def export_assignments(parent, saved=None):
+            selected_paths = set(selection())
+            clashes = conflicts(selected_paths)
+            outcomes = dict(saved or ())
+            entries = []
+            for row, path in enumerate(paths):
+                plan = chosen.get(path)
+                reason = ""
+                if path in outcomes:
+                    reason = outcomes[path]
+                    status = "Speichern fehlgeschlagen" if reason else "Gespeichert"
+                elif path in clashes:
+                    status, reason = "Übersprungen", "Excel-Zeile oder Zielname mehrfach zugeordnet"
+                elif path in selected_paths:
+                    status = "Ausgewählt" if saved is None else "Übersprungen"
+                    reason = "" if saved is None else "Verarbeitung abgebrochen"
+                else:
+                    status = "Übersprungen"
+                    reason = table.item(row, 4).text()
+                    if plan and (path in manual_paths or path not in initial_conflicts):
+                        reason = "Nicht ausgewählt"
+                line = plan[0] if plan else None
+                method = ""
+                if plan:
+                    method = "Von Hand bestätigt" if path in manual_paths else "Automatisch erkannt"
+                entries.append((str(path), ", ".join(details[path][1]), str(workbook), sheet,
+                                f"{rows.columns[key]}{line}" if plan else "",
+                                row_values[line].get(key, "") if plan else "", method,
+                                str(plan[2]) if plan else "", status, reason))
+            name, _ = QFileDialog.getSaveFileName(parent, "Zuordnungsprotokoll speichern",
+                                                 str(folder / "Zuordnungsprotokoll.xlsx"), "Excel (*.xlsx)")
+            if not name:
+                return
+            try:
+                if Path(name).resolve() == workbook.resolve():
+                    raise ValueError("Wähle einen anderen Namen, damit die Excel-Quelldatei erhalten bleibt.")
+                self.save_workbook(name, lambda target: export_linked_sheet(
+                    entries, target, "Zuordnung",
+                    ("Originalscan", "Gelesene Kennung", "Excel-Datei", "Tabellenblatt", "Excel-Zelle",
+                     "Excel-Kennung", "Zuordnung", "Ziel-PDF", "Status", "Grund"),
+                    (42, 20, 42, 20, 15, 20, 24, 42, 26, 58), source_column=1))
+            except Exception as exc:
+                self.error(exc)
+
         def refresh(*_):
             row = table.currentRow()
             current = paths[row] if row >= 0 else None
@@ -6873,15 +7024,54 @@ class Window(QMainWindow):
             plans = details[path][2]
             if not plans:
                 return
-            labels = {f"Zeile {line} · {row_values[line].get(key, '')}": line for line in plans}
-            value, ok = QInputDialog.getItem(dialog, "Excel-Zeile zuordnen", path.name, list(labels), editable=False)
-            if not ok:
+            choice = QDialog(dialog)
+            choice.setWindowTitle(f"Excel-Zeile zuordnen · {path.name}")
+            choice.resize(820, 420)
+            choice_layout = QVBoxLayout(choice)
+            panels = QHBoxLayout()
+            choice_layout.addLayout(panels)
+            scan_panel, excel_panel = QVBoxLayout(), QVBoxLayout()
+            panels.addLayout(scan_panel, 1)
+            panels.addLayout(excel_panel, 1)
+            scan_panel.addWidget(QLabel("Textausschnitt aus dem Scan"))
+            excerpt = QPlainTextEdit(excerpts.get(path) or "Kein lesbarer Ausschnitt verfügbar.")
+            excerpt.setReadOnly(True)
+            scan_panel.addWidget(excerpt)
+            excel_panel.addWidget(QLabel(f"Excel · {sheet}"))
+            candidates = QComboBox()
+            excel_panel.addWidget(candidates)
+            values = QPlainTextEdit()
+            values.setReadOnly(True)
+            excel_panel.addWidget(values)
+            recognized = set(details[path][1])
+            preferred = {line for identifier in recognized for line in index.get(identifier, [])}
+            for line in sorted(plans, key=lambda line: (line not in preferred, line)):
+                candidates.addItem(f"Zeile {line} · {row_values[line].get(key, '')}", line)
+            if path in chosen:
+                candidates.setCurrentIndex(candidates.findData(chosen[path][0]))
+
+            def show_values():
+                line = candidates.currentData()
+                address = f"{rows.columns[key]}{line}"
+                values.setPlainText("\n".join([f"Kennung in {address}", "",
+                                                *(f"{name} · {value}" for name, value in row_values[line].items()),
+                                                *plans[line][4]]))
+
+            candidates.currentIndexChanged.connect(show_values)
+            show_values()
+            actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
+            actions.addButton("Zuordnung übernehmen", QDialogButtonBox.ButtonRole.AcceptRole)
+            actions.accepted.connect(choice.accept)
+            actions.rejected.connect(choice.reject)
+            choice_layout.addWidget(actions)
+            if choice.exec() != QDialog.DialogCode.Accepted:
                 return
-            plan = plans[labels[value]]
+            plan = plans[candidates.currentData()]
             try:
                 with filled(path, plan):
                     pass
                 chosen[path] = plan
+                manual_paths.add(path)
                 set_row(row, "Von Hand bestätigt", True)
                 refresh()
             except Exception as exc:
@@ -6900,6 +7090,7 @@ class Window(QMainWindow):
         table.itemChanged.connect(refresh)
         manual.clicked.connect(lambda: assign(table.currentRow()))
         preview.clicked.connect(show_preview)
+        export.clicked.connect(lambda: export_assignments(dialog))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         table.setCurrentCell(0, 1)
@@ -6911,6 +7102,8 @@ class Window(QMainWindow):
             raise ValueError("Die Auswahl enthält doppelte Excel-Zeilen oder Zielnamen.")
         if file_signature(workbook) != workbook_stamp:
             raise ValueError("Die Excel-Datei wurde geändert. Starte die Prüfung erneut.")
+
+        progress_errors = []
 
         def store(path):
             plan = chosen[path]
@@ -6925,20 +7118,29 @@ class Window(QMainWindow):
                         candidate.rename(target)
                     else:
                         os.link(candidate, target)
-                return ""
             except FileExistsError:
                 return "Zieldatei existiert bereits."
             except Exception as exc:
                 return str(exc)
+            if on_saved is not None:
+                try:
+                    on_saved(path, details[path][0])
+                except OSError as exc:
+                    progress_errors.append(f"{path.name}: {exc}")
+            return ""
 
         saved = self.inspect_pdfs(selected, "Ausgefüllte Scan-Kopien werden gespeichert …", store)
         report = QMessageBox(self)
         report.setWindowTitle("Scans mit Excel-Zeilen füllen")
         report.setText(f"{sum(not issue for _, issue in saved)} von {len(selected)} gewählten PDF-Kopien gespeichert.")
-        failures = [f"{path.name}: {issue}" for path, issue in saved if issue]
+        failures = [f"{path.name}: {issue}" for path, issue in saved if issue] + progress_errors
         if failures:
             report.setDetailedText("\n".join(failures))
+        report.addButton(QMessageBox.StandardButton.Close)
+        export_result = report.addButton("Zuordnungsprotokoll speichern", QMessageBox.ButtonRole.ActionRole)
         report.exec()
+        if report.clickedButton() is export_result:
+            export_assignments(self, saved)
 
     def scan_field_batch(self):
         try:
@@ -9386,15 +9588,16 @@ class Window(QMainWindow):
 
     def show_program_info(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Info zu PDF Werkbank")
+        dialog.setWindowTitle(f"Info zu {APP_TITLE}")
         layout = QVBoxLayout(dialog)
-        title = QLabel("PDF Werkbank " + ".".join(map(str, VERSION)))
+        title = QLabel(APP_TITLE + " " + ".".join(map(str, VERSION)))
         title.setStyleSheet("font-size: 20px; font-weight: bold;")
         layout.addWidget(title)
+        layout.addWidget(QLabel(APP_SLOGAN))
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Unter Ansicht zwischen heller und dunkler "
-                         "Darstellung umschalten.")
+                         "Neu in dieser Version: Excel-Scan-Aufträge im Posteingang speichern "
+                         "und unklare Zuordnungen direkt vergleichen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
@@ -9416,7 +9619,7 @@ class Window(QMainWindow):
             self.error(exc)
             return
         dialog = QDialog(parent)
-        dialog.setWindowTitle("Lizenz · PDF Werkbank")
+        dialog.setWindowTitle(f"Lizenz · {APP_TITLE}")
         layout = QVBoxLayout(dialog)
         text = QPlainTextEdit()
         text.setReadOnly(True)
@@ -9576,7 +9779,7 @@ class Window(QMainWindow):
             write(prog, "", "PDF-Dokument")
             write(prog + r"\DefaultIcon", "", f'"{icon}",0')
             write(prog + r"\shell\open\command", "", f'"{launcher}" "%1"')
-            write(capabilities, "ApplicationName", "PDF Werkbank")
+            write(capabilities, "ApplicationName", APP_TITLE)
             write(capabilities, "ApplicationDescription", "PDF-Dateien öffnen und bearbeiten")
             write(capabilities + r"\FileAssociations", ".pdf", "PDFWerkbank.PDF")
             write(r"Software\RegisteredApplications", "PDF Werkbank", capabilities)
@@ -9627,6 +9830,7 @@ def signal_startup_ready():
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("PDF Werkbank")
+    app.setApplicationDisplayName(APP_TITLE)
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("pdf-werkbank.ico"))))
     settings = QSettings("PDF Werkbank", "PDF Werkbank")
     folder = settings.value("updates", "", str)

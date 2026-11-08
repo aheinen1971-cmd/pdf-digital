@@ -17,8 +17,9 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.50.0";
-    private const string Title = "PDF Werkbank";
+    private const string Version = "1.51.0";
+    private const string Title = "PDF Digital";
+    private const string DataFolder = "PDF Werkbank";
     private const string UpdatePublicModulus = "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp";
 
     [STAThread]
@@ -42,7 +43,7 @@ internal static class Launcher
         {
             string custom = Environment.GetEnvironmentVariable("PDF_WERKBANK_RUNTIME_ROOT");
             string root = String.IsNullOrWhiteSpace(custom)
-                ? Path.Combine(LocalData(), Title, "GitHub", Version)
+                ? Path.Combine(LocalData(), DataFolder, "GitHub", Version)
                 : Path.GetFullPath(custom);
             if (prepare)
             {
@@ -72,8 +73,8 @@ internal static class Launcher
                     return 0;
                 }
                 var answer = MessageBox.Show(
-                    (offline ? "PDF Werkbank wird aus dem Ordner „Pakete“ eingerichtet. Dazu ist kein Internet nötig.\n\n"
-                    : "PDF Werkbank lädt beim ersten Start rund 140 MB direkt von Python.org, PyPI und GitHub. " +
+                    (offline ? "PDF Digital wird aus dem Ordner „Pakete“ eingerichtet. Dazu ist kein Internet nötig.\n\n"
+                    : "PDF Digital lädt beim ersten Start rund 140 MB direkt von Python.org, PyPI und GitHub. " +
                     "Die Dateien werden lokal für dieses Windows-Konto gespeichert. Danach funktioniert die PDF-App offline.\n\n")
                     + "Jetzt einrichten?", Title, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
                     MessageBoxDefaultButton.Button2);
@@ -143,7 +144,7 @@ internal static class Launcher
 
     private static string InstallOfflineStarter(string executable)
     {
-        string folder = Path.Combine(LocalData(), Title, "Offline", Version);
+        string folder = Path.Combine(LocalData(), DataFolder, "Offline", Version);
         Directory.CreateDirectory(folder);
         string target = Path.Combine(folder, "PDF-Werkbank-Offline.exe");
         if (!File.Exists(target))
@@ -170,7 +171,7 @@ internal static class Launcher
 
     private static string UpdateRoot()
     {
-        return Path.Combine(LocalData(), Title, "Online-Updates");
+        return Path.Combine(LocalData(), DataFolder, "Online-Updates");
     }
 
     private static void Notify(string message)
@@ -315,7 +316,7 @@ internal static class Launcher
         {
             string label = version.ToString();
             string digest = VerifiedDigest(label);
-            string runtime = Path.Combine(LocalData(), Title, "GitHub", label);
+            string runtime = Path.Combine(LocalData(), DataFolder, "GitHub", label);
             if (digest == null || IsFailed(label, digest) || !File.Exists(Path.Combine(runtime, "ready-" + label))
                 || !File.Exists(Path.Combine(runtime, "python", "pythonw.exe"))
                 || !File.Exists(Path.Combine(runtime, "app", "pdf_werkbank.py")))
@@ -339,7 +340,7 @@ internal static class Launcher
         if (Environment.GetEnvironmentVariable("PDF_WERKBANK_OFFLINE") == "1")
         {
             string entrypoint = Environment.GetEnvironmentVariable("PDF_WERKBANK_ENTRYPOINT");
-            string offline = Path.Combine(LocalData(), Title, "Offline");
+            string offline = Path.Combine(LocalData(), DataFolder, "Offline");
             if (!String.IsNullOrEmpty(entrypoint))
             {
                 var executable = new FileInfo(entrypoint);
@@ -349,7 +350,7 @@ internal static class Launcher
                     && executable.Directory != null && executable.Directory.Parent != null
                     && String.Equals(executable.Directory.Parent.FullName, offline, StringComparison.OrdinalIgnoreCase)
                     && System.Version.TryParse(executable.Directory.Name, out version) && version < current
-                    && File.Exists(Path.Combine(LocalData(), Title, "GitHub", version.ToString(), "ready-" + version)))
+                    && File.Exists(Path.Combine(LocalData(), DataFolder, "GitHub", version.ToString(), "ready-" + version)))
                 {
                     var start = new ProcessStartInfo(executable.FullName,
                         String.Join(" ", Environment.GetCommandLineArgs().Skip(1).Select(Quote)))
@@ -716,7 +717,7 @@ internal sealed class SetupWindow : Form
 
     internal SetupWindow(string root, string offlinePackages)
     {
-        Text = "PDF Werkbank einrichten";
+        Text = "PDF Digital einrichten";
         ClientSize = new Size(480, 153);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;

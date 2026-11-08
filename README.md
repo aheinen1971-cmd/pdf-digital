@@ -1,11 +1,13 @@
-# PDF Werkbank 1.50.0 für Windows
+# PDF Digital 1.51.0 für Windows
+
+**Alles finden und bearbeiten**
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.50.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.51.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +17,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.50.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.51.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -59,6 +61,16 @@ Update erforderlich sein.
 **Start → Offene Arbeiten** bündelt registrierte Formularläufe mit
 offenen Zeilen, Entwürfe im Scan-Posteingang und fällige Wiedervorlagen
 im überwachten Rechnungsordner. Ein Doppelklick öffnet den Eintrag.
+
+Im **Scan-Posteingang → Excel-Scan-Auftrag einrichten** lassen sich
+Excel-Datei, Tabellenblatt, Kennung, Excel-Formularvorlage und Zielordner
+für wiederkehrende Aufträge speichern. Der Eintrag **Scan-Auftrag**
+unter **Offene Arbeiten** öffnet die Prüfung für bis zu 60 ausstehende
+Entwürfe. Ein Doppelklick auf einen unklaren Treffer zeigt den erkannten
+Textausschnitt neben der ausgewählten Excel-Zeile. Erst die Freigabe
+schreibt PDF-Kopien. Erfolgreiche Entwürfe bleiben im Posteingang und
+werden bei unverändertem Inhalt aus der Auftragsliste ausgeblendet.
+Nach Korrekturen liest der nächste Prüflauf die aktuelle Excel-Datei ein.
 Die Übersicht erscheint beim normalen Programmstart. Das lässt sich
 direkt in der Übersicht abschalten. Rechnungen erscheinen, sobald
 der Ordner eingelesen ist.
@@ -260,6 +272,10 @@ der Messliste. Excel enthält auch die Stückzahlen.
   Treffern kannst du die Zeile selbst wählen und die ausgefüllte PDF
   ansehen. Die automatische Texterkennung für diese Zuordnung umfasst
   bis zu 20 Seiten pro Scan.
+  **Zuordnungsprotokoll speichern** exportiert Originalscan, gelesene
+  Kennung, Excel-Zelle, Ziel-PDF und Ergebnis als XLSX. In der Vorschau
+  zeigt das Protokoll die Auswahl. Nach dem Speichern enthält es auch
+  fehlgeschlagene und übersprungene Einträge mit Grund.
   Doppelklick auf eine zugeordnete Zelle springt zur PDF-Seite und markiert
   die Felder. **Nächste Feldseite** führt zu weiteren Fundstellen.
   **Zur Formularvorschau** bringt dich zurück. Nach dem Speichern einer
