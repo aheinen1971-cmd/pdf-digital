@@ -8,6 +8,7 @@ DEFAULT_FAVORITES = ["scan", "quick-scan", "folder", "duplex"]
 COMMANDS = {"scan", "quick-scan", "inbox", "folder", "duplex", "booklet", "open", "save", "archive", "compare"}
 STEPS = {"ocr", "rotate", "compress"}
 FORM_TEMPLATES = "form-export/templates"
+FORM_RULES = ("unique", "date")
 
 
 def short_text(value, maximum):
@@ -22,9 +23,13 @@ def validate_form_templates(templates):
             raise ValueError("Eine Excel-Vorlage braucht einen Namen und 1 bis 100 Spalten.")
         used = {"pdf-datei", "hinweis"}
         for column in columns:
-            if not isinstance(column, list) or len(column) != 3:
+            if not isinstance(column, list) or len(column) not in (3, 4):
                 raise ValueError("Ungültige Feldzuordnung in der Excel-Vorlage.")
-            heading, aliases, required = column
+            heading, aliases, required = column[:3]
+            if len(column) == 4 and (not isinstance(column[3], list)
+                                     or any(rule not in FORM_RULES for rule in column[3])
+                                     or len(set(column[3])) != len(column[3])):
+                raise ValueError("Unbekannte oder doppelte Prüfregel in der Excel-Vorlage.")
             if (not short_text(heading, 120) or not heading.strip() or heading.casefold() in used
                     or type(required) is not bool or not isinstance(aliases, list) or not 1 <= len(aliases) <= 30
                     or any(not short_text(alias, 250) or not alias.strip() for alias in aliases)):

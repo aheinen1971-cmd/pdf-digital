@@ -2,7 +2,9 @@
 import os
 import posixpath
 import re
-from collections import Counter
+from collections import Counter, defaultdict
+from datetime import date, timedelta
+from decimal import Decimal, InvalidOperation
 from itertools import zip_longest
 from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, fromstring, tostring
@@ -13,6 +15,14 @@ import pymupdf as pdf
 REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 OFFICE_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 MAX_FORM_ROWS = 500
+BUILTIN_DATES = {14, 15, 16, 17, 22}
+
+
+class FormSheetRows(list):
+    def __init__(self):
+        super().__init__()
+        self.columns = {}
+        self.date_cells = {}
 
 
 def workbook_xml(archive, name):
@@ -63,12 +73,55 @@ def spreadsheet_text(node):
     return "".join(item.text or "" for item in [*node.findall("{*}t"), *node.findall("{*}r/{*}t")])
 
 
+def excel_date_styles(archive):
+    if "xl/styles.xml" not in archive.namelist():
+        return set()
+    styles = workbook_xml(archive, "xl/styles.xml")
+    date_formats = set(BUILTIN_DATES)
+    for entry in styles.findall("{*}numFmts/{*}numFmt"):
+        code = re.sub(r'"[^"]*"|\\.|\[[^]]*\]|_.|\*.', "", entry.get("formatCode", "")).lower()
+        if "y" in code or ("d" in code and "m" in code):
+            date_formats.add(int(entry.attrib["numFmtId"]))
+    return {index for index, entry in enumerate(styles.findall("{*}cellXfs/{*}xf"))
+            if int(entry.get("numFmtId", "0")) in date_formats}
+
+
+def parse_form_date(value):
+    try:
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:T00:00:00(?:\.0+)?)?", value, re.ASCII):
+            return date.fromisoformat(value[:10])
+        match = re.fullmatch(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", value, re.ASCII)
+        if match:
+            day, month, year = map(int, match.groups())
+            return date(year, month, day)
+    except ValueError:
+        pass
+    return None
+
+
+def serial_date(value, uses_1904):
+    try:
+        number = Decimal(value)
+        if not number.is_finite() or not 0 <= number <= 2958465 or number != number.to_integral_value():
+            return None
+        if uses_1904:
+            return date(1904, 1, 1) + timedelta(days=int(number))
+        if not number or number == 60:
+            return None
+        return date(1899, 12, 31) + timedelta(days=int(number) - int(number > 60))
+    except (InvalidOperation, OverflowError):
+        return None
+
+
 def read_form_sheet(path, sheet):
     with ZipFile(path) as archive:
         sheets, strings = workbook_parts(archive)
         shared = [spreadsheet_text(item) for item in workbook_xml(archive, strings).findall("{*}si")] if strings else []
         grid = workbook_xml(archive, sheets[sheet])
-    headers, rows, previous = None, [], 0
+        formats = excel_date_styles(archive)
+        properties = workbook_xml(archive, "xl/workbook.xml").find("{*}workbookPr")
+        uses_1904 = properties is not None and properties.get("date1904") in ("true", "1")
+    headers, rows, previous = None, FormSheetRows(), 0
     for number, row in enumerate(grid.findall("{*}sheetData/{*}row"), 1):
         line = int(row.get("r", number))
         if not previous < line <= 1048576:
@@ -77,8 +130,8 @@ def read_form_sheet(path, sheet):
         cells, issues = {}, []
         for cell in row.findall("{*}c"):
             address = cell.get("r", "")
-            match = re.fullmatch(r"([A-Z]{1,3})[1-9][0-9]*", address)
-            if match is None or match[1] in cells:
+            match = re.fullmatch(r"([A-Z]{1,3})([1-9][0-9]*)", address)
+            if match is None or match[2] != str(line) or match[1] in cells:
                 raise ValueError("Ungültige Zelladresse in der Excel-Datei.")
             kind = cell.get("t", "n")
             value = cell.findtext("{*}v") or ""
@@ -94,11 +147,15 @@ def read_form_sheet(path, sheet):
                 value = spreadsheet_text(cell.find("{*}is"))
             elif kind == "b":
                 value = {"0": "FALSE", "1": "TRUE"}[value]
+            elif headers is not None and value and kind == "n" and int(cell.get("s", "0")) in formats:
+                if match[1] in headers:
+                    rows.date_cells[line, headers[match[1]]] = serial_date(value, uses_1904)
             cells[match[1]] = value
         if not any(value.strip() for value in cells.values()) and not issues:
             continue
         if headers is None:
             headers = {column: value.strip() for column, value in cells.items() if value.strip()}
+            rows.columns = {name: column for column, name in headers.items()}
             if issues or len({name.casefold() for name in headers.values()}) != len(headers):
                 raise ValueError("Die Kopfzeile braucht eindeutige Spaltennamen ohne Formeln.")
         else:
@@ -113,12 +170,33 @@ def read_form_sheet(path, sheet):
 def form_row_plan(doc, columns, rows, target, source):
     fields = set(name for page in doc for name, _, _ in form_fields(page))
     plan = []
+    coordinates = getattr(rows, "columns", {})
+    excel_dates = getattr(rows, "date_cells", {})
+    duplicates = defaultdict(list)
     for line, row, issues in rows:
         issues = list(issues)
         values = {}
-        for heading, aliases, required in columns:
+        for column in columns:
+            heading, aliases, required = column[:3]
+            rules = column[3] if len(column) == 4 else ()
             value = row.get(heading, "")
             matches = fields.intersection(aliases)
+            if rules and heading not in coordinates and heading not in row:
+                issues.append(f"Excel-Spalte für Prüfregel fehlt: {heading}")
+            if rules and value.strip():
+                address = f"{coordinates[heading]}{line}" if heading in coordinates else f"Zeile {line} · {heading}"
+                comparable = value.strip().casefold()
+                if "date" in rules:
+                    key = line, heading
+                    parsed = excel_dates[key] if key in excel_dates else parse_form_date(value.strip())
+                    if parsed is None:
+                        issues.append(f"{address}: Ungültiges Datum in „{heading}“")
+                    else:
+                        comparable = parsed.isoformat()
+                        if key in excel_dates or "T" in value:
+                            value = f"{parsed.day:02d}.{parsed.month:02d}.{parsed.year:04d}"
+                if "unique" in rules:
+                    duplicates[heading, comparable].append((issues, address))
             if required and not value.strip():
                 issues.append(f"Pflichtwert fehlt: {heading}")
             if value.strip() and not matches:
@@ -143,6 +221,11 @@ def form_row_plan(doc, columns, rows, target, source):
                 issues.append("Zieldatei existiert bereits")
         plan.append((line, filename, path, values, issues))
     counts = Counter(name.casefold() for _, name, path, _, _ in plan if path is not None)
+    for (heading, _), cells in duplicates.items():
+        if len(cells) > 1:
+            for index, (issues, address) in enumerate(cells):
+                other = cells[0 if index else 1][1]
+                issues.append(f"{address}: „{heading}“ doppelt (auch in {other})")
     for _, name, path, _, issues in plan:
         if path is not None and counts[name.casefold()] > 1:
             issues.append("Doppelter Dateiname")
@@ -192,7 +275,7 @@ def form_entry_columns(doc, mappings):
                 continue
             choices.setdefault(field.field_name, []).append(options)
     columns = []
-    for heading, aliases, required in mappings:
+    for heading, aliases, required, *_ in mappings:
         groups = [options for alias in aliases for options in choices.get(alias, [])]
         common = list(dict.fromkeys(value for value in groups[0] if all(value in group for group in groups))) if groups else []
         columns.append((heading, required, common))
@@ -240,7 +323,7 @@ def read_form_values(path, separate=False):
 
 def map_form_values(fields, columns):
     values, issues = [], {}
-    for index, (heading, aliases, required) in enumerate(columns):
+    for index, (heading, aliases, required, *_) in enumerate(columns):
         sources = [(alias, value) for alias in aliases for value in fields.get(alias, ()) if value.strip()]
         distinct = {value.strip() for _, value in sources}
         value = sources[0][1] if len(distinct) == 1 else None

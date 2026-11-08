@@ -65,7 +65,7 @@ from recovery import Recovery, atomic_write
 from document_review import attachments, comments, insert_labels, label_conflicts, page_labels
 from filing import (archive_target, clear_index, filename_hint, file_signature, folder_matches, indexed_matches,
                     pdf_files, scan_breaks, scan_ranges, search_rectangles)
-from preferences import (DEFAULT_FAVORITES, FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
+from preferences import (DEFAULT_FAVORITES, FORM_RULES, FORM_TEMPLATES, GROUPS, export_package, form_templates, import_groups,
                          read_package, validate_form_templates)
 from archive_run import ArchiveRun
 from form_run import FormRun
@@ -81,7 +81,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 43, 0)
+VERSION = (1, 44, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -5631,11 +5631,15 @@ class Window(QMainWindow):
         form.addRow("Name beim Speichern", name)
         layout.addLayout(form)
         content = QHBoxLayout()
-        table = QTableWidget(0, 3)
-        table.setHorizontalHeaderLabels(["Excel-Spalte", "PDF-Feldnamen", "Pflicht"])
+        table = QTableWidget(0, 5)
+        table.setHorizontalHeaderLabels(["Excel-Spalte", "PDF-Feldnamen", "Pflicht", "Eindeutig", "Datum"])
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         table.setColumnWidth(0, 190)
         table.setColumnWidth(2, 65)
+        table.setColumnWidth(3, 85)
+        table.setColumnWidth(4, 65)
+        table.horizontalHeaderItem(3).setToolTip("Der Wert darf im Formularlauf nur einmal vorkommen.")
+        table.horizontalHeaderItem(4).setToolTip("Erwartet ein Excel-Datum, TT.MM.JJJJ oder JJJJ-MM-TT.")
         content.addWidget(table, 3)
         fields = QListWidget()
         fields.addItems(available)
@@ -5661,7 +5665,7 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
         result = None
 
-        def append_column(heading="", aliases=(), required=False):
+        def append_column(heading="", aliases=(), required=False, rules=()):
             row = table.rowCount()
             if row >= 100:
                 return
@@ -5670,18 +5674,19 @@ class Window(QMainWindow):
             editor = QPlainTextEdit("\n".join(aliases))
             table.setCellWidget(row, 1, editor)
             table.setRowHeight(row, 75)
-            flag = QTableWidgetItem()
-            flag.setFlags(flag.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            flag.setCheckState(Qt.CheckState.Checked if required else Qt.CheckState.Unchecked)
-            table.setItem(row, 2, flag)
+            for column, enabled in enumerate((required, *(rule in rules for rule in FORM_RULES)), 2):
+                flag = QTableWidgetItem()
+                flag.setFlags(flag.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                flag.setCheckState(Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked)
+                table.setItem(row, column, flag)
             table.setCurrentCell(row, 0)
 
         def load():
             selected = choice.currentData()
             name.setText(selected or "")
             table.setRowCount(0)
-            for heading, aliases, required in templates.get(selected, []):
-                append_column(heading, aliases, required)
+            for column in templates.get(selected, []):
+                append_column(*column)
             if not selected:
                 append_column()
             else:
@@ -5727,7 +5732,9 @@ class Window(QMainWindow):
                 aliases = list(dict.fromkeys(line for line in table.cellWidget(row, 1).toPlainText().splitlines()
                                               if line.strip()))
                 required = table.item(row, 2).checkState() == Qt.CheckState.Checked
-                columns.append([heading, aliases, required])
+                rules = [rule for index, rule in enumerate(FORM_RULES, 3)
+                         if table.item(row, index).checkState() == Qt.CheckState.Checked]
+                columns.append([heading, aliases, required, rules] if rules else [heading, aliases, required])
             try:
                 current = form_templates(settings)
                 if label in current and (label != choice.currentData() or current[label] != templates.get(label)):
@@ -5868,7 +5875,7 @@ class Window(QMainWindow):
             if template is None:
                 return
             title, mappings = template
-            columns = [heading for heading, _, _ in mappings]
+            columns = [column[0] for column in mappings]
         if len(columns) > 1000 or len(outcomes) * (len(columns) + 2) > 100000:
             self.error("Zu viele Formularfelder für die Vorschau. Bitte weniger PDFs auswählen.")
             return
@@ -5941,7 +5948,7 @@ class Window(QMainWindow):
         def open_cell(row, column):
             if column < 2 or column >= len(header):
                 return
-            _, aliases, _ = mappings[column - 2]
+            aliases = mappings[column - 2][1]
             problem = cell_issues.get((row, column))
             filled = problem is not None and problem[0].startswith("Widerspruch:")
             self.jump_to_form_field(paths[row], aliases, filled, dialog)
@@ -8430,8 +8437,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Formularläufe und Scan-Entwürfe "
-                         "mit dem Umzugsassistenten auf einen anderen PC mitnehmen.")
+                         "Neu in dieser Version: Doppelte Werte und ungültige Datumsangaben "
+                         "in Excel-Formularläufen mit Zelladresse erkennen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
