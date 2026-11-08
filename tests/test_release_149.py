@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pymupdf as pdf
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QMessageBox, QPlainTextEdit, QTableWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QMessageBox, QPlainTextEdit, QPushButton, QTableWidget
 
 from office_export import export_linked_sheet, read_form_sheet, read_form_values, scan_keys
 from pdf_werkbank import Window
@@ -171,6 +171,75 @@ with TemporaryDirectory() as directory:
     window.favorite_settings = QSettings(settings_path, QSettings.Format.IniFormat)
     assert inbox_scan.is_file() and window.scan_drafts() == [inbox_scan]
     assert window.pending_scan_job(window.scan_drafts()) == []
+    result_pdf = target / "Testkunde.pdf"
+    assert window.open_path(result_pdf)
+
+    def press(dialog, label):
+        next(button for button in dialog.findChildren(QPushButton) if button.text() == label).click()
+
+    def sources(dialog):
+        if dialog.windowTitle() == "Quellen der fertigen PDF":
+            press(dialog, "Zur Excel-Zelle")
+            press(dialog, "Originalscan öffnen")
+        else:
+            assert dialog.windowTitle() == "Excel · Daten · A2"
+            sheet = dialog.findChild(QTableWidget)
+            assert sheet.currentItem().text() == "0123"
+            assert sheet.item(0, 1).text() == "Testkunde"
+            dialog.reject()
+        return dialog.result()
+
+    with patch.object(QDialog, "exec", sources), patch.object(window, "error", side_effect=AssertionError):
+        window.show_scan_sources()
+        assert window.current.path == inbox_scan
+
+    identical = inbox / "2026-11-08-Kopie.pdf"
+    identical.write_bytes(inbox_scan.read_bytes())
+    same_key = inbox / "2026-11-08-Neuer-Scan.pdf"
+    make_scan(same_key, "0123")
+    fresh = inbox / "2026-11-08-Neu.pdf"
+    make_scan(fresh, "4321")
+    fresh_copy = inbox / "2026-11-08-Neu-Kopie.pdf"
+    fresh_copy.write_bytes(fresh.read_bytes())
+    export_linked_sheet([("0123", "Testkunde", "Testkunde"), ("4321", "Neu", "Neu"), ("7654", "Alternativ", "Alternativ")],
+                        book, "Daten", ["Kundennummer", "Name", "Dateiname"], [20] * 3)
+
+    def duplicates(dialog):
+        if dialog.windowTitle().startswith("Excel-Zeile zuordnen"):
+            candidates = dialog.findChild(QComboBox)
+            candidates.setCurrentIndex(candidates.findData(4))
+            dialog.accept()
+            return dialog.result()
+        grid = dialog.findChild(QTableWidget)
+        by_name = {grid.item(row, 1).text(): row for row in range(grid.rowCount())}
+        assert "Datei bereits verarbeitet" in grid.item(by_name[identical.name], 4).text()
+        assert "Kennung bereits verarbeitet" in grid.item(by_name[same_key.name], 4).text()
+        for path in (fresh, fresh_copy):
+            assert "Dateiidentischer Scan im Stapel" in grid.item(by_name[path.name], 4).text()
+        assert all(grid.item(row, 0).checkState() == Qt.CheckState.Unchecked for row in by_name.values())
+        grid.cellDoubleClicked.emit(by_name[fresh_copy.name], 1)
+        grid.item(by_name[fresh.name], 0).setCheckState(Qt.CheckState.Checked)
+        grid.item(by_name[fresh_copy.name], 0).setCheckState(Qt.CheckState.Checked)
+        save = next(button for button in dialog.findChildren(QPushButton)
+                    if button.text() == "Auswahl als PDF-Kopien speichern")
+        assert not save.isEnabled()
+        grid.selectRow(by_name[identical.name])
+        press(dialog, "Bisherige PDF öffnen")
+        return dialog.result()
+
+    with patch.object(QDialog, "exec", duplicates), patch.object(window, "error", side_effect=AssertionError):
+        window.run_inbox_scan_job()
+    assert window.current.path == result_pdf
+    assert not (target / "Neu.pdf").exists()
+
+    export_linked_sheet([("0000", "Andere Zeile", "Andere")], book, "Daten",
+                        ["Kundennummer", "Name", "Dateiname"], [20] * 3)
+    record = next(record for record in window.scan_sources().values() if record["value"] == "0123")
+    with patch.object(window, "error") as error:
+        window.show_scan_excel_cell(window, record, book)
+        assert "passt nicht mehr" in str(error.call_args.args[0])
+    while window.sessions:
+        window.close_tab(0)
     window.close()
 
-print("OCR, Zuordnungsvergleich, Excel-Protokoll und Scan-Auftrag mit Korrektur und Neustart geprüft.")
+print("OCR, Scan-Auftrag, Dubletten im und nach dem Stapel, Originalscan und Excel-Zellensprung geprüft.")

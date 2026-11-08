@@ -1,4 +1,4 @@
-# PDF Digital 1.51.0 für Windows
+# PDF Digital 1.52.0 für Windows
 
 **Alles finden und bearbeiten**
 
@@ -7,7 +7,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.51.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.52.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -17,7 +17,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.51.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.52.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -71,6 +71,17 @@ Textausschnitt neben der ausgewählten Excel-Zeile. Erst die Freigabe
 schreibt PDF-Kopien. Erfolgreiche Entwürfe bleiben im Posteingang und
 werden bei unverändertem Inhalt aus der Auftragsliste ausgeblendet.
 Nach Korrekturen liest der nächste Prüflauf die aktuelle Excel-Datei ein.
+Dateiidentische Scans und mögliche Dubletten mit derselben Kennung
+werden im Stapel und gegenüber früheren Zuordnungen angezeigt. Sie
+sind zunächst abgewählt. **Bisherige PDF öffnen** öffnet ein vorhandenes
+Ergebnis zum Vergleich. Eine dateiidentische Kopie kann je Freigabe
+nur einmal ausgewählt werden.
+
+Öffne eine neu erzeugte PDF und wähle **Formular → Quellen der fertigen PDF**.
+Dort öffnest du den Originalscan oder springst in der Werkbank direkt
+zur markierten Excel-Zelle. Von dort lässt sich auch die Excel-Datei
+mit dem Windows-Standardprogramm öffnen. Die Zuordnung bleibt nach einem
+Neustart verfügbar und wird lokal gespeichert.
 Die Übersicht erscheint beim normalen Programmstart. Das lässt sich
 direkt in der Übersicht abschalten. Rechnungen erscheinen, sobald
 der Ordner eingelesen ist.
