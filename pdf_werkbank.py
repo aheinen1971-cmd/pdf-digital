@@ -39,6 +39,8 @@ from PySide6.QtWidgets import (
 )
 
 from local_ai import LocalTextEngine, ModelDownload, model_path, model_ready
+from offline_tools import (PACKAGE_NAME, TOOLS, export_tools, install_tools, package_size, read_selection,
+                           tool_status)
 
 from online_updates import ReleaseCheck
 from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
@@ -77,7 +79,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 40, 0)
+VERSION = (1, 41, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -858,6 +860,7 @@ class Window(QMainWindow):
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
                        ("Einstellungen übertragen", self.transfer_preferences), ("Arbeitsstand sichern", self.work_backup), ("Explorer-Befehle einrichten", self.configure_explorer),
                        ("Umzugsassistent", self.project_move_dialog),
+                       ("USB-Stick vorbereiten", self.offline_tools_dialog),
                        ("Broschürendruck", self.booklet_dialog),
                        ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
                        ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Info", self.update_info), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
@@ -1566,6 +1569,94 @@ class Window(QMainWindow):
                  "Feld": "Einen Bereich für das neue Formularfeld aufziehen.", "Link": "Einen Bereich für den Link aufziehen.", "Stempel": "Auf die Stelle für den Stempel klicken."}
         if mode in hints:
             self.statusBar().showMessage(hints[mode], 6500)
+
+    def offline_tools_dialog(self):
+        base = app_backup_root().with_name("Prüfwerkzeuge")
+        model = model_path()
+        available = tool_status(base, model)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("USB-Stick vorbereiten")
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Wähle bereits eingerichtete Funktionen für den USB-Stick. Auf dem Ziel-PC "
+                      "öffnest du dieses Fenster erneut und klickst auf „Zusatzpaket übernehmen“.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        choices = {}
+        for key, title in TOOLS.items():
+            box = QCheckBox(f"{title} · " + ("Lokal vorhanden" if available[key] else "Lokal fehlt"))
+            box.setEnabled(available[key])
+            box.setChecked(available[key] and key != "KI")
+            choices[key] = box
+            layout.addWidget(box)
+        size = QLabel()
+        layout.addWidget(size)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        export = buttons.addButton("Auf USB-Stick kopieren", QDialogButtonBox.ButtonRole.AcceptRole)
+        restore = buttons.addButton("Zusatzpaket übernehmen", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        restore.clicked.connect(lambda: dialog.done(2))
+        layout.addWidget(buttons)
+
+        def selected():
+            return [key for key, box in choices.items() if box.isChecked()]
+
+        def refresh():
+            modules = selected()
+            export.setEnabled(bool(modules))
+            size.setText(f"Benötigter Platz: {package_size(modules) / 1048576:.0f} MiB" if modules else "Keine Auswahl")
+
+        for box in choices.values():
+            box.toggled.connect(refresh)
+        refresh()
+        result = dialog.exec()
+        if result == QDialog.DialogCode.Accepted:
+            folder = QFileDialog.getExistingDirectory(self, "USB-Stick oder Zielordner auswählen")
+            if not folder:
+                return
+            target = Path(folder) / PACKAGE_NAME
+            action = lambda progress: export_tools(target, selected(), base, model, progress)
+            message = f"Zusatzpaket gespeichert: {target}"
+        elif result == 2:
+            name, _ = QFileDialog.getOpenFileName(self, "Paket.json im USB-Zusatzpaket öffnen", "", "Paketliste (Paket.json)")
+            if not name:
+                return
+            source = Path(name).parent
+            try:
+                modules = read_selection(source)
+            except (OSError, ValueError) as exc:
+                self.error(exc)
+                return
+            labels = ", ".join(TOOLS[key] for key in modules)
+            if QMessageBox.question(self, "Zusatzpaket übernehmen", f"Diese Funktionen einrichten?\n{labels}",
+                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+            action = lambda progress: install_tools(source, base, model, progress)
+            message = f"Offline verfügbar: {labels}"
+        else:
+            return
+        progress = QProgressDialog("Dateien werden geprüft …", "Abbrechen", 0, 0, self)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+
+        def tick(key, name):
+            progress.setLabelText(f"{key} · {Path(name).name}" if name else key)
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                raise InterruptedError
+
+        try:
+            action(tick)
+        except InterruptedError:
+            return
+        except Exception as exc:
+            self.error(exc)
+            return
+        finally:
+            progress.close()
+        self.statusBar().showMessage(message, 15000)
+        QMessageBox.information(self, "USB-Zusatzpakete", message)
 
     def project_move_dialog(self):
         actions = ("Projektpaket erstellen", "Projektpaket öffnen")
