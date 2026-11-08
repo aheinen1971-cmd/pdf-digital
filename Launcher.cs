@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 internal static class Launcher
 {
-    private const string Version = "1.42.0";
+    private const string Version = "1.43.0";
     private const string Title = "PDF Werkbank";
     private const string UpdatePublicModulus = "wIhGX47WvM5T5fBx9vcHFPLHbyx7r5XxgKIV7bgf/ONGxieObcHesqs8LtroLSSTKUmzW1DFFAUaUJeMYPgME+XCjKtey+a0bQHiSKEK0JD5v1YXjhkwAW/nYBZX9v2LjIU9nNO0dMpmY+hbv99EyTncZsBKUXentZlIctgctpSA+EJBsTL5Q010bDfLpww/pD0jzwqu8sv2omFP4ZVSte0e5oG58Yxih5CODfV+H9B88P1PpW+2gNwrJoNlOCsxUneydMu/Buh9FyP89WvNLFYfILQGAUgNFZCEcTVn8qjViST1qV3tYJTWoc0Sx21gLzaSFyy2wjj2STLFr0RMXgK1QX2P/Tq/TYjzho0pKnObJHuDv/mnrg6wrMoJnGf5HV06/WoormJkB5O51dZ4jpA7htgpXisKUbohfj/6hTSrrZot2bqbQ75OWn8WaKQOxPFgI8dOo/a5bcUMQMEFXlgTDYKxK4gVNmIXYRNxJOgyRKxg3H8ELFRYX4EHVObp";
 
@@ -48,8 +48,10 @@ internal static class Launcher
             {
                 if (installOnly && !offline)
                     throw new IOException("Bitte den Starter aus dem Offline-Paket verwenden.");
+                string updatePackages = Environment.GetEnvironmentVariable("PDF_WERKBANK_UPDATE_PACKAGES");
                 if (!Ready(root))
-                    Install(root, new Progress<string>(), CancellationToken.None, packages).GetAwaiter().GetResult();
+                    Install(root, new Progress<string>(), CancellationToken.None,
+                            updatePackages ?? packages, updatePackages != null).GetAwaiter().GetResult();
                 if (installOnly)
                     InstallOfflineStarter(executable);
                 return Ready(root) ? 0 : 1;
@@ -334,6 +336,39 @@ internal static class Launcher
             }
             catch (System.ComponentModel.Win32Exception) { }
         }
+        if (Environment.GetEnvironmentVariable("PDF_WERKBANK_OFFLINE") == "1")
+        {
+            string entrypoint = Environment.GetEnvironmentVariable("PDF_WERKBANK_ENTRYPOINT");
+            string offline = Path.Combine(LocalData(), Title, "Offline");
+            if (!String.IsNullOrEmpty(entrypoint))
+            {
+                var executable = new FileInfo(entrypoint);
+                System.Version version;
+                if (executable.Exists && (executable.Attributes & FileAttributes.ReparsePoint) == 0
+                    && String.Equals(executable.Name, "PDF-Werkbank-Offline.exe", StringComparison.OrdinalIgnoreCase)
+                    && executable.Directory != null && executable.Directory.Parent != null
+                    && String.Equals(executable.Directory.Parent.FullName, offline, StringComparison.OrdinalIgnoreCase)
+                    && System.Version.TryParse(executable.Directory.Name, out version) && version < current
+                    && File.Exists(Path.Combine(LocalData(), Title, "GitHub", version.ToString(), "ready-" + version)))
+                {
+                    var start = new ProcessStartInfo(executable.FullName,
+                        String.Join(" ", Environment.GetCommandLineArgs().Skip(1).Select(Quote)))
+                    {
+                        UseShellExecute = false,
+                        WorkingDirectory = Environment.CurrentDirectory
+                    };
+                    start.EnvironmentVariables.Remove("PDF_WERKBANK_RUNTIME_ROOT");
+                    start.EnvironmentVariables.Remove("PDF_WERKBANK_STARTUP_READY");
+                    start.EnvironmentVariables["PDF_WERKBANK_UPDATE_FORWARDED"] = "1";
+                    try
+                    {
+                        using (Process process = Process.Start(start))
+                            return true;
+                    }
+                    catch (System.ComponentModel.Win32Exception) { }
+                }
+            }
+        }
         return false;
     }
 
@@ -373,7 +408,7 @@ internal static class Launcher
     }
 
     internal static async Task Install(string root, IProgress<string> progress, CancellationToken cancellation,
-                                       string offlinePackages = null)
+                                       string offlinePackages = null, bool reuseForUpdate = false)
     {
         root = ExtendedPath(root);
         string parent = Path.GetDirectoryName(root);
@@ -402,7 +437,8 @@ internal static class Launcher
                         throw new IOException("Im Zielordner liegt bereits eine unvollständige Einrichtung. " +
                                               "Bitte benenne diesen Ordner um und starte erneut:\n" + root);
                     Directory.CreateDirectory(staging);
-                    int installedPackages = offlinePackages == null ? ReuseRuntime(parent, staging, progress, cancellation) : 0;
+                    int installedPackages = offlinePackages == null || reuseForUpdate
+                        ? ReuseRuntime(parent, staging, progress, cancellation) : 0;
                     string cache = Path.Combine(parent, ".setup-cache-" + Version);
                     DownloadPackages(staging, cache, installedPackages, progress, cancellation, offlinePackages).GetAwaiter().GetResult();
                     cancellation.ThrowIfCancellationRequested();

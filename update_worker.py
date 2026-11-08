@@ -154,6 +154,104 @@ class GitHubRedirect(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+def usb_update_info(package):
+    match = re.fullmatch(rf"PDF-Werkbank-({VERSION_PATTERN})-Windows\.zip", package.name)
+    if match is None:
+        raise ValueError("Bitte die Windows-ZIP-Datei eines signierten Werkbank-Updates wählen.")
+    version = match[1]
+    size = package.stat().st_size
+    if not 0 < size <= MAX_PACKAGE:
+        raise ValueError("Ungültige Größe des USB-Updates.")
+    signature = package.with_name(f"PDF-Werkbank-{version}-Signatur.json")
+    try:
+        with signature.open("rb") as stream:
+            signed = stream.read(SIGNATURE_LIMIT + 1)
+    except FileNotFoundError as exc:
+        raise SignatureError("Die Signaturdatei muss neben der Windows-ZIP-Datei liegen.") from exc
+    expected = verify_release_signature(signed, version, digest_file(package), size)
+    return version, signed, expected
+
+
+def export_usb_update(folder):
+    headers = {"User-Agent": "PDF-Werkbank", "Accept": "application/vnd.github+json"}
+    opener = build_opener(GitHubRedirect())
+    with opener.open(Request(LATEST, headers=headers), timeout=15) as response:
+        result = available_release(json.loads(response.read(1024 * 1024)), (0, 0, 0))
+    if not result:
+        raise ValueError("Es wurde keine passende Windows-Freigabe gefunden.")
+    version, digest, size = result
+    target = folder / f"PDF-Werkbank-USB-Update-{version}"
+    if target.exists():
+        raise FileExistsError("Dieses USB-Update liegt bereits im gewählten Ordner.")
+    with tempfile.TemporaryDirectory(dir=folder) as temporary:
+        stage = Path(temporary) / "USB-Update"
+        stage.mkdir()
+        package = stage / f"PDF-Werkbank-{version}-Windows.zip"
+        with opener.open(Request(signature_url(version), headers=headers), timeout=30) as response:
+            signed = response.read(SIGNATURE_LIMIT + 1)
+        verify_release_signature(signed, version, digest, size)
+        with opener.open(Request(package_url(version), headers={"User-Agent": "PDF-Werkbank"}), timeout=30) as response:
+            data = response.read(size + 1)
+        if len(data) != size or hashlib.sha256(data).hexdigest() != digest:
+            raise ValueError("Die Prüfsumme oder Größe des Update-Pakets stimmt nicht.")
+        package.write_bytes(data)
+        package.with_name(f"PDF-Werkbank-{version}-Signatur.json").write_bytes(signed)
+        stage.rename(target)
+    return target
+
+
+def prepare_candidate(package, candidate, version, expected_exe, offline_packages=None):
+    with ZipFile(package) as archive:
+        entry = archive.getinfo(candidate.name)
+        if not 0 < entry.file_size <= MAX_PACKAGE:
+            raise ValueError("Die Größe der Programmdatei stimmt nicht.")
+        with archive.open(entry) as source, candidate.open("wb") as output:
+            output.write(source.read(MAX_PACKAGE + 1))
+    if digest_file(candidate) != expected_exe:
+        raise SignatureError("Die EXE stimmt nicht mit der signierten Freigabe überein.")
+    env = os.environ.copy()
+    env.pop("PDF_WERKBANK_RUNTIME_ROOT", None)
+    env.pop("PDF_WERKBANK_UPDATE_PACKAGES", None)
+    if offline_packages is not None:
+        env["PDF_WERKBANK_UPDATE_PACKAGES"] = str(offline_packages)
+    subprocess.run([str(candidate), "--prepare-update"], env=env, check=True, timeout=360,
+                   creationflags=subprocess.CREATE_NO_WINDOW)
+    if not runtime_ready(version):
+        raise ValueError("Die neue Laufzeit wurde nicht vollständig eingerichtet.")
+
+
+def stage_usb_update(package, current):
+    import msvcrt
+
+    root = update_root()
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / "update.lock").open("a+b") as lock:
+        lock.seek(0)
+        try:
+            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        except OSError as exc:
+            raise OSError("Ein anderes Fenster bereitet bereits ein Update vor.") from exc
+        version, signed, expected = usb_update_info(package)
+        if version_tuple(version) <= current:
+            raise ValueError("Das USB-Update ist nicht neuer als die laufende Version.")
+        if failed_update(version, expected):
+            raise ValueError("Diese Freigabe ist beim Start bereits fehlgeschlagen.")
+        with tempfile.TemporaryDirectory(dir=root) as folder:
+            temp = Path(folder)
+            name = f"PDF-Werkbank-{version}.exe"
+            candidate = temp / name
+            try:
+                prepare_candidate(package, candidate, version, expected, package.parent / "Pakete")
+            except subprocess.SubprocessError as exc:
+                raise ValueError("Das USB-Update konnte nicht eingerichtet werden. "
+                                 "Falls neue Laufzeitpakete benötigt werden, lege sie im Ordner „Pakete“ neben das Update.") from exc
+            marker = temp / "verified.json"
+            marker.write_bytes(signed)
+            os.replace(candidate, root / name)
+            os.replace(marker, root / f"{version}.json")
+    return version
+
+
 def stage_update(version, digest, size):
     import msvcrt
 
@@ -199,20 +297,7 @@ def stage_update(version, digest, size):
                 raise ValueError("Die Prüfsumme des Update-Pakets stimmt nicht.")
             name = f"PDF-Werkbank-{version}.exe"
             candidate = temp / name
-            with ZipFile(package) as archive:
-                entry = archive.getinfo(name)
-                if not 0 < entry.file_size <= MAX_PACKAGE:
-                    raise ValueError("Die Größe der Programmdatei stimmt nicht.")
-                with archive.open(entry) as source, candidate.open("wb") as output:
-                    output.write(source.read(MAX_PACKAGE + 1))
-            if digest_file(candidate) != expected_exe:
-                raise SignatureError("Die EXE stimmt nicht mit der signierten Freigabe überein.")
-            env = os.environ.copy()
-            env.pop("PDF_WERKBANK_RUNTIME_ROOT", None)
-            subprocess.run([str(candidate), "--prepare-update"], env=env, check=True, timeout=360,
-                           creationflags=subprocess.CREATE_NO_WINDOW)
-            if not runtime_ready(version):
-                raise ValueError("Die neue Laufzeit wurde nicht vollständig eingerichtet.")
+            prepare_candidate(package, candidate, version, expected_exe)
             marker = temp / "verified.json"
             marker.write_bytes(signed)
             os.replace(candidate, root / name)

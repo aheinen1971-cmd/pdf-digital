@@ -1,11 +1,11 @@
-# PDF Werkbank 1.42.0 für Windows
+# PDF Werkbank 1.43.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.42.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.43.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.42.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.43.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -42,6 +42,15 @@ Das optionale KI-Modell kann mitgewählt werden, wenn es bereits geladen ist.
 **Info → Offline-Bereitschaft prüfen** führt PDF/A, E-Rechnungsprüfung,
 OCR und die lokale KI mit erzeugten Beispieldaten aus. Zu fehlenden
 Dateien und Startfehlern nennt der Test das passende USB-Paket.
+
+Für Updates ohne Internet speichert **Info → Update für USB speichern**
+auf einem Online-PC das Windows-ZIP und die zugehörige Projektsignatur.
+Auf dem Offline-PC wählst du das ZIP unter **Info → Update vom USB-Stick**.
+Die Werkbank prüft die Signatur und sichert den Arbeitsstand vor der
+Einrichtung. Beim nächsten Start übernimmt sie die neue Version. Bei
+einem fehlgeschlagenen Start wird die vorige funktionsfähige Version
+geöffnet. Für neue Abhängigkeiten kann der Ordner `Pakete` neben dem
+Update erforderlich sein.
 
 **Start → Offene Arbeiten** bündelt registrierte Formularläufe mit
 offenen Zeilen, Entwürfe im Scan-Posteingang und fällige Wiedervorlagen

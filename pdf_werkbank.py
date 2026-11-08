@@ -44,7 +44,8 @@ from offline_tools import (PACKAGE_NAME, TOOLS, export_tools, install_tools, pac
 from offline_readiness import PROBES, USB, check_invoice, check_ocr, check_pdfa, run_probe
 
 from online_updates import ReleaseCheck
-from update_worker import SIGNER, digest_file, prepared_update, runtime_ready, verified_launcher, version_tuple
+from update_worker import (SIGNER, digest_file, export_usb_update, prepared_update, runtime_ready, stage_usb_update,
+                           usb_update_info, verified_launcher, version_tuple)
 
 from office_export import (export_word, export_word_layout, export_excel, export_form_entry, export_invoices, export_linked_sheet,
                            fill_form, form_entry_columns, form_fields, form_row_plan, map_form_values, read_form_sheet,
@@ -80,7 +81,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 42, 0)
+VERSION = (1, 43, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -918,7 +919,8 @@ class Window(QMainWindow):
                           ("Excel-Eingabevorlage erstellen", self.create_form_entry),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
             ("Info", [("Info zu PDF Werkbank", self.show_program_info), ("Update-Info", self.update_info),
-                      ("Offline-Bereitschaft prüfen", self.offline_readiness_dialog)]),
+                      ("Offline-Bereitschaft prüfen", self.offline_readiness_dialog),
+                      ("Update vom USB-Stick", self.usb_update_dialog), ("Update für USB speichern", self.usb_update_export)]),
         ]
         for name, _ in self.groups:
             self.tools.addTab(name)
@@ -8464,6 +8466,62 @@ class Window(QMainWindow):
         dialog.resize(720, 580)
         dialog.exec()
 
+
+    def usb_update_dialog(self):
+        name, _ = QFileDialog.getOpenFileName(self, "Signiertes USB-Update wählen", "", "Windows-Update (*-Windows.zip)")
+        if not name:
+            return
+        package = Path(name)
+        try:
+            version, _, _ = usb_update_info(package)
+            if version_tuple(version) <= VERSION:
+                raise ValueError("Das USB-Update ist nicht neuer als die laufende Version.")
+            current = ".".join(map(str, VERSION))
+            if QMessageBox.question(self, "Signiertes USB-Update",
+                                    f"Die Projektsignatur ist gültig. Version {version} vorbereiten?\n"
+                                    f"Die Werkbank sichert vorher den Arbeitsstand von Version {current}.",
+                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+            def prepare():
+                automatic_backup(self.favorite_settings, self.measurement_store(), current, version, refresh=True)
+                return stage_usb_update(package, VERSION)
+
+            installed = self.run_usb_update_job("USB-Update wird vorbereitet …", prepare)
+            QMessageBox.information(self, "USB-Update bereit",
+                                    f"Version {installed} ist bereit. Schließe die Werkbank und öffne sie erneut "
+                                    "über deinen bisherigen Starter.")
+        except Exception as exc:
+            self.error(exc)
+
+    def usb_update_export(self):
+        folder = QFileDialog.getExistingDirectory(self, "USB-Stick oder Zielordner auswählen")
+        if not folder:
+            return
+        try:
+            target = self.run_usb_update_job("Signierte Freigabe wird geladen …", lambda: export_usb_update(Path(folder)))
+            QMessageBox.information(self, "USB-Update gespeichert", f"Signiertes Update gespeichert in:\n{target}")
+        except Exception as exc:
+            self.error(exc)
+
+    def run_usb_update_job(self, title, job):
+        progress = QProgressDialog(title, "", 0, 0, self)
+        progress.setCancelButton(None)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.show()
+        timer = QTimer(progress, interval=100)
+        loop = QEventLoop(progress)
+        with ThreadPoolExecutor(max_workers=1) as worker:
+            future = worker.submit(job)
+            timer.timeout.connect(lambda: loop.quit() if future.done() else None)
+            timer.start()
+            try:
+                loop.exec()
+                return future.result()
+            finally:
+                timer.stop()
+                progress.close()
 
     def update_info(self):
         label = ".".join(map(str, VERSION))
