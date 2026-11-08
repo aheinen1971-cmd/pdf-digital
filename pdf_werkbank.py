@@ -27,7 +27,7 @@ if os.name == "nt":
         os.add_dll_directory(str(qt_runtime))
 
 import pymupdf as pdf
-from PySide6.QtCore import QDate, QEventLoop, QItemSelectionModel, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QDate, QEventLoop, QItemSelectionModel, QLibraryInfo, QLocale, QLockFile, QMimeData, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer, QTranslator, QUrl
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QDrag, QIcon, QImage, QPageLayout, QPageSize, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF, QTransform
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import (
@@ -85,9 +85,16 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 53, 0)
+VERSION = (1, 54, 0)
 APP_TITLE = "PDF Digital"
 APP_SLOGAN = "Alles finden und bearbeiten"
+UI_LANGUAGES = {
+    "de": "Deutsch", "en-US": "English", "fr": "Français", "es-ES": "Español",
+    "nl": "Nederlands", "it": "Italiano", "pt-PT": "Português", "pl": "Polski",
+    "cs": "Čeština", "da": "Dansk", "sv-SE": "Svenska", "nb-NO": "Norsk bokmål",
+    "fi": "Suomi", "tr": "Türkçe", "uk": "Українська", "el": "Ελληνικά",
+    "ja": "日本語", "ko": "한국어", "ar": "العربية", "he": "עברית",
+}
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -983,7 +990,7 @@ class Window(QMainWindow):
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
                          ("Zu Seite springen", self.jump_to_page),
                          ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid),
-                         ("Dunkelmodus", self.choose_appearance)]),
+                         ("Dunkelmodus", self.choose_appearance), ("Sprache", self.choose_language)]),
             ("Kommentar", [("Lesen", lambda: self.set_mode("Lesen")), ("Text markieren", lambda: self.set_mode("Markieren")),
                             ("Notiz setzen", lambda: self.set_mode("Notiz")), ("Kommentarübersicht", self.review_comments)]),
             ("Seiten", [("Nach links drehen", lambda: self.edit_page("rotate", -90)),
@@ -1040,12 +1047,17 @@ class Window(QMainWindow):
                       ("Update vom USB-Stick", self.usb_update_dialog), ("Update für USB speichern", self.usb_update_export)]),
         ]
         for name, _ in self.groups:
-            self.tools.addTab(name)
+            self.tools.addTab(self.ui(name))
         layout.addWidget(self.tools)
         ribbon_panel = QWidget(objectName="ribbon")
         self.ribbon = QHBoxLayout(ribbon_panel)
         self.ribbon.setContentsMargins(10, 8, 10, 8)
-        layout.addWidget(ribbon_panel)
+        self.ribbon_scroll = QScrollArea()
+        self.ribbon_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.ribbon_scroll.setWidgetResizable(True)
+        self.ribbon_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.ribbon_scroll.setWidget(ribbon_panel)
+        layout.addWidget(self.ribbon_scroll)
         self.tools.currentChanged.connect(self.update_ribbon)
         self.tools.setCurrentIndex(1)
 
@@ -1074,11 +1086,11 @@ class Window(QMainWindow):
         self.welcome = QWidget()
         welcome = QVBoxLayout(self.welcome)
         welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title = QLabel("PDF Werkbank")
+        title = QLabel(APP_TITLE)
         title.setStyleSheet("font-size: 32px; font-weight: 650;")
         welcome.addWidget(title, alignment=Qt.AlignmentFlag.AlignHCenter)
-        welcome.addWidget(QLabel("PDFs öffnen, bearbeiten und drucken"), alignment=Qt.AlignmentFlag.AlignHCenter)
-        start = QPushButton("PDF öffnen")
+        welcome.addWidget(QLabel(self.ui("PDFs öffnen, bearbeiten und drucken")), alignment=Qt.AlignmentFlag.AlignHCenter)
+        start = QPushButton(self.ui("PDF öffnen"))
         start.clicked.connect(self.open_files)
         welcome.addWidget(start, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self.welcome, 1)
@@ -1090,14 +1102,14 @@ class Window(QMainWindow):
         self.thumbs.verticalScrollBar().valueChanged.connect(self.schedule_thumbnails)
         self.thumbs.verticalScrollBar().rangeChanged.connect(self.schedule_thumbnails)
         self.splitter.splitterMoved.connect(self.schedule_thumbnails)
-        self.status = QLabel("Bereit")
+        self.status = QLabel(self.ui("Bereit"))
         self.statusBar().addWidget(self.status, 1)
-        self.invoice_badge = QPushButton("Rechnungen")
-        self.invoice_badge.setToolTip("Überwachten Rechnungseingang öffnen")
+        self.invoice_badge = QPushButton(self.ui("Rechnungen"))
+        self.invoice_badge.setToolTip(self.ui("Überwachten Rechnungseingang öffnen"))
         self.invoice_badge.clicked.connect(lambda: self.invoice_folder())
         self.statusBar().addPermanentWidget(self.invoice_badge)
         self.invoice_badge.hide()
-        work_badge = QPushButton("Offene Arbeiten")
+        work_badge = QPushButton(self.ui("Offene Arbeiten"))
         work_badge.clicked.connect(lambda: self.show_open_work())
         self.statusBar().addPermanentWidget(work_badge)
         for label, callback in [("‹", lambda: self.turn(-1)), ("›", lambda: self.turn(1)),
@@ -1135,15 +1147,42 @@ class Window(QMainWindow):
         self.setStyleSheet(DARK_STYLE if dark else STYLE)
 
     def choose_appearance(self):
-        choice, ok = QInputDialog.getItem(self, "Dunkelmodus", "Darstellung",
-                                          ("Hell", "Dunkel"), int(self.dark_mode), editable=False)
+        choices = (self.ui("Hell"), self.ui("Dunkel"))
+        choice, ok = QInputDialog.getItem(self, self.ui("Dunkelmodus"), self.ui("Darstellung"),
+                                          choices, int(self.dark_mode), editable=False)
         if ok:
-            enabled = choice == "Dunkel"
+            enabled = choice == choices[1]
             self.favorite_settings.setValue("view/dark-mode", enabled)
             self.favorite_settings.sync()
             self.apply_appearance(enabled)
             if self.favorite_settings.status() != QSettings.Status.NoError:
-                self.error("Die Darstellung konnte für den nächsten Start nicht gespeichert werden.")
+                self.error(self.ui("Die Darstellung konnte für den nächsten Start nicht gespeichert werden."))
+
+    def ui(self, text):
+        return self.ui_words.get(text, text)
+
+    def ui_format(self, template, *values):
+        try:
+            return self.ui(template).format(*values)
+        except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+            return template.format(*values)
+
+    def ui_columns(self, labels):
+        return tuple(map(self.ui, labels))
+
+    def choose_language(self):
+        labels = {f"{name} ({code})": code for code, name in UI_LANGUAGES.items()}
+        current = self.favorite_settings.value("view/language", self.ui_language, str)
+        selected = list(UI_LANGUAGES).index(current) if current in UI_LANGUAGES else 0
+        choice, ok = QInputDialog.getItem(self, self.ui("Sprache"), self.ui("Sprache auswählen"),
+                                          list(labels), selected, editable=False)
+        if ok:
+            self.favorite_settings.setValue("view/language", labels[choice])
+            self.favorite_settings.sync()
+            if self.favorite_settings.status() == QSettings.Status.NoError:
+                QMessageBox.information(self, self.ui("Sprache"), self.ui("Die Sprache wird beim nächsten Start verwendet."))
+            else:
+                self.error(self.ui("Die Sprache konnte nicht gespeichert werden."))
 
     def setup_favorites(self):
         self.favorite_commands = {
@@ -1159,6 +1198,21 @@ class Window(QMainWindow):
             "compare": ("PDFs vergleichen", self.compare),
         }
         self.favorite_settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        self.ui_language = self.favorite_settings.value("view/language", "de", str)
+        self.ui_words = {}
+        if self.ui_language not in UI_LANGUAGES:
+            self.ui_language = "de"
+        if self.ui_language != "de":
+            try:
+                catalog = Path(__file__).with_name("ui_languages.json")
+                words = json.loads(catalog.read_text(encoding="utf-8"))[self.ui_language]
+                if not isinstance(words, dict):
+                    raise ValueError("Invalid translation catalog")
+                self.ui_words = words
+            except (OSError, ValueError, KeyError, TypeError):
+                self.ui_language = "de"
+        if self.ui_language in ("ar", "he"):
+            self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.profile_commands()
         defaults = DEFAULT_FAVORITES
         saved = self.favorite_settings.value("toolbar/favorites", defaults)
@@ -1166,14 +1220,14 @@ class Window(QMainWindow):
             saved = defaults
         self.favorite_keys = list(dict.fromkeys(key for key in saved if isinstance(key, str) and key in self.favorite_commands))
         self.favorite_actions = []
-        self.favorite_toolbar = QToolBar("Angeheftete Funktionen", self)
+        self.favorite_toolbar = QToolBar(self.ui("Angeheftete Funktionen"), self)
         self.favorite_toolbar.setObjectName("favorites")
         self.favorite_toolbar.setMovable(False)
         self.favorite_toolbar.setFloatable(False)
         self.favorite_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.favorite_toolbar)
         button = QToolButton()
-        button.setText("Favoriten")
+        button.setText(self.ui("Favoriten"))
         button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.favorite_menu = QMenu(button)
         button.setMenu(self.favorite_menu)
@@ -1189,10 +1243,10 @@ class Window(QMainWindow):
 
     def populate_favorite_menu(self):
         self.favorite_menu.clear()
-        profiles = self.favorite_menu.addMenu("Gespeicherte Abläufe")
+        profiles = self.favorite_menu.addMenu(self.ui("Gespeicherte Abläufe"))
         profiles.setEnabled(any(key.startswith("profile:") for key in self.favorite_commands))
         for key, (label, _) in self.favorite_commands.items():
-            action = (profiles if key.startswith("profile:") else self.favorite_menu).addAction(label)
+            action = (profiles if key.startswith("profile:") else self.favorite_menu).addAction(self.ui(label))
             action.setCheckable(True)
             action.setChecked(key in self.favorite_keys)
             action.toggled.connect(lambda checked, key=key: self.pin_favorite(key, checked))
@@ -1212,12 +1266,12 @@ class Window(QMainWindow):
         self.favorite_actions.clear()
         for key in self.favorite_keys:
             label, callback = self.favorite_commands[key]
-            action = self.favorite_toolbar.addAction(label)
+            action = self.favorite_toolbar.addAction(self.ui(label))
             action.triggered.connect(lambda _=False, run=callback: run())
             self.favorite_actions.append(action)
 
     def transfer_preferences(self):
-        action, ok = QInputDialog.getItem(self, "Einstellungen übertragen", "Aktion",
+        action, ok = QInputDialog.getItem(self, self.ui("Einstellungen übertragen"), self.ui("Aktion"),
                                           ["Einstellungen exportieren", "Einstellungen importieren"], editable=False)
         if not ok:
             return
@@ -1229,16 +1283,16 @@ class Window(QMainWindow):
                 if path:
                     target = Path(path if path.lower().endswith(".json") else path + ".json")
                     atomic_write(target, export_package(settings))
-                    self.statusBar().showMessage("Einstellungspaket gespeichert.", 6500)
+                    self.statusBar().showMessage(self.ui("Einstellungspaket gespeichert."), 6500)
                 return
             path, _ = QFileDialog.getOpenFileName(self, action, "", "Einstellungspaket (*.json)")
             if not path:
                 return
             groups = read_package(Path(path))
             dialog = QDialog(self)
-            dialog.setWindowTitle("Einstellungsgruppen übernehmen")
+            dialog.setWindowTitle(self.ui("Einstellungsgruppen übernehmen"))
             layout = QVBoxLayout(dialog)
-            layout.addWidget(QLabel("Ausgewählte Gruppen ersetzen deine derzeitigen Einstellungen dieser Gruppe."))
+            layout.addWidget(QLabel(self.ui("Ausgewählte Gruppen ersetzen deine derzeitigen Einstellungen dieser Gruppe.")))
             choices = {}
             for key, label in GROUPS.items():
                 if key in groups:
@@ -1263,7 +1317,7 @@ class Window(QMainWindow):
             self.favorite_keys = [key for key in keys if key in self.favorite_commands]
             self.populate_favorite_menu()
             self.refresh_favorites()
-            self.statusBar().showMessage("Ausgewählte Einstellungsgruppen übernommen.", 6500)
+            self.statusBar().showMessage(self.ui("Ausgewählte Einstellungsgruppen übernommen."), 6500)
         except (OSError, ValueError, TypeError) as exc:
             self.error(exc)
 
@@ -1281,9 +1335,9 @@ class Window(QMainWindow):
     def start_profile(self, name):
         steps = self.read_batch_profiles(self.favorite_settings).get(name)
         if not steps:
-            self.error("Dieser gespeicherte Ablauf ist nicht mehr vorhanden.")
+            self.error(self.ui("Dieser gespeicherte Ablauf ist nicht mehr vorhanden."))
             return
-        paths, _ = QFileDialog.getOpenFileNames(self, f"Dateien für „{name}“ auswählen", "", "PDF-Dateien (*.pdf)")
+        paths, _ = QFileDialog.getOpenFileNames(self, self.ui_format('Dateien für „{0}“ auswählen', name), "", "PDF-Dateien (*.pdf)")
         if paths:
             self.run_batch(paths, steps)
 
@@ -1298,14 +1352,15 @@ class Window(QMainWindow):
             return "".join(char for char in unicodedata.normalize("NFKD", text.casefold())
                            if not unicodedata.combining(char))
 
-        commands = [(label, group, callback, key(f"{label} {group} {aliases.get(label, '')}"))
+        commands = [(self.ui(label), self.ui(group), callback,
+                     key(f"{self.ui(label)} {self.ui(group)} {label} {group} {aliases.get(label, '')}"))
                     for group, actions in self.groups for label, callback in actions]
         dialog = QDialog(self)
-        dialog.setWindowTitle("Befehl suchen")
+        dialog.setWindowTitle(self.ui("Befehl suchen"))
         dialog.resize(630, 450)
         layout = QVBoxLayout(dialog)
         query = QLineEdit()
-        query.setPlaceholderText("Befehl eingeben, z. B. Scan, Broschüre oder Schwärzen")
+        query.setPlaceholderText(self.ui("Befehl eingeben, z. B. Scan, Broschüre oder Schwärzen"))
         layout.addWidget(query)
         results = QListWidget()
         layout.addWidget(results, 1)
@@ -1348,23 +1403,23 @@ class Window(QMainWindow):
 
     def save_workspace(self):
         if not self.sessions:
-            self.error("Öffne zuerst die PDFs für deine Arbeitsmappe.")
+            self.error(self.ui("Öffne zuerst die PDFs für deine Arbeitsmappe."))
             return
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         try:
             maps = self.workspaces(settings)
-            name, ok = QInputDialog.getText(self, "Arbeitsmappe speichern", "Name der Arbeitsmappe")
+            name, ok = QInputDialog.getText(self, self.ui("Arbeitsmappe speichern"), self.ui("Name der Arbeitsmappe"))
             name = name.strip()
             if not ok or not name:
                 return
-            if name in maps and QMessageBox.question(self, "Arbeitsmappe aktualisieren",
-                                                       f"„{name}“ mit den jetzt geöffneten PDFs aktualisieren?"
+            if name in maps and QMessageBox.question(self, self.ui("Arbeitsmappe aktualisieren"),
+                                                       self.ui_format('„{0}“ mit den jetzt geöffneten PDFs aktualisieren?', name)
                                                        ) != QMessageBox.StandardButton.Yes:
                 return
             active = self.tabs.currentIndex()
             if any(session.changed for session in self.sessions):
-                choice = QMessageBox.question(self, "Bearbeitete PDFs speichern",
-                                              "Für die Arbeitsmappe werden geänderte PDFs zuerst als Kopien gespeichert. Fortfahren?")
+                choice = QMessageBox.question(self, self.ui("Bearbeitete PDFs speichern"),
+                                              self.ui("Für die Arbeitsmappe werden geänderte PDFs zuerst als Kopien gespeichert. Fortfahren?"))
                 if choice != QMessageBox.StandardButton.Yes:
                     return
                 try:
@@ -1381,7 +1436,7 @@ class Window(QMainWindow):
             settings.sync()
             if settings.status() != QSettings.Status.NoError:
                 raise OSError("Die Arbeitsmappe konnte nicht lokal gespeichert werden.")
-            self.statusBar().showMessage(f"Arbeitsmappe „{name}“ gespeichert.", 6500)
+            self.statusBar().showMessage(self.ui_format('Arbeitsmappe „{0}“ gespeichert.', name), 6500)
         except (OSError, ValueError) as exc:
             self.error(exc)
 
@@ -1390,9 +1445,9 @@ class Window(QMainWindow):
         try:
             maps = self.workspaces(settings)
             if not maps:
-                QMessageBox.information(self, "Arbeitsmappen", "Es sind noch keine Arbeitsmappen gespeichert.")
+                QMessageBox.information(self, self.ui("Arbeitsmappen"), self.ui("Es sind noch keine Arbeitsmappen gespeichert."))
                 return
-            name, ok = QInputDialog.getItem(self, "Arbeitsmappe öffnen", "Arbeitsmappe", sorted(maps), editable=False)
+            name, ok = QInputDialog.getItem(self, self.ui("Arbeitsmappe öffnen"), self.ui("Arbeitsmappe"), sorted(maps), editable=False)
             if not ok:
                 return
             records = maps[name]
@@ -1422,13 +1477,13 @@ class Window(QMainWindow):
             self.switch_doc(self.tabs.currentIndex())
             self.write_recovery()
             if missing:
-                QMessageBox.information(self, "Dateien fehlen", "Diese PDFs wurden verschoben oder gelöscht:\n"
+                QMessageBox.information(self, self.ui("Dateien fehlen"), "Diese PDFs wurden verschoben oder gelöscht:\n"
                                         + "\n".join(missing))
         except (OSError, ValueError) as exc:
             self.error(exc)
 
     def error(self, exc):
-        QMessageBox.warning(self, APP_TITLE, str(exc))
+        QMessageBox.warning(self, APP_TITLE, self.ui(str(exc)))
 
     def update_ribbon(self, index):
         while self.ribbon.count():
@@ -1438,15 +1493,17 @@ class Window(QMainWindow):
                 item.widget().deleteLater()
         group, commands = self.groups[index]
         if group == "Info":
-            self.ribbon.addWidget(QLabel(f"{APP_TITLE} · {APP_SLOGAN}"))
+            self.ribbon.addWidget(QLabel(f"{APP_TITLE} · {self.ui(APP_SLOGAN)}"))
         for name, callback in commands:
-            button = QPushButton(name)
+            button = QPushButton(self.ui(name))
             button.clicked.connect(lambda checked=False, run=callback: run())
             self.ribbon.addWidget(button)
         self.ribbon.addStretch()
+        self.ribbon_scroll.setFixedHeight(self.ribbon.sizeHint().height()
+                                          + self.ribbon_scroll.horizontalScrollBar().sizeHint().height())
 
     def open_files(self):
-        paths, _ = QFileDialog.getOpenFileNames(self, "PDF öffnen", "", "PDF-Dateien (*.pdf)")
+        paths, _ = QFileDialog.getOpenFileNames(self, self.ui("PDF öffnen"), "", self.ui("PDF-Dateien (*.pdf)"))
         for path in paths:
             self.open_path(path)
 
@@ -1455,7 +1512,7 @@ class Window(QMainWindow):
             with (pdf.open(stream=snapshot, filetype="pdf") if snapshot is not None else pdf.open(path)) as probe:
                 password = None
                 if probe.needs_pass:
-                    password, ok = QInputDialog.getText(self, "PDF öffnen", "Passwort", QLineEdit.EchoMode.Password)
+                    password, ok = QInputDialog.getText(self, self.ui("PDF öffnen"), self.ui("Passwort"), QLineEdit.EchoMode.Password)
                     if not ok:
                         return
             session = Session(path, password, snapshot)
@@ -1473,7 +1530,7 @@ class Window(QMainWindow):
                 if session.plan_measurements:
                     self.render()
             except (ValueError, OSError) as exc:
-                self.statusBar().showMessage(f"Messliste konnte nicht geladen werden: {exc}", 9000)
+                self.statusBar().showMessage(self.ui_format('Messliste konnte nicht geladen werden: {0}', exc), 9000)
 
         self.write_recovery()
         return session
@@ -1490,8 +1547,8 @@ class Window(QMainWindow):
                     if not records:
                         self.recovery.clear(folder, lock)
                         continue
-                    choice = QMessageBox.question(self, "Sitzung wiederherstellen",
-                                                  f"{len(records)} offene PDF-Tabs aus einer früheren Sitzung wiederherstellen?",
+                    choice = QMessageBox.question(self, self.ui("Sitzung wiederherstellen"),
+                                                  self.ui_format('{0} offene PDF-Tabs aus einer früheren Sitzung wiederherstellen?', len(records)),
                                                   QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
                                                   QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Yes)
                     if choice == QMessageBox.StandardButton.Cancel:
@@ -1535,7 +1592,7 @@ class Window(QMainWindow):
             self.recovery.save(self.sessions, self.current)
             return True
         except Exception as exc:
-            self.statusBar().showMessage(f"Wiederherstellung konnte nicht gesichert werden: {exc}", 8000)
+            self.statusBar().showMessage(self.ui_format('Wiederherstellung konnte nicht gesichert werden: {0}', exc), 8000)
             return False
 
     def switch_doc(self, index):
@@ -1614,7 +1671,7 @@ class Window(QMainWindow):
         self.welcome.setVisible(session is None)
         self.splitter.setVisible(session is not None)
         if not session:
-            self.status.setText("Bereit")
+            self.status.setText(self.ui("Bereit"))
             return
         page = session.doc[session.page]
         try:
@@ -1675,7 +1732,7 @@ class Window(QMainWindow):
 
     def jump_to_page(self):
         if self.current:
-            page, ok = QInputDialog.getInt(self, "Zu Seite springen", "Seite", self.current.page + 1,
+            page, ok = QInputDialog.getInt(self, self.ui("Zu Seite springen"), self.ui("Seite"), self.current.page + 1,
                                             1, len(self.current.doc))
             if ok:
                 self.thumbs.setCurrentRow(page - 1)
@@ -1719,15 +1776,15 @@ class Window(QMainWindow):
 
     def offline_readiness_dialog(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Offline-Bereitschaft prüfen")
+        dialog.setWindowTitle(self.ui("Offline-Bereitschaft prüfen"))
         dialog.resize(920, 350)
         layout = QVBoxLayout(dialog)
-        info = QLabel("Die Werkbank testet mit eigenen Beispielen. Dafür werden keine Dateien heruntergeladen "
-                      "und keine offenen Dokumente verwendet.")
+        info = QLabel(self.ui("Die Werkbank testet mit eigenen Beispielen. Dafür werden keine Dateien heruntergeladen "
+                      "und keine offenen Dokumente verwendet."))
         info.setWordWrap(True)
         layout.addWidget(info)
         table = QTableWidget(len(PROBES), 4)
-        table.setHorizontalHeaderLabels(["Funktion", "Status", "Ergebnis", "USB-Paket bei Bedarf"])
+        table.setHorizontalHeaderLabels([self.ui("Funktion"), self.ui("Status"), self.ui("Ergebnis"), self.ui("USB-Paket bei Bedarf")])
         table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         table.setColumnWidth(0, 105)
         table.setColumnWidth(1, 105)
@@ -1822,10 +1879,10 @@ class Window(QMainWindow):
         model = model_path()
         available = tool_status(base, model)
         dialog = QDialog(self)
-        dialog.setWindowTitle("USB-Stick vorbereiten")
+        dialog.setWindowTitle(self.ui("USB-Stick vorbereiten"))
         layout = QVBoxLayout(dialog)
-        info = QLabel("Wähle bereits eingerichtete Funktionen für den USB-Stick. Auf dem Ziel-PC "
-                      "öffnest du dieses Fenster erneut und klickst auf „Zusatzpaket übernehmen“.")
+        info = QLabel(self.ui("Wähle bereits eingerichtete Funktionen für den USB-Stick. Auf dem Ziel-PC "
+                      "öffnest du dieses Fenster erneut und klickst auf „Zusatzpaket übernehmen“."))
         info.setWordWrap(True)
         layout.addWidget(info)
         choices = {}
@@ -1838,8 +1895,8 @@ class Window(QMainWindow):
         size = QLabel()
         layout.addWidget(size)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        export = buttons.addButton("Auf USB-Stick kopieren", QDialogButtonBox.ButtonRole.AcceptRole)
-        restore = buttons.addButton("Zusatzpaket übernehmen", QDialogButtonBox.ButtonRole.ActionRole)
+        export = buttons.addButton(self.ui("Auf USB-Stick kopieren"), QDialogButtonBox.ButtonRole.AcceptRole)
+        restore = buttons.addButton(self.ui("Zusatzpaket übernehmen"), QDialogButtonBox.ButtonRole.ActionRole)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         restore.clicked.connect(lambda: dialog.done(2))
@@ -1858,14 +1915,14 @@ class Window(QMainWindow):
         refresh()
         result = dialog.exec()
         if result == QDialog.DialogCode.Accepted:
-            folder = QFileDialog.getExistingDirectory(self, "USB-Stick oder Zielordner auswählen")
+            folder = QFileDialog.getExistingDirectory(self, self.ui("USB-Stick oder Zielordner auswählen"))
             if not folder:
                 return
             target = Path(folder) / PACKAGE_NAME
             action = lambda progress: export_tools(target, selected(), base, model, progress)
             message = f"Zusatzpaket gespeichert: {target}"
         elif result == 2:
-            name, _ = QFileDialog.getOpenFileName(self, "Paket.json im USB-Zusatzpaket öffnen", "", "Paketliste (Paket.json)")
+            name, _ = QFileDialog.getOpenFileName(self, self.ui("Paket.json im USB-Zusatzpaket öffnen"), "", "Paketliste (Paket.json)")
             if not name:
                 return
             source = Path(name).parent
@@ -1875,7 +1932,7 @@ class Window(QMainWindow):
                 self.error(exc)
                 return
             labels = ", ".join(TOOLS[key] for key in modules)
-            if QMessageBox.question(self, "Zusatzpaket übernehmen", f"Diese Funktionen einrichten?\n{labels}",
+            if QMessageBox.question(self, self.ui("Zusatzpaket übernehmen"), self.ui_format('Diese Funktionen einrichten?\n{0}', labels),
                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                     QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                 return
@@ -1883,7 +1940,7 @@ class Window(QMainWindow):
             message = f"Offline verfügbar: {labels}"
         else:
             return
-        progress = QProgressDialog("Dateien werden geprüft …", "Abbrechen", 0, 0, self)
+        progress = QProgressDialog(self.ui("Dateien werden geprüft …"), self.ui("Abbrechen"), 0, 0, self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
 
@@ -1903,11 +1960,11 @@ class Window(QMainWindow):
         finally:
             progress.close()
         self.statusBar().showMessage(message, 15000)
-        QMessageBox.information(self, "USB-Zusatzpakete", message)
+        QMessageBox.information(self, self.ui("USB-Zusatzpakete"), message)
 
     def project_move_dialog(self):
         actions = ("Projektpaket erstellen", "Projektpaket öffnen")
-        action, ok = QInputDialog.getItem(self, "Umzugsassistent", "Aktion", actions, editable=False)
+        action, ok = QInputDialog.getItem(self, self.ui("Umzugsassistent"), self.ui("Aktion"), actions, editable=False)
         if not ok:
             return
         try:
@@ -1928,7 +1985,7 @@ class Window(QMainWindow):
         info.setWordWrap(True)
         layout.addWidget(info)
         table = QTableWidget(len(rows), 2)
-        table.setHorizontalHeaderLabels(["Datei im Paket", "Größe oder Ziel"])
+        table.setHorizontalHeaderLabels([self.ui("Datei im Paket"), self.ui("Größe oder Ziel")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         table.setColumnWidth(0, 290)
@@ -1947,18 +2004,18 @@ class Window(QMainWindow):
 
     def export_project_move(self):
         selector = QDialog(self)
-        selector.setWindowTitle("Dateien für den Umzug wählen")
+        selector.setWindowTitle(self.ui("Dateien für den Umzug wählen"))
         selector.resize(650, 410)
         layout = QVBoxLayout(selector)
         journal = QLineEdit()
         journal.setReadOnly(True)
-        journal.setPlaceholderText("Kein Formularlauf ausgewählt")
+        journal.setPlaceholderText(self.ui("Kein Formularlauf ausgewählt"))
         layout.addWidget(journal)
-        choose = QPushButton("Formularlauf auswählen")
-        clear = QPushButton("Auswahl des Formularlaufs entfernen")
+        choose = QPushButton(self.ui("Formularlauf auswählen"))
+        clear = QPushButton(self.ui("Auswahl des Formularlaufs entfernen"))
         layout.addWidget(choose)
         layout.addWidget(clear)
-        layout.addWidget(QLabel("Scan-Entwürfe für das Paket ankreuzen"))
+        layout.addWidget(QLabel(self.ui("Scan-Entwürfe für das Paket ankreuzen")))
         scans = QListWidget()
         layout.addWidget(scans)
         for path in self.scan_drafts():
@@ -1972,7 +2029,7 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
 
         def choose_run():
-            name, _ = QFileDialog.getOpenFileName(self, "Formularlauf auswählen",
+            name, _ = QFileDialog.getOpenFileName(self, self.ui("Formularlauf auswählen"),
                                                  self.favorite_settings.value("form-export/run-folder", "", str),
                                                  "Werkbank-Formularlauf (*.werkbanklauf)")
             if name:
@@ -2003,7 +2060,7 @@ class Window(QMainWindow):
             description += " Das Paket darf bis zu 64 MiB enthalten."
         if not self.project_file_preview("Projektpaket prüfen", description, rows, not missing and total <= MAX_PROJECT):
             return
-        name, _ = QFileDialog.getSaveFileName(self, "Projektpaket speichern", "Umzug.werkbankprojekt",
+        name, _ = QFileDialog.getSaveFileName(self, self.ui("Projektpaket speichern"), "Umzug.werkbankprojekt",
                                              "Werkbank-Projekt (*.werkbankprojekt)")
         if not name:
             return
@@ -2017,10 +2074,10 @@ class Window(QMainWindow):
                 write_project(candidate, state, files, password)
                 read_project(candidate, password)
                 os.replace(candidate, target)
-            self.statusBar().showMessage(f"Projektpaket gespeichert: {target.name}", 8500)
+            self.statusBar().showMessage(self.ui_format('Projektpaket gespeichert: {0}', target.name), 8500)
 
     def import_project_move(self):
-        name, _ = QFileDialog.getOpenFileName(self, "Projektpaket öffnen", "",
+        name, _ = QFileDialog.getOpenFileName(self, self.ui("Projektpaket öffnen"), "",
                                              "Werkbank-Projekt (*.werkbankprojekt)")
         if not name:
             return
@@ -2028,12 +2085,12 @@ class Window(QMainWindow):
         try:
             state, files = read_project(package)
         except BackupPasswordRequired:
-            password, ok = QInputDialog.getText(self, "Geschütztes Projektpaket öffnen", "Passwort",
+            password, ok = QInputDialog.getText(self, self.ui("Geschütztes Projektpaket öffnen"), self.ui("Passwort"),
                                                 QLineEdit.EchoMode.Password)
             if not ok:
                 return
             state, files = read_project(package, password)
-        folder = QFileDialog.getExistingDirectory(self, "Zielordner für das Projekt wählen")
+        folder = QFileDialog.getExistingDirectory(self, self.ui("Zielordner für das Projekt wählen"))
         if not folder:
             return
         target = Path(folder).resolve() / (package.stem + " – Projekt")
@@ -2053,7 +2110,7 @@ class Window(QMainWindow):
         self.show_open_work()
 
     def work_backup(self):
-        action, ok = QInputDialog.getItem(self, "Arbeitsstand sichern", "Aktion",
+        action, ok = QInputDialog.getItem(self, self.ui("Arbeitsstand sichern"), self.ui("Aktion"),
                                           ("Backup speichern", "Backup wiederherstellen", "Rücksicherung testen"),
                                           editable=False)
         if not ok:
@@ -2073,7 +2130,7 @@ class Window(QMainWindow):
                         write_backup(temporary, settings, self.measurement_store(), password)
                         read_backup(temporary, password)
                         os.replace(temporary, target)
-                    self.statusBar().showMessage(f"Arbeitsstand gesichert: {target.name}", 8000)
+                    self.statusBar().showMessage(self.ui_format('Arbeitsstand gesichert: {0}', target.name), 8000)
                 return
             name, _ = QFileDialog.getOpenFileName(self, action, str(app_backup_root()), kind)
             if not name:
@@ -2082,7 +2139,7 @@ class Window(QMainWindow):
                 data = read_backup(name)
             except BackupPasswordRequired:
                 password, confirmed = QInputDialog.getText(
-                    self, "Geschütztes Backup öffnen", "Passwort für dieses Backup", QLineEdit.EchoMode.Password)
+                    self, self.ui("Geschütztes Backup öffnen"), self.ui("Passwort für dieses Backup"), QLineEdit.EchoMode.Password)
                 if not confirmed:
                     return
                 data = read_backup(name, password)
@@ -2095,16 +2152,16 @@ class Window(QMainWindow):
 
     def backup_check_dialog(self, data):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Rücksicherung testen")
+        dialog.setWindowTitle(self.ui("Rücksicherung testen"))
         dialog.resize(840, 420)
         layout = QVBoxLayout(dialog)
         rows = backup_check_rows(data)
-        notice = QLabel("Backup erfolgreich gelesen. Es wurden keine Daten übernommen. "
-                        "Geprüft werden gespeicherte Archivpfade auf lokalen Laufwerken.")
+        notice = QLabel(self.ui("Backup erfolgreich gelesen. Es wurden keine Daten übernommen. "
+                        "Geprüft werden gespeicherte Archivpfade auf lokalen Laufwerken."))
         notice.setWordWrap(True)
         layout.addWidget(notice)
         table = QTableWidget(len(rows), 3)
-        table.setHorizontalHeaderLabels(["Gruppe", "Eintrag", "Prüfergebnis"])
+        table.setHorizontalHeaderLabels([self.ui("Gruppe"), self.ui("Eintrag"), self.ui("Prüfergebnis")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         table.setColumnWidth(0, 145)
@@ -2123,9 +2180,9 @@ class Window(QMainWindow):
     def backup_password_dialog(self, project=False):
         dialog = QDialog(self)
         label = "Projektpaket" if project else "Backup"
-        dialog.setWindowTitle(f"{label} speichern")
+        dialog.setWindowTitle(self.ui_format('{0} speichern', label))
         layout = QVBoxLayout(dialog)
-        protect = QCheckBox(f"{label} mit Passwort schützen")
+        protect = QCheckBox(self.ui_format('{0} mit Passwort schützen', label))
         layout.addWidget(protect)
         fields = QWidget(dialog)
         form = QFormLayout(fields)
@@ -2133,10 +2190,9 @@ class Window(QMainWindow):
         for field in (password, repeat):
             field.setEchoMode(QLineEdit.EchoMode.Password)
             field.setMaxLength(MAX_PASSWORD)
-        form.addRow("Passwort", password)
-        form.addRow("Passwort wiederholen", repeat)
-        note = QLabel(f"Mindestens {MIN_PASSWORD} Zeichen. Bewahre das Passwort sicher auf. "
-                      "Es kann später nicht zurückgesetzt werden.")
+        form.addRow(self.ui("Passwort"), password)
+        form.addRow(self.ui("Passwort wiederholen"), repeat)
+        note = QLabel(self.ui_format('Mindestens {0} Zeichen. Bewahre das Passwort sicher auf. Es kann später nicht zurückgesetzt werden.', MIN_PASSWORD))
         note.setWordWrap(True)
         form.addRow(note)
         error = QLabel()
@@ -2146,18 +2202,18 @@ class Window(QMainWindow):
         fields.setVisible(False)
         protect.toggled.connect(fields.setVisible)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Save).setText("Speichern")
-        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        buttons.button(QDialogButtonBox.StandardButton.Save).setText(self.ui("Speichern"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         layout.addWidget(buttons)
 
         def accept():
             if protect.isChecked():
                 if len(password.text()) < MIN_PASSWORD:
-                    error.setText(f"Das Passwort muss mindestens {MIN_PASSWORD} Zeichen lang sein.")
+                    error.setText(self.ui_format('Das Passwort muss mindestens {0} Zeichen lang sein.', MIN_PASSWORD))
                     password.setFocus()
                     return
                 if password.text() != repeat.text():
-                    error.setText("Die beiden Passwörter stimmen nicht überein.")
+                    error.setText(self.ui("Die beiden Passwörter stimmen nicht überein."))
                     repeat.setFocus()
                     return
             dialog.accept()
@@ -2169,9 +2225,9 @@ class Window(QMainWindow):
 
     def restore_backup_dialog(self, data, settings):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Backup prüfen und wiederherstellen")
+        dialog.setWindowTitle(self.ui("Backup prüfen und wiederherstellen"))
         layout = QVBoxLayout(dialog)
-        info = QLabel("Wähle die Gruppen für die Wiederherstellung. Abweichende lokale Messlisten bleiben erhalten.")
+        info = QLabel(self.ui("Wähle die Gruppen für die Wiederherstellung. Abweichende lokale Messlisten bleiben erhalten."))
         info.setWordWrap(True)
         layout.addWidget(info)
         checks = {key: QCheckBox(label) for key, label in BACKUP_GROUPS.items()}
@@ -2181,7 +2237,7 @@ class Window(QMainWindow):
             choices.addWidget(box)
         layout.addLayout(choices)
         table = QTableWidget(0, 3)
-        table.setHorizontalHeaderLabels(["Gruppe", "Eintrag", "Geplante Aktion"])
+        table.setHorizontalHeaderLabels([self.ui("Gruppe"), self.ui("Eintrag"), self.ui("Geplante Aktion")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         table.setColumnWidth(0, 150)
@@ -2191,13 +2247,13 @@ class Window(QMainWindow):
         locations = data.get("locations", {"folders": {}, "runs": {}})
         replacements = {}
         roots = location_roots(locations)
-        choose_locations = QPushButton("Ordner und Formularläufe neu zuordnen")
+        choose_locations = QPushButton(self.ui("Ordner und Formularläufe neu zuordnen"))
         choose_locations.setEnabled(bool(roots))
         layout.addWidget(choose_locations)
         mapped = {}
         remap_rows = []
         new_archive = None
-        remap = QPushButton("Archivordner neu zuordnen")
+        remap = QPushButton(self.ui("Archivordner neu zuordnen"))
         remap.setEnabled(any("/archived" in key for key in data["archive"]))
         layout.addWidget(remap)
 
@@ -2218,11 +2274,11 @@ class Window(QMainWindow):
 
         def choose_archive():
             nonlocal new_archive
-            old, ok = QInputDialog.getText(dialog, "Archivordner neu zuordnen", "Bisheriger Archivordner",
+            old, ok = QInputDialog.getText(dialog, self.ui("Archivordner neu zuordnen"), self.ui("Bisheriger Archivordner"),
                                             text=data.get("archive_root", ""))
             if not ok or not old.strip():
                 return
-            new = QFileDialog.getExistingDirectory(dialog, "Neuen Archivordner auswählen")
+            new = QFileDialog.getExistingDirectory(dialog, self.ui("Neuen Archivordner auswählen"))
             if not new:
                 return
             try:
@@ -2239,10 +2295,10 @@ class Window(QMainWindow):
         remap.clicked.connect(choose_archive)
 
         def choose_location():
-            old, ok = QInputDialog.getItem(dialog, "Ordner neu zuordnen", "Bisheriger Ordner", roots, editable=False)
+            old, ok = QInputDialog.getItem(dialog, self.ui("Ordner neu zuordnen"), self.ui("Bisheriger Ordner"), roots, editable=False)
             if not ok:
                 return
-            new = QFileDialog.getExistingDirectory(dialog, "Ordner am neuen Ort auswählen", replacements.get(old, ""))
+            new = QFileDialog.getExistingDirectory(dialog, self.ui("Ordner am neuen Ort auswählen"), replacements.get(old, ""))
             if not new:
                 return
             proposed = {**replacements, old: new}
@@ -2264,7 +2320,7 @@ class Window(QMainWindow):
             box.toggled.connect(show_rows)
         show_rows()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Ausgewählte Gruppen übernehmen")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Ausgewählte Gruppen übernehmen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -2293,8 +2349,8 @@ class Window(QMainWindow):
         if self.open_work_dialog is not None:
             self.open_work_dialog.refresh_entries()
         if warnings:
-            QMessageBox.warning(self, "Formularläufe teilweise übernommen", "\n".join(warnings))
-        self.statusBar().showMessage(f"Backup übernommen. Beibehaltene lokale Messlisten: {conflicts}.", 10000)
+            QMessageBox.warning(self, self.ui("Formularläufe teilweise übernommen"), "\n".join(warnings))
+        self.statusBar().showMessage(self.ui_format('Backup übernommen. Beibehaltene lokale Messlisten: {0}.', conflicts), 10000)
 
     def undo_measure_point(self):
         session = self.current
@@ -2314,13 +2370,13 @@ class Window(QMainWindow):
             self.canvas.update()
             self.statusBar().showMessage("Messpunkt zurückgesetzt · " + plan.marks[index].caption(plan.scale), 8000)
             return
-        self.statusBar().showMessage("Keine passende Messpunktkorrektur zum Rückgängigmachen.", 6500)
+        self.statusBar().showMessage(self.ui("Keine passende Messpunktkorrektur zum Rückgängigmachen."), 6500)
 
 
     def edit_measure_point(self, point):
         plan = self.current_plan()
         if not plan or not plan.marks:
-            self.statusBar().showMessage("Auf dieser Seite gibt es keine Messpunkte.", 6500)
+            self.statusBar().showMessage(self.ui("Auf dieser Seite gibt es keine Messpunkte."), 6500)
             return
         if self.measure_edit is None:
             candidates = [(distance(point, vertex), index, ring_index, vertex_index, vertex)
@@ -2329,12 +2385,12 @@ class Window(QMainWindow):
                           for vertex_index, vertex in enumerate(ring)]
             gap, index, ring_index, vertex_index, vertex = min(candidates, key=lambda entry: entry[0])
             if gap * self.scale > 12:
-                self.statusBar().showMessage("Bitte nahe an einen markierten End- oder Eckpunkt klicken.", 6500)
+                self.statusBar().showMessage(self.ui("Bitte nahe an einen markierten End- oder Eckpunkt klicken."), 6500)
                 return
             self.measure_edit = index, ring_index, vertex_index
             self.measure_points[:] = [vertex]
             self.canvas.update()
-            self.statusBar().showMessage("Neue Position anklicken. Esc bricht ab.", 8000)
+            self.statusBar().showMessage(self.ui("Neue Position anklicken. Esc bricht ab."), 8000)
             return
         index, ring_index, vertex_index = self.measure_edit
         try:
@@ -2356,11 +2412,11 @@ class Window(QMainWindow):
     def takeoff_tools(self):
         if not self.current:
             return
-        choice, ok = QInputDialog.getItem(self, "Aufmaß", "Werkzeug", ("Aussparung messen", "Symbole zählen"), editable=False)
+        choice, ok = QInputDialog.getItem(self, self.ui("Aufmaß"), self.ui("Werkzeug"), ("Aussparung messen", "Symbole zählen"), editable=False)
         if not ok:
             return
         if choice == "Symbole zählen":
-            name, ok = QInputDialog.getText(self, "Symbole zählen", "Kategorie, z. B. Steckdose", text=self.symbol_category)
+            name, ok = QInputDialog.getText(self, self.ui("Symbole zählen"), self.ui("Kategorie, z. B. Steckdose"), text=self.symbol_category)
             category = " ".join(name.split())[:40]
             if not ok or not category:
                 return
@@ -2382,7 +2438,7 @@ class Window(QMainWindow):
 
     def measurement_options(self):
         options = ("Automatisch", "Fangpunkte", "Lupe", "Aus")
-        selected, ok = QInputDialog.getItem(self, "Messoptionen", "Beim Messen verwenden",
+        selected, ok = QInputDialog.getItem(self, self.ui("Messoptionen"), self.ui("Beim Messen verwenden"),
                                             options, options.index(self.measure_assist), editable=False)
         if ok:
             self.measure_assist = selected
@@ -2445,17 +2501,17 @@ class Window(QMainWindow):
         session = self.current
         rows = measurement_rows(session.doc, session.plan_measurements, grouped=True)
         if not rows:
-            QMessageBox.information(self, "Messliste", "Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen.")
+            QMessageBox.information(self, self.ui("Messliste"), self.ui("Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen."))
             return
-        name, _ = QFileDialog.getSaveFileName(self, "Messliste als Excel speichern",
+        name, _ = QFileDialog.getSaveFileName(self, self.ui("Messliste als Excel speichern"),
                                                str(session.path.with_suffix(".xlsx")), "Excel (*.xlsx)")
         if name:
             totals = measurement_group_totals(session.doc, session.plan_measurements)
             self.save_workbook(name, lambda target: export_linked_sheet(
-                rows, target, "Messliste", ("Seite", "Name", "Messwert", "Einheit", "Raum", "Gewerk"),
+                rows, target, "Messliste", self.ui_columns(("Seite", "Name", "Messwert", "Einheit", "Raum", "Gewerk")),
                 (10, 45, 18, 12, 24, 24), extra_sheets=(
-                    ("Gruppensummen", ("Raum", "Gewerk", "Flächen (m²)", "Strecken (m)", "Stückzahlen",
-                                       "Außenumfang (m)", "Innenkanten (m)"),
+                    ("Gruppensummen", self.ui_columns(("Raum", "Gewerk", "Flächen (m²)", "Strecken (m)", "Stückzahlen",
+                                                       "Außenumfang (m)", "Innenkanten (m)")),
                      (28, 28, 19, 19, 17, 22, 22), totals, None),
                 )))
 
@@ -2472,7 +2528,7 @@ class Window(QMainWindow):
                 raise ValueError("Die PDF auf dem Datenträger wurde geändert. Bitte erneut öffnen.")
             kind = "Messprojekt (*.messprojekt)"
             if importing:
-                name, _ = QFileDialog.getOpenFileName(self, "Messprojekt öffnen", "", kind)
+                name, _ = QFileDialog.getOpenFileName(self, self.ui("Messprojekt öffnen"), "", kind)
                 if not name:
                     return False
                 data = stored_bytes(Path(name))
@@ -2480,7 +2536,7 @@ class Window(QMainWindow):
                     raise ValueError("Das Messprojekt wurde nicht gefunden.")
                 plans = decode_project(session.doc, data, digest)
                 if session.plan_measurements and QMessageBox.question(
-                        self, "Messprojekt öffnen", "Die Messliste im geöffneten Tab durch das Projekt ersetzen?",
+                        self, self.ui("Messprojekt öffnen"), self.ui("Die Messliste im geöffneten Tab durch das Projekt ersetzen?"),
                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                         QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                     return False
@@ -2488,16 +2544,16 @@ class Window(QMainWindow):
                 session.measure_undo.clear()
                 self.clear_measure_draft()
                 self.render()
-                self.statusBar().showMessage("Messprojekt geladen. Mit „Messliste speichern“ lokal übernehmen.", 7500)
+                self.statusBar().showMessage(self.ui("Messprojekt geladen. Mit „Messliste speichern“ lokal übernehmen."), 7500)
                 return True
-            name, _ = QFileDialog.getSaveFileName(self, "Messprojekt speichern",
+            name, _ = QFileDialog.getSaveFileName(self, self.ui("Messprojekt speichern"),
                                                    str(session.path.with_suffix(".messprojekt")), kind)
             if name:
                 path = Path(name)
                 if path.suffix.lower() != ".messprojekt":
                     path = Path(name + ".messprojekt")
                 atomic_write(path, encode_project(session.doc, session.plan_measurements, digest))
-                self.statusBar().showMessage(f"Messprojekt gespeichert: {path.name}", 7500)
+                self.statusBar().showMessage(self.ui_format('Messprojekt gespeichert: {0}', path.name), 7500)
         except Exception as exc:
             self.error(exc)
         return False
@@ -2506,7 +2562,7 @@ class Window(QMainWindow):
         session = self.current
         if not session:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Zweite Planfassung wählen", "", "PDF-Dateien (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, self.ui("Zweite Planfassung wählen"), "", "PDF-Dateien (*.pdf)")
         if not path:
             return
         try:
@@ -2519,10 +2575,10 @@ class Window(QMainWindow):
 
     def overlay_dialog(self, fixed, index, moving):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Planfassungen überlagern")
+        dialog.setWindowTitle(self.ui("Planfassungen überlagern"))
         layout = QVBoxLayout(dialog)
-        info = QLabel("Wähle je Plan dieselben zwei Referenzpunkte in derselben Reihenfolge. "
-                      "Danach kannst du zwischen beiden Fassungen umblenden.")
+        info = QLabel(self.ui("Wähle je Plan dieselben zwei Referenzpunkte in derselben Reihenfolge. "
+                      "Danach kannst du zwischen beiden Fassungen umblenden."))
         info.setWordWrap(True)
         layout.addWidget(info)
         controls = QHBoxLayout()
@@ -2540,9 +2596,9 @@ class Window(QMainWindow):
         blend = QSlider(Qt.Orientation.Horizontal)
         blend.setRange(0, 100)
         blend.setValue(50)
-        blend.setToolTip("Links erster Plan, rechts zweiter Plan")
+        blend.setToolTip(self.ui("Links erster Plan, rechts zweiter Plan"))
         layout.addWidget(blend)
-        changes = QCheckBox("Änderungen markieren (Rot: entfernt · Grün: neu)")
+        changes = QCheckBox(self.ui("Änderungen markieren (Rot: entfernt · Grün: neu)"))
         layout.addWidget(changes)
         area = QScrollArea()
         area.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -2592,21 +2648,20 @@ class Window(QMainWindow):
                             if "result" not in differences:
                                 differences["result"] = QPixmap.fromImage(plan_difference(images[0].toImage(), aligned.toImage()))
                             painter.drawPixmap(0, 0, differences["result"])
-                            info.setText("Farbige Unterschiede der ausgerichteten Seiten. Kleine Abweichungen der Ausrichtung können mit erscheinen.")
+                            info.setText(self.ui("Farbige Unterschiede der ausgerichteten Seiten. Kleine Abweichungen der Ausrichtung können mit erscheinen."))
                         else:
                             painter.setOpacity(blend.value() / 100)
                             painter.drawPixmap(0, 0, aligned)
-                            info.setText("Ausgerichtete Überlagerung. Der Regler blendet zwischen den Fassungen um.")
+                            info.setText(self.ui("Ausgerichtete Überlagerung. Der Regler blendet zwischen den Fassungen um."))
                     else:
-                        info.setText("Bitte zuerst je zwei Referenzpunkte setzen.")
+                        info.setText(self.ui("Bitte zuerst je zwei Referenzpunkte setzen."))
                 else:
                     for number, (x, y) in enumerate(anchors[side], 1):
                         painter.setPen(QPen(QColor("#005b91"), 2))
                         painter.setBrush(QColor("white"))
                         painter.drawEllipse(QPointF(x, y), 6, 6)
                         painter.drawText(QPointF(x + 9, y - 4), str(number))
-                    info.setText(f"Plan {side + 1} · {len(anchors[side])} von 2 Referenzpunkten gesetzt. "
-                                 "Ein weiterer Klick beginnt die Auswahl neu.")
+                    info.setText(self.ui_format('Plan {0} · {1} von 2 Referenzpunkten gesetzt. Ein weiterer Klick beginnt die Auswahl neu.', side + 1, len(anchors[side])))
             finally:
                 painter.end()
             image.setPixmap(result)
@@ -2630,7 +2685,7 @@ class Window(QMainWindow):
         blend.valueChanged.connect(refresh)
         changes.toggled.connect(refresh)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         dialog.resize(950, 850)
@@ -2669,7 +2724,7 @@ class Window(QMainWindow):
                 session.plan_saved_token = plan_token(data)
             finally:
                 lock.unlock()
-            self.statusBar().showMessage("Maßstäbe und Messliste lokal gespeichert.", 8000)
+            self.statusBar().showMessage(self.ui("Maßstäbe und Messliste lokal gespeichert."), 8000)
             return True
         except Exception as exc:
             self.error(exc)
@@ -2680,16 +2735,16 @@ class Window(QMainWindow):
         if not session:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Messliste")
+        dialog.setWindowTitle(self.ui("Messliste"))
         layout = QVBoxLayout(dialog)
-        info = QLabel("Namen, Räume und Gewerke per Doppelklick bearbeiten. „Messliste speichern“ speichert die Zuordnungen und Maße "
-                      "lokal für diese PDF-Fassung.")
+        info = QLabel(self.ui("Namen, Räume und Gewerke per Doppelklick bearbeiten. „Messliste speichern“ speichert die Zuordnungen und Maße "
+                      "lokal für diese PDF-Fassung."))
         info.setWordWrap(True)
         layout.addWidget(info)
         rows = QTableWidget(0, 7)
         rows.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         rows.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        rows.setHorizontalHeaderLabels(["Seite", "Name / Symbol", "Messwert", "Umfang", "Innenkanten", "Raum", "Gewerk"])
+        rows.setHorizontalHeaderLabels([self.ui("Seite"), self.ui("Name / Symbol"), self.ui("Messwert"), self.ui("Umfang"), self.ui("Innenkanten"), self.ui("Raum"), self.ui("Gewerk")])
         rows.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         entries = []
         for index, plan in plan_entries(session.doc, session.plan_measurements):
@@ -2717,17 +2772,17 @@ class Window(QMainWindow):
             summary.setWordWrap(True)
             layout.addWidget(summary)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
-        save = buttons.addButton("Messliste speichern", QDialogButtonBox.ButtonRole.ActionRole)
-        extra = buttons.addButton("Export und Projekte", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+        save = buttons.addButton(self.ui("Messliste speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+        extra = buttons.addButton(self.ui("Export und Projekte"), QDialogButtonBox.ButtonRole.ActionRole)
         menu = QMenu(extra)
         menu.addAction("Messliste als Excel", self.export_measurement_excel)
         menu.addAction("Messprojekt speichern", lambda: self.transfer_measurement_project(False))
         menu.addAction("Messprojekt öffnen", lambda: dialog.accept() if self.transfer_measurement_project(True) else None)
         extra.setMenu(menu)
-        jump = buttons.addButton("Zur Seite", QDialogButtonBox.ButtonRole.ActionRole)
+        jump = buttons.addButton(self.ui("Zur Seite"), QDialogButtonBox.ButtonRole.ActionRole)
         jump.setEnabled(bool(entries))
-        assign = buttons.addButton("Raum / Gewerk zuweisen", QDialogButtonBox.ButtonRole.ActionRole)
+        assign = buttons.addButton(self.ui("Raum / Gewerk zuweisen"), QDialogButtonBox.ButtonRole.ActionRole)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
@@ -2752,9 +2807,9 @@ class Window(QMainWindow):
             if not selected:
                 return
             group = QDialog(dialog)
-            group.setWindowTitle("Raum und Gewerk zuweisen")
+            group.setWindowTitle(self.ui("Raum und Gewerk zuweisen"))
             form = QFormLayout(group)
-            form.addRow(QLabel("Leere Felder lassen die bisherige Zuordnung unverändert."))
+            form.addRow(QLabel(self.ui("Leere Felder lassen die bisherige Zuordnung unverändert.")))
             fields = []
             for column, label in ((5, "Raum"), (6, "Gewerk")):
                 entry = QComboBox()
@@ -2795,7 +2850,7 @@ class Window(QMainWindow):
         if not session:
             return
         if not any(plan.marks or plan.symbols for _, plan in plan_entries(session.doc, session.plan_measurements)):
-            QMessageBox.information(self, "PDF mit Maßen", "Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen.")
+            QMessageBox.information(self, self.ui("PDF mit Maßen"), self.ui("Bitte zuerst eine Strecke, Fläche oder Stückzahl erfassen."))
             return
         try:
             if session.password:
@@ -2811,7 +2866,7 @@ class Window(QMainWindow):
                 if target.resolve() == session.recovery_path:
                     raise ValueError("Bitte einen anderen Namen als den der bearbeiteten PDF wählen.")
                 save_copy(output, target)
-            self.statusBar().showMessage(f"PDF-Kopie mit Maßen gespeichert: {target.name}", 7500)
+            self.statusBar().showMessage(self.ui_format('PDF-Kopie mit Maßen gespeichert: {0}', target.name), 7500)
         except Exception as exc:
             self.error(exc)
 
@@ -2836,7 +2891,7 @@ class Window(QMainWindow):
         if not self.current:
             return
         plan = self.current_plan()
-        ratio, ok = QInputDialog.getDouble(self, "Maßstab eingeben", "Maßstab 1 : n dieser Seite",
+        ratio, ok = QInputDialog.getDouble(self, self.ui("Maßstab eingeben"), self.ui("Maßstab 1 : n dieser Seite"),
                                             plan.scale / METRES_PER_POINT if plan and plan.scale else 100,
                                             0.001, 1000000, 3)
         if ok:
@@ -2849,18 +2904,18 @@ class Window(QMainWindow):
         self.update_page_status()
         plan = self.current_plan()
         ratio = format_measure(plan.scale / METRES_PER_POINT, "").strip()
-        self.statusBar().showMessage(f"Maßstab dieser Seite 1 : {ratio} · Messwerte in m und m².", 9500)
+        self.statusBar().showMessage(self.ui_format('Maßstab dieser Seite 1 : {0} · Messwerte in m und m².', ratio), 9500)
 
     def start_measure(self, mode):
         if not self.current:
             return
         plan = self.current_plan()
         if mode == "Aussparung messen" and self.last_area(plan) is None:
-            QMessageBox.information(self, "Aussparung", "Bitte zuerst die Außenfläche messen.")
+            QMessageBox.information(self, self.ui("Aussparung"), self.ui("Bitte zuerst die Außenfläche messen."))
             return
         if mode not in ("Kalibrieren", "Symbole zählen") and (not plan or not plan.scale):
-            QMessageBox.information(self, "Maßstab fehlt",
-                                    "Bitte zuerst den Maßstab dieser Seite eingeben oder eine bekannte Strecke kalibrieren.")
+            QMessageBox.information(self, self.ui("Maßstab fehlt"),
+                                    self.ui("Bitte zuerst den Maßstab dieser Seite eingeben oder eine bekannte Strecke kalibrieren."))
             return
         self.set_mode(mode)
         self.canvas.setFocus()
@@ -2899,21 +2954,21 @@ class Window(QMainWindow):
             plan = self.current_plan(create=True)
             if any(symbol.category == self.symbol_category and distance(symbol.point, point) * self.scale < 4
                    for symbol in plan.symbols):
-                self.statusBar().showMessage("Dieses Symbol wurde bereits markiert.", 4500)
+                self.statusBar().showMessage(self.ui("Dieses Symbol wurde bereits markiert."), 4500)
                 return
             plan.symbols.append(CountedSymbol(point, self.symbol_category))
             count = sum(symbol.category == self.symbol_category for symbol in plan.symbols)
-            self.statusBar().showMessage(f"{self.symbol_category}: {count} Stk. auf dieser Seite.", 7000)
+            self.statusBar().showMessage(self.ui_format('{0}: {1} Stk. auf dieser Seite.', self.symbol_category, count), 7000)
             self.canvas.update()
             return
         if self.mode != "Kalibrieren" and not getattr(self.current_plan(), "scale", 0):
             self.start_measure(self.mode)
             return
         if self.measure_points and distance(self.measure_points[-1], point) <= EPSILON:
-            self.statusBar().showMessage("Bitte einen anderen Punkt anklicken.", 6000)
+            self.statusBar().showMessage(self.ui("Bitte einen anderen Punkt anklicken."), 6000)
             return
         if len(self.measure_points) >= MAX_VERTICES:
-            self.statusBar().showMessage("Bitte die Fläche abschließen. Die maximale Punktzahl ist erreicht.", 6500)
+            self.statusBar().showMessage(self.ui("Bitte die Fläche abschließen. Die maximale Punktzahl ist erreicht."), 6500)
             return
         self.measure_points.append(point)
         self.measure_hover = None
@@ -2925,7 +2980,7 @@ class Window(QMainWindow):
         if self.mode == "Kalibrieren":
             plan = self.current_plan()
             estimate = distance(*points) * plan.scale if plan and plan.scale else 1.0
-            metres, ok = QInputDialog.getDouble(self, "Bekannte Strecke", "Tatsächliche Länge in Metern",
+            metres, ok = QInputDialog.getDouble(self, self.ui("Bekannte Strecke"), self.ui("Tatsächliche Länge in Metern"),
                                                 estimate, 0.000001, 10000000, 6)
             if ok:
                 self.current_plan(create=True).scale = calibrated_scale(*points, metres)
@@ -2955,7 +3010,7 @@ class Window(QMainWindow):
                 mark = add_cutout(plan.marks[index], points)
                 plan.marks[index] = mark
                 outer, inner = self.area_edges(mark, plan.scale)
-                self.statusBar().showMessage(f"Netto: {mark.label(plan.scale)} · Umfang: {outer} · Innenkanten: {inner}", 12000)
+                self.statusBar().showMessage(self.ui_format('Netto: {0} · Umfang: {1} · Innenkanten: {2}', mark.label(plan.scale), outer, inner), 12000)
             else:
                 self.add_measurement(Measurement(points, polygon_area(points), area=True))
         except ValueError as exc:
@@ -3039,7 +3094,7 @@ class Window(QMainWindow):
 
 
     def configure_grid(self):
-        value, ok = QInputDialog.getInt(self, "Hilfsraster", "Abstand in Millimetern (0 schaltet das Raster aus)",
+        value, ok = QInputDialog.getInt(self, self.ui("Hilfsraster"), self.ui("Abstand in Millimetern (0 schaltet das Raster aus)"),
                                         self.grid_mm or 5, 0, 100)
         if ok:
             self.grid_mm = value
@@ -3055,7 +3110,7 @@ class Window(QMainWindow):
     def image_position(self, page, selected):
         old = pdf.Rect(selected["bbox"]) * page.rotation_matrix
         dialog = QDialog(self)
-        dialog.setWindowTitle("Bild positionieren")
+        dialog.setWindowTitle(self.ui("Bild positionieren"))
         form = QFormLayout(dialog)
         values = []
         for label, initial in (("Von links", old.x0), ("Von oben", old.y0)):
@@ -3087,7 +3142,7 @@ class Window(QMainWindow):
             if self.mode == "Lesen":
                 for note in page.annots():
                     if note.type[0] == pdf.PDF_ANNOT_TEXT and note.rect.contains(point):
-                        QMessageBox.information(self, "PDF-Notiz", note.info.get("content") or "Leere Notiz")
+                        QMessageBox.information(self, self.ui("PDF-Notiz"), note.info.get("content") or "Leere Notiz")
                         return
                 for link in page.get_links():
                     if not link["from"].contains(point):
@@ -3118,7 +3173,7 @@ class Window(QMainWindow):
                         return
                 elif self.mode == "Bild ersetzen":
                     selected = image_at(page, point)
-                    path, _ = QFileDialog.getOpenFileName(self, "Ersatzbild auswählen", "",
+                    path, _ = QFileDialog.getOpenFileName(self, self.ui("Ersatzbild auswählen"), "",
                                                          "Bilder (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)")
                     if not path:
                         return
@@ -3155,8 +3210,8 @@ class Window(QMainWindow):
             elif self.mode == "Schwärzen":
                 if rect.width < 2 or rect.height < 2:
                     return
-                if QMessageBox.question(self, "Bereich schwärzen",
-                                        "Text und Bildinhalt in diesem Bereich aus der Kopie entfernen?"
+                if QMessageBox.question(self, self.ui("Bereich schwärzen"),
+                                        self.ui("Text und Bildinhalt in diesem Bereich aus der Kopie entfernen?")
                                         ) != QMessageBox.StandardButton.Yes:
                     return
                 session.checkpoint("Bereich schwärzen")
@@ -3169,7 +3224,7 @@ class Window(QMainWindow):
                 words = [pdf.Rect(word[:4]) for word in page.get_text("words")
                          if rect.contains(pdf.Rect(word[:4]).tl + (pdf.Rect(word[:4]).br - pdf.Rect(word[:4]).tl) * 0.5)]
                 if not words:
-                    self.statusBar().showMessage("Kein auswählbarer Text in diesem Bereich.", 4500)
+                    self.statusBar().showMessage(self.ui("Kein auswählbarer Text in diesem Bereich."), 4500)
                     return
                 session.checkpoint("Text markieren")
                 page.add_highlight_annot(words)
@@ -3182,20 +3237,20 @@ class Window(QMainWindow):
             elif self.mode == "Formular":
                 widget = next((field for field in page.widgets() if field.rect.contains(point)), None)
                 if not widget:
-                    self.statusBar().showMessage("An dieser Stelle befindet sich kein Formularfeld.", 4500)
+                    self.statusBar().showMessage(self.ui("An dieser Stelle befindet sich kein Formularfeld."), 4500)
                     return
                 if widget.field_flags & pdf.PDF_FIELD_IS_READ_ONLY:
                     raise ValueError("Dieses Feld ist schreibgeschützt.")
                 if widget.field_type == pdf.PDF_WIDGET_TYPE_TEXT:
-                    value, ok = QInputDialog.getText(self, "Formularfeld", widget.field_label or widget.field_name,
+                    value, ok = QInputDialog.getText(self, self.ui("Formularfeld"), widget.field_label or widget.field_name,
                                                      text=str(widget.field_value or ""))
                 elif widget.field_type == pdf.PDF_WIDGET_TYPE_CHECKBOX:
-                    value, ok = QInputDialog.getItem(self, "Kontrollkästchen", widget.field_name,
+                    value, ok = QInputDialog.getItem(self, self.ui("Kontrollkästchen"), widget.field_name,
                                                      ["Aktiviert", "Leer"], editable=False)
                     value = widget.on_state() if value == "Aktiviert" else "Off"
                 elif widget.field_type in (pdf.PDF_WIDGET_TYPE_COMBOBOX, pdf.PDF_WIDGET_TYPE_LISTBOX):
                     choices = widget.choice_values or []
-                    value, ok = QInputDialog.getItem(self, "Formularfeld", widget.field_name, choices, editable=False)
+                    value, ok = QInputDialog.getItem(self, self.ui("Formularfeld"), widget.field_name, choices, editable=False)
                 else:
                     raise ValueError("Dieser Formularfeldtyp wird noch nicht unterstützt.")
                 if not ok:
@@ -3233,8 +3288,8 @@ class Window(QMainWindow):
         except OSError as exc:
             self.error(exc)
             return None
-        progress = QProgressDialog(label, "Abbrechen", 0, 0, QApplication.activeModalWidget() or self)
-        progress.setWindowTitle("Vom Scanner einlesen")
+        progress = QProgressDialog(label, self.ui("Abbrechen"), 0, 0, QApplication.activeModalWidget() or self)
+        progress.setWindowTitle(self.ui("Vom Scanner einlesen"))
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         timer = QTimer(progress, interval=250)
@@ -3262,9 +3317,9 @@ class Window(QMainWindow):
                 devices = json.loads(stdout.decode("utf-8"))
                 names = [f"{index + 1}. {device['name']}" for index, device in enumerate(devices)]
             except (ValueError, KeyError, TypeError):
-                self.error("Die verfügbaren Scanner konnten nicht ermittelt werden.")
+                self.error(self.ui("Die verfügbaren Scanner konnten nicht ermittelt werden."))
                 return None
-            choice, ok = QInputDialog.getItem(self, "Scanner auswählen", "Gerät", names, editable=False)
+            choice, ok = QInputDialog.getItem(self, self.ui("Scanner auswählen"), self.ui("Gerät"), names, editable=False)
             if not ok:
                 return None
             acquired = self.acquire_scan(scan, devices[names.index(choice)]["id"], feeder=feeder, samsung=samsung)
@@ -3283,15 +3338,15 @@ class Window(QMainWindow):
             return None
         status, stdout = acquired
         if status != 0 or not scan.is_file():
-            self.error("Windows konnte kein Bild vom Scanner einlesen. Prüfe das Gerät und versuche es erneut.")
+            self.error(self.ui("Windows konnte kein Bild vom Scanner einlesen. Prüfe das Gerät und versuche es erneut."))
             return None
         match = re.search(rb"(\d+),(\d+)", stdout)
         dpi = tuple(map(int, match.groups())) if match else None
         return scanned_document(scan, dpi)
 
     def scan_feeder(self, folder):
-        count, ok = QInputDialog.getInt(self, "Automatischer Blatteinzug",
-                                        "Maximale Seitenzahl (der Einzug stoppt früher, wenn er leer ist)", 30, 1, 200)
+        count, ok = QInputDialog.getInt(self, self.ui("Automatischer Blatteinzug"),
+                                        self.ui("Maximale Seitenzahl (der Einzug stoppt früher, wenn er leer ist)"), 30, 1, 200)
         if not ok:
             return
         result = self.scan_device(folder, feeder=count)
@@ -3302,7 +3357,7 @@ class Window(QMainWindow):
                        6: "Der Blatteinzug ist leer."}.get(status, "Der Scanner hat den Einzug mit einem Fehler beendet.")
             if records:
                 message += f" {len(records)} bereits gescannte Seiten bleiben in der Vorschau."
-            QMessageBox.information(self, "Blatteinzug", message)
+            QMessageBox.information(self, self.ui("Blatteinzug"), message)
         if not records:
             return
         document = pdf.open()
@@ -3320,7 +3375,7 @@ class Window(QMainWindow):
         default = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "NAPS2" / "NAPS2.Console.exe"
         executable = Path(settings.value("scan/twain-console", str(default), str))
         if not executable.is_file():
-            path, _ = QFileDialog.getOpenFileName(self, "Installierte NAPS2.Console.exe auswählen",
+            path, _ = QFileDialog.getOpenFileName(self, self.ui("Installierte NAPS2.Console.exe auswählen"),
                                                    str(executable.parent), "NAPS2-Konsole (NAPS2.Console.exe)")
             if not path:
                 return
@@ -3334,10 +3389,10 @@ class Window(QMainWindow):
         names = [line.strip() for line in output.decode("utf-8-sig", errors="replace").splitlines() if line.strip()]
         if status != 0 or not names:
             raise ValueError("NAPS2 meldet keinen erreichbaren TWAIN-Scanner. Prüfe den TWAIN-Treiber des Herstellers.")
-        name, ok = QInputDialog.getItem(self, "TWAIN-Scanner", "Gerät", names, editable=False)
+        name, ok = QInputDialog.getItem(self, self.ui("TWAIN-Scanner"), self.ui("Gerät"), names, editable=False)
         if not ok:
             return
-        source, ok = QInputDialog.getItem(self, "Papierquelle", "Einzug oder Glas", ["Blatteinzug", "Scannerglas"], editable=False)
+        source, ok = QInputDialog.getItem(self, self.ui("Papierquelle"), self.ui("Einzug oder Glas"), ["Blatteinzug", "Scannerglas"], editable=False)
         if not ok:
             return
         settings.setValue("scan/twain-console", str(executable))
@@ -3351,7 +3406,7 @@ class Window(QMainWindow):
             message = "TWAIN hat keine Seite geliefert. Möchtest du dieselbe Papierquelle über Windows WIA versuchen?"
             if details:
                 message += "\n\n" + details[-600:]
-            if QMessageBox.question(self, "Scanner-Anbindung wechseln", message,
+            if QMessageBox.question(self, self.ui("Scanner-Anbindung wechseln"), message,
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                      QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                 return
@@ -3361,17 +3416,17 @@ class Window(QMainWindow):
             document.close()
             raise ValueError("Der TWAIN-Scan hat keine lesbare PDF geliefert.")
         if result[0]:
-            QMessageBox.information(self, "TWAIN", "Der Scan wurde vorzeitig beendet. Prüfe die übernommenen Seiten.")
+            QMessageBox.information(self, self.ui("TWAIN"), self.ui("Der Scan wurde vorzeitig beendet. Prüfe die übernommenen Seiten."))
         return document
 
     def save_scanned_document(self, document):
-        target, _ = QFileDialog.getSaveFileName(self, "Scan als PDF speichern",
+        target, _ = QFileDialog.getSaveFileName(self, self.ui("Scan als PDF speichern"),
                                               str(Path.home() / "Documents" / "Scan.pdf"), "PDF-Dateien (*.pdf)")
         if not target:
             return
         path = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
         if any(path.resolve() == session.path.resolve() for session in self.sessions):
-            self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+            self.error(self.ui("Bitte einen anderen Namen als den einer geöffneten PDF wählen."))
             return
         save_copy(document, path)
         self.open_path(str(path))
@@ -3397,10 +3452,10 @@ class Window(QMainWindow):
             layout.addWidget(QLabel("Die erste Seite wird über Windows WIA gescannt. Lege danach bei Bedarf die nächste Seite auf."
                                     if quick else "Lege eine Seite auf und klicke auf „Seite scannen“. Ziehe die Miniaturen zum Sortieren."))
             settings = QSettings("PDF Werkbank", "PDF Werkbank")
-            a4 = QCheckBox("Samsung-Profil · Seiten auf A4 einpassen")
+            a4 = QCheckBox(self.ui("Samsung-Profil · Seiten auf A4 einpassen"))
             a4.setChecked(settings.value("scan/a4", False, type=bool))
             layout.addWidget(a4)
-            hint = QLabel("Bei „Schief“ kannst du das Kästchen für die Korrektur aktivieren. Prüfe leere und ähnliche Seiten in der Vorschau.")
+            hint = QLabel(self.ui("Bei „Schief“ kannst du das Kästchen für die Korrektur aktivieren. Prüfe leere und ähnliche Seiten in der Vorschau."))
             hint.setWordWrap(True)
             layout.addWidget(hint)
             pages = QListWidget()
@@ -3408,10 +3463,10 @@ class Window(QMainWindow):
             pages.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
             layout.addWidget(pages, 1)
             row = QHBoxLayout()
-            add = QPushButton("Seite scannen")
-            feeder = QPushButton("Blatteinzug")
-            twain = QPushButton("TWAIN")
-            remove = QPushButton("Aus Auswahl entfernen")
+            add = QPushButton(self.ui("Seite scannen"))
+            feeder = QPushButton(self.ui("Blatteinzug"))
+            twain = QPushButton(self.ui("TWAIN"))
+            remove = QPushButton(self.ui("Aus Auswahl entfernen"))
             remove.setEnabled(False)
             row.addWidget(add)
             row.addWidget(feeder)
@@ -3420,12 +3475,12 @@ class Window(QMainWindow):
             twain.setVisible(not quick)
             row.addWidget(remove)
             layout.addLayout(row)
-            ocr = QCheckBox("Scan-PDF durchsuchbar machen (Deutsch und Englisch)")
+            ocr = QCheckBox(self.ui("Scan-PDF durchsuchbar machen (Deutsch und Englisch)"))
             ocr.setChecked(settings.value("scan/ocr", True, type=bool))
             layout.addWidget(ocr)
-            archive = QCheckBox("Als geprüftes PDF/A-Archiv speichern")
+            archive = QCheckBox(self.ui("Als geprüftes PDF/A-Archiv speichern"))
             layout.addWidget(archive)
-            inbox = QCheckBox("Im Scan-Posteingang ablegen")
+            inbox = QCheckBox(self.ui("Im Scan-Posteingang ablegen"))
             layout.addWidget(inbox)
             if quick:
                 inbox.setChecked(True)
@@ -3507,10 +3562,10 @@ class Window(QMainWindow):
                         if count is None:
                             if not quick:
                                 return
-                            QMessageBox.information(self, "Texterkennung abgebrochen",
-                                                    "Die gescannten Seiten werden im Posteingang behalten.")
+                            QMessageBox.information(self, self.ui("Texterkennung abgebrochen"),
+                                                    self.ui("Die gescannten Seiten werden im Posteingang behalten."))
                         if failures:
-                            QMessageBox.information(self, "Texterkennung", "Ohne neue Textebene: Seite " +
+                            QMessageBox.information(self, self.ui("Texterkennung"), "Ohne neue Textebene: Seite " +
                                                     ", ".join(map(str, failures)))
                     if inbox.isChecked():
                         self.queue_scan(result)
@@ -3546,36 +3601,36 @@ class Window(QMainWindow):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         folder = self.inbox_folder()
         dialog = QDialog(self)
-        dialog.setWindowTitle("Scan-Posteingang")
+        dialog.setWindowTitle(self.ui("Scan-Posteingang"))
         dialog.resize(650, 480)
         layout = QVBoxLayout(dialog)
-        layout.addWidget(QLabel("Die Vorschläge entstehen aus dem lokal erkannten Text. Prüfe Namen und Ablage vor dem Speichern."))
+        layout.addWidget(QLabel(self.ui("Die Vorschläge entstehen aus dem lokal erkannten Text. Prüfe Namen und Ablage vor dem Speichern.")))
         rows = QListWidget()
         layout.addWidget(rows, 1)
         form = QFormLayout()
         base = QLineEdit(settings.value("scan/archive-folder", "", str))
         name = QLineEdit()
         category = QLineEdit()
-        form.addRow("Archivordner", base)
-        form.addRow("Unterordner", category)
-        form.addRow("Dateiname", name)
+        form.addRow(self.ui("Archivordner"), base)
+        form.addRow(self.ui("Unterordner"), category)
+        form.addRow(self.ui("Dateiname"), name)
         layout.addLayout(form)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        choose = buttons.addButton("Archivordner wählen", QDialogButtonBox.ButtonRole.ActionRole)
-        archive = buttons.addButton("Prüfen und archivieren", QDialogButtonBox.ButtonRole.ActionRole)
-        batch = buttons.addButton("Mehrere archivieren", QDialogButtonBox.ButtonRole.ActionRole)
-        correct = buttons.addButton("OCR korrigieren", QDialogButtonBox.ButtonRole.ActionRole)
-        split = buttons.addButton("Stapel aufteilen", QDialogButtonBox.ButtonRole.ActionRole)
-        discard = buttons.addButton("Entwurf löschen", QDialogButtonBox.ButtonRole.ActionRole)
+        choose = buttons.addButton(self.ui("Archivordner wählen"), QDialogButtonBox.ButtonRole.ActionRole)
+        archive = buttons.addButton(self.ui("Prüfen und archivieren"), QDialogButtonBox.ButtonRole.ActionRole)
+        batch = buttons.addButton(self.ui("Mehrere archivieren"), QDialogButtonBox.ButtonRole.ActionRole)
+        correct = buttons.addButton(self.ui("OCR korrigieren"), QDialogButtonBox.ButtonRole.ActionRole)
+        split = buttons.addButton(self.ui("Stapel aufteilen"), QDialogButtonBox.ButtonRole.ActionRole)
+        discard = buttons.addButton(self.ui("Entwurf löschen"), QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(buttons)
         buttons.rejected.connect(dialog.reject)
         run_buttons = QHBoxLayout()
-        resume = QPushButton("Archivlauf fortsetzen")
-        forget = QPushButton("Gespeicherten Lauf verwerfen")
+        resume = QPushButton(self.ui("Archivlauf fortsetzen"))
+        forget = QPushButton(self.ui("Gespeicherten Lauf verwerfen"))
         run_buttons.addWidget(resume)
         run_buttons.addWidget(forget)
-        scan_job = QPushButton("Excel-Scan-Auftrag prüfen")
-        configure_job = QPushButton("Excel-Scan-Auftrag einrichten")
+        scan_job = QPushButton(self.ui("Excel-Scan-Auftrag prüfen"))
+        configure_job = QPushButton(self.ui("Excel-Scan-Auftrag einrichten"))
         run_buttons.addWidget(scan_job)
         run_buttons.addWidget(configure_job)
         run_buttons.addStretch()
@@ -3613,7 +3668,7 @@ class Window(QMainWindow):
                 self.error(exc)
 
         def select_base():
-            value = QFileDialog.getExistingDirectory(dialog, "Archivordner auswählen", base.text())
+            value = QFileDialog.getExistingDirectory(dialog, self.ui("Archivordner auswählen"), base.text())
             if value:
                 base.setText(value)
 
@@ -3637,7 +3692,7 @@ class Window(QMainWindow):
 
         def discard_draft():
             index = rows.currentRow()
-            if index >= 0 and QMessageBox.question(dialog, "Entwurf löschen", "Diesen lokalen Scan-Entwurf löschen?"
+            if index >= 0 and QMessageBox.question(dialog, self.ui("Entwurf löschen"), self.ui("Diesen lokalen Scan-Entwurf löschen?")
                                                    ) == QMessageBox.StandardButton.Yes:
                 try:
                     drafts[index].unlink(missing_ok=True)
@@ -3686,7 +3741,7 @@ class Window(QMainWindow):
         refresh()
         if selected_path is not None:
             if selected_path not in drafts:
-                self.statusBar().showMessage("Dieser Scan liegt nicht mehr im Posteingang.", 8000)
+                self.statusBar().showMessage(self.ui("Dieser Scan liegt nicht mehr im Posteingang."), 8000)
                 return
             rows.setCurrentRow(drafts.index(selected_path))
         dialog.exec()
@@ -3695,22 +3750,22 @@ class Window(QMainWindow):
         if not drafts:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Scan-Entwürfe gemeinsam freigeben")
+        dialog.setWindowTitle(self.ui("Scan-Entwürfe gemeinsam freigeben"))
         dialog.resize(920, 560)
         layout = QVBoxLayout(dialog)
-        explanation = QLabel("Prüfe Dateiname und Unterordner in jeder Zeile. Nur angekreuzte Entwürfe "
-                             "werden archiviert. Bei Fehlern bleibt der jeweilige Entwurf im Posteingang.")
+        explanation = QLabel(self.ui("Prüfe Dateiname und Unterordner in jeder Zeile. Nur angekreuzte Entwürfe "
+                             "werden archiviert. Bei Fehlern bleibt der jeweilige Entwurf im Posteingang."))
         explanation.setWordWrap(True)
         layout.addWidget(explanation)
         controls = QHBoxLayout()
         layout.addLayout(controls)
-        controls.addWidget(QLabel("Archivordner"))
+        controls.addWidget(QLabel(self.ui("Archivordner")))
         base = QLineEdit(initial_folder)
         controls.addWidget(base, 1)
-        browse = QPushButton("Ordner wählen")
+        browse = QPushButton(self.ui("Ordner wählen"))
         controls.addWidget(browse)
         table = QTableWidget(len(drafts), 5)
-        table.setHorizontalHeaderLabels(["Auswahl", "Miniatur", "Seiten", "Dateiname", "Unterordner"])
+        table.setHorizontalHeaderLabels([self.ui("Auswahl"), self.ui("Miniatur"), self.ui("Seiten"), self.ui("Dateiname"), self.ui("Unterordner")])
         table.setIconSize(QSize(56, 72))
         table.verticalHeader().setVisible(False)
         for index in range(5):
@@ -3748,13 +3803,13 @@ class Window(QMainWindow):
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(row, column, item)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        buttons.addButton("Auswahl archivieren", QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.addButton(self.ui("Auswahl archivieren"), QDialogButtonBox.ButtonRole.AcceptRole)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
         def select_folder():
-            directory = QFileDialog.getExistingDirectory(dialog, "Archivordner auswählen", base.text())
+            directory = QFileDialog.getExistingDirectory(dialog, self.ui("Archivordner auswählen"), base.text())
             if directory:
                 base.setText(directory)
 
@@ -3794,12 +3849,12 @@ class Window(QMainWindow):
         lock = QLockFile(str(run.inbox / ".archivlauf.lock"))
         lock.setStaleLockTime(0)
         if not lock.tryLock(0):
-            self.error("Der Archivlauf ist in einem anderen Fenster geöffnet.")
+            self.error(self.ui("Der Archivlauf ist in einem anderen Fenster geöffnet."))
             return
         try:
             if discard:
-                if QMessageBox.question(self, "Archivlauf verwerfen",
-                                        "Den gespeicherten Ablauf verwerfen? Die verbliebenen Entwürfe bleiben erhalten."
+                if QMessageBox.question(self, self.ui("Archivlauf verwerfen"),
+                                        self.ui("Den gespeicherten Ablauf verwerfen? Die verbliebenen Entwürfe bleiben erhalten.")
                                         ) == QMessageBox.StandardButton.Yes:
                     run.path.unlink(missing_ok=True)
                 return
@@ -3817,7 +3872,7 @@ class Window(QMainWindow):
         tools = self.standard_tools()
         if tools is None:
             return
-        progress = QProgressDialog("Archivkopien werden erstellt …", "Pausieren" if journal else "Abbrechen", 0, len(jobs),
+        progress = QProgressDialog(self.ui("Archivkopien werden erstellt …"), "Pausieren" if journal else "Abbrechen", 0, len(jobs),
                                    QApplication.activeModalWidget() or self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
@@ -3826,7 +3881,7 @@ class Window(QMainWindow):
         try:
             for index, (draft, target) in enumerate(jobs):
                 progress.setValue(index)
-                progress.setLabelText(f"Prüfe {target.name} …")
+                progress.setLabelText(self.ui_format('Prüfe {0} …', target.name))
                 QApplication.processEvents()
                 if progress.wasCanceled():
                     cancelled = True
@@ -3883,13 +3938,13 @@ class Window(QMainWindow):
         if journal and all(job["done"] for job in journal.jobs):
             journal.path.unlink(missing_ok=True)
         report = QMessageBox(self)
-        report.setWindowTitle("Archivierung abgeschlossen")
+        report.setWindowTitle(self.ui("Archivierung abgeschlossen"))
         report.setText(f"{saved} geprüfte Archivkopien gespeichert. {len(failures)} Fehler."
                        + (f" {skipped} bereits fertig." if skipped else "")
                        + (" Der Lauf wurde unterbrochen." if cancelled and journal else
                           " Der Lauf wurde abgebrochen." if cancelled else ""))
         if failures or notes:
-            report.setInformativeText("Die Details zeigen Fehler und Seiten ohne Suchtext.")
+            report.setInformativeText(self.ui("Die Details zeigen Fehler und Seiten ohne Suchtext."))
             report.setDetailedText("\n\n".join(failures + notes))
         report.exec()
 
@@ -3897,7 +3952,7 @@ class Window(QMainWindow):
         with tempfile.TemporaryDirectory(dir=original.parent) as folder:
             with pdf.open(original) as doc:
                 if len(doc) < 2:
-                    QMessageBox.information(self, "Stapel aufteilen", "Der Entwurf enthält nur eine Seite.")
+                    QMessageBox.information(self, self.ui("Stapel aufteilen"), self.ui("Der Entwurf enthält nur eine Seite."))
                     return []
                 ranges = self.review_scan_breaks(doc)
                 if len(ranges) < 2:
@@ -3921,16 +3976,16 @@ class Window(QMainWindow):
                 for target in promoted:
                     target.unlink(missing_ok=True)
                 raise
-        self.statusBar().showMessage(f"{len(promoted)} einzelne Entwürfe liegen zum Archivieren bereit.", 8000)
+        self.statusBar().showMessage(self.ui_format('{0} einzelne Entwürfe liegen zum Archivieren bereit.', len(promoted)), 8000)
         return promoted
 
     def review_scan_breaks(self, doc):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Scan-Stapel aufteilen")
+        dialog.setWindowTitle(self.ui("Scan-Stapel aufteilen"))
         dialog.resize(940, 640)
         layout = QVBoxLayout(dialog)
-        notice = QLabel("Markiere jede Seite, auf der ein neues Dokument beginnt. Alle Seiten bleiben erhalten. "
-                        "Die einzelnen Entwürfe kannst du anschließend im Posteingang prüfen und archivieren.")
+        notice = QLabel(self.ui("Markiere jede Seite, auf der ein neues Dokument beginnt. Alle Seiten bleiben erhalten. "
+                        "Die einzelnen Entwürfe kannst du anschließend im Posteingang prüfen und archivieren."))
         notice.setWordWrap(True)
         layout.addWidget(notice)
         pane = QSplitter()
@@ -3955,7 +4010,7 @@ class Window(QMainWindow):
             rows.addItem(item)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         apply = buttons.button(QDialogButtonBox.StandardButton.Ok)
-        apply.setText("Einzelne Entwürfe erstellen")
+        apply.setText(self.ui("Einzelne Entwürfe erstellen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -3983,7 +4038,7 @@ class Window(QMainWindow):
         def preview(index):
             for image, page_index in zip(images, (index - 1, index)):
                 if page_index < 0:
-                    image.setText("Keine vorherige Seite")
+                    image.setText(self.ui("Keine vorherige Seite"))
                 else:
                     page = doc[page_index]
                     image.setPixmap(pixmap(page, min(300 / page.rect.width, 490 / page.rect.height)))
@@ -4000,7 +4055,7 @@ class Window(QMainWindow):
             return
         entries = session.doc.get_toc(simple=False)
         dialog = QDialog(self)
-        dialog.setWindowTitle("Lesezeichen")
+        dialog.setWindowTitle(self.ui("Lesezeichen"))
         layout = QVBoxLayout(dialog)
         listing = QListWidget()
         layout.addWidget(listing, 1)
@@ -4025,7 +4080,7 @@ class Window(QMainWindow):
             index = listing.currentRow()
             updated = [entry.copy() for entry in entries]
             if action == "Hinzufügen":
-                name, ok = QInputDialog.getText(dialog, "Lesezeichen hinzufügen", "Titel")
+                name, ok = QInputDialog.getText(dialog, self.ui("Lesezeichen hinzufügen"), self.ui("Titel"))
                 if not ok or not name.strip():
                     return
                 updated.append([1, name.strip(), session.page + 1, {"kind": pdf.LINK_GOTO, "page": session.page}])
@@ -4038,7 +4093,7 @@ class Window(QMainWindow):
                     dialog.accept()
                 return
             elif action == "Umbenennen":
-                name, ok = QInputDialog.getText(dialog, "Lesezeichen umbenennen", "Titel", text=entries[index][1])
+                name, ok = QInputDialog.getText(dialog, self.ui("Lesezeichen umbenennen"), self.ui("Titel"), text=entries[index][1])
                 if not ok or not name.strip():
                     return
                 updated[index][1] = name.strip()
@@ -4069,7 +4124,7 @@ class Window(QMainWindow):
         session = self.current
         if not session:
             return
-        value, ok = QInputDialog.getText(self, "Seitenzahlen einfügen", "Seiten (z. B. 1, 3-5)",
+        value, ok = QInputDialog.getText(self, self.ui("Seitenzahlen einfügen"), self.ui("Seiten (z. B. 1, 3-5)"),
                                          text=f"1-{len(session.doc)}")
         if not ok:
             return
@@ -4104,7 +4159,7 @@ class Window(QMainWindow):
         except ValueError:
             templates = {}
         dialog = QDialog(self)
-        dialog.setWindowTitle("Kopf- und Fußzeilen")
+        dialog.setWindowTitle(self.ui("Kopf- und Fußzeilen"))
         dialog.resize(680, 730)
         layout = QVBoxLayout(dialog)
         form = QFormLayout()
@@ -4112,7 +4167,7 @@ class Window(QMainWindow):
         template = QComboBox()
         template.addItem("Neue Vorlage")
         template.addItems(sorted(templates))
-        form.addRow("Vorlage", template)
+        form.addRow(self.ui("Vorlage"), template)
         header = QLineEdit()
         footer = QLineEdit("Seite {Seite} von {Seiten}")
         indices = QLineEdit(f"1-{len(session.doc)}")
@@ -4128,7 +4183,7 @@ class Window(QMainWindow):
         for label, field in (("Kopfzeile", header), ("Fußzeile", footer), ("Seiten", indices),
                              ("Ausrichtung", alignment), ("Schriftgröße", size), ("Vorschauseite", sample)):
             form.addRow(label, field)
-        layout.addWidget(QLabel("Platzhalter  {Seite}   {Seiten}   {Datum}   {Datei}"))
+        layout.addWidget(QLabel(self.ui("Platzhalter  {Seite}   {Seiten}   {Datum}   {Datei}")))
         status = QLabel()
         status.setWordWrap(True)
         layout.addWidget(status)
@@ -4138,7 +4193,7 @@ class Window(QMainWindow):
         area.setWidget(image)
         layout.addWidget(area, 1)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        save = buttons.addButton("Vorlage speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton(self.ui("Vorlage speichern"), QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(buttons)
         today = date.today()
 
@@ -4167,7 +4222,7 @@ class Window(QMainWindow):
                 status.setText(str(exc))
 
         def save_template():
-            name, ok = QInputDialog.getText(dialog, "Vorlage speichern", "Name",
+            name, ok = QInputDialog.getText(dialog, self.ui("Vorlage speichern"), self.ui("Name"),
                                             text=template.currentText() if template.currentIndex() else "")
             name = name.strip()
             if not ok or not name or name == template.itemText(0):
@@ -4206,7 +4261,7 @@ class Window(QMainWindow):
                 if not any(labels for _, labels in staged):
                     raise ValueError("Bitte eine Kopf- oder Fußzeile eingeben.")
                 overlaps = [str(index + 1) for index, labels in staged if label_conflicts(session.doc[index], labels)]
-                if overlaps and QMessageBox.question(dialog, "Mögliche Überdeckung",
+                if overlaps and QMessageBox.question(dialog, self.ui("Mögliche Überdeckung"),
                         "Vorhandener Inhalt liegt im Bereich der Kopf- oder Fußzeile auf Seite "
                         + ", ".join(overlaps) + ". Trotzdem einfügen?") != QMessageBox.StandardButton.Yes:
                     continue
@@ -4230,11 +4285,11 @@ class Window(QMainWindow):
             return
         entries = list(comments(session.doc))
         dialog = QDialog(self)
-        dialog.setWindowTitle("Kommentarübersicht")
+        dialog.setWindowTitle(self.ui("Kommentarübersicht"))
         dialog.resize(650, 540)
         layout = QVBoxLayout(dialog)
         search = QLineEdit()
-        search.setPlaceholderText("Nach Text, Typ, Autor oder Seite filtern")
+        search.setPlaceholderText(self.ui("Nach Text, Typ, Autor oder Seite filtern"))
         layout.addWidget(search)
         rows = QListWidget()
         layout.addWidget(rows, 1)
@@ -4243,8 +4298,8 @@ class Window(QMainWindow):
         body.setMaximumHeight(120)
         layout.addWidget(body)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        jump = buttons.addButton("Zur Stelle", QDialogButtonBox.ButtonRole.ActionRole)
-        export = buttons.addButton("Gefilterte Übersicht speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        jump = buttons.addButton(self.ui("Zur Stelle"), QDialogButtonBox.ButtonRole.ActionRole)
+        export = buttons.addButton(self.ui("Gefilterte Übersicht speichern"), QDialogButtonBox.ButtonRole.ActionRole)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
@@ -4278,7 +4333,7 @@ class Window(QMainWindow):
             dialog.accept()
 
         def save_summary():
-            target, _ = QFileDialog.getSaveFileName(dialog, "Kommentarübersicht speichern",
+            target, _ = QFileDialog.getSaveFileName(dialog, self.ui("Kommentarübersicht speichern"),
                                                     str(session.path.with_suffix(".txt")), "Textdateien (*.txt)")
             if target:
                 path = Path(target if target.lower().endswith(".txt") else target + ".txt")
@@ -4302,15 +4357,15 @@ class Window(QMainWindow):
         if not session:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Anlagen")
+        dialog.setWindowTitle(self.ui("Anlagen"))
         dialog.resize(600, 440)
         layout = QVBoxLayout(dialog)
         rows = QListWidget()
         layout.addWidget(rows)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        add = buttons.addButton("Datei hinzufügen", QDialogButtonBox.ButtonRole.ActionRole)
-        save = buttons.addButton("Anlage speichern unter", QDialogButtonBox.ButtonRole.ActionRole)
-        remove = buttons.addButton("Anlage entfernen", QDialogButtonBox.ButtonRole.ActionRole)
+        add = buttons.addButton(self.ui("Datei hinzufügen"), QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton(self.ui("Anlage speichern unter"), QDialogButtonBox.ButtonRole.ActionRole)
+        remove = buttons.addButton(self.ui("Anlage entfernen"), QDialogButtonBox.ButtonRole.ActionRole)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         entries = []
@@ -4335,7 +4390,7 @@ class Window(QMainWindow):
             refresh()
 
         def add_file():
-            path, _ = QFileDialog.getOpenFileName(dialog, "Datei als Anlage hinzufügen")
+            path, _ = QFileDialog.getOpenFileName(dialog, self.ui("Datei als Anlage hinzufügen"))
             if path:
                 source = Path(path)
                 if source.name in session.doc.embfile_names():
@@ -4353,12 +4408,12 @@ class Window(QMainWindow):
             page = session.doc[index] if index is not None else None
             annot = page.load_annot(xref) if page is not None else None
             if remove_selected:
-                if QMessageBox.question(dialog, "Anlage entfernen", f"„{name}“ aus der PDF entfernen?"
+                if QMessageBox.question(dialog, self.ui("Anlage entfernen"), self.ui_format('„{0}“ aus der PDF entfernen?', name)
                                         ) == QMessageBox.StandardButton.Yes:
                     mutate(lambda: page.delete_annot(annot) if page is not None else session.doc.embfile_del(key))
                 return
             filename = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name).strip(" .") or "Anlage"
-            target, _ = QFileDialog.getSaveFileName(dialog, "Anlage speichern unter", str(session.path.parent / filename))
+            target, _ = QFileDialog.getSaveFileName(dialog, self.ui("Anlage speichern unter"), str(session.path.parent / filename))
             if target:
                 path = Path(target)
                 if any(path.resolve() == opened.path.resolve() for opened in self.sessions):
@@ -4381,7 +4436,7 @@ class Window(QMainWindow):
         if rect.width < 3 or rect.height < 3:
             return False
         session = self.current
-        value, ok = QInputDialog.getText(self, "Link einfügen", "Ziel: Seitennummer oder https://-Adresse")
+        value, ok = QInputDialog.getText(self, self.ui("Link einfügen"), self.ui("Ziel: Seitennummer oder https://-Adresse"))
         if not ok:
             return False
         value = value.strip()
@@ -4403,7 +4458,7 @@ class Window(QMainWindow):
     def put_stamp(self, page, point):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         entries = settings.value("stamp_presets", ["GEPRÜFT", "EINGEGANGEN"], list)
-        value, ok = QInputDialog.getItem(self, "Stempel", "Stempel wählen oder eigenen Text eingeben",
+        value, ok = QInputDialog.getItem(self, self.ui("Stempel"), self.ui("Stempel wählen oder eigenen Text eingeben"),
                                          [str(entry) for entry in entries], editable=True)
         value = value.strip()
         if not ok or not value:
@@ -4457,8 +4512,8 @@ class Window(QMainWindow):
             layout.addWidget(checkbox)
             checkboxes.append(checkbox)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Auswahl übernehmen")
-        select_all = buttons.addButton("Alle markieren", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Auswahl übernehmen"))
+        select_all = buttons.addButton(self.ui("Alle markieren"), QDialogButtonBox.ButtonRole.ActionRole)
         def mark_all():
             for row in range(rows.count()):
                 rows.item(row).setCheckState(Qt.CheckState.Checked)
@@ -4491,29 +4546,28 @@ class Window(QMainWindow):
                 [option.isChecked() for option in checkboxes])
 
     def archive_check(self):
-        folder = QFileDialog.getExistingDirectory(self, "PDF-Archiv auswählen")
+        folder = QFileDialog.getExistingDirectory(self, self.ui("PDF-Archiv auswählen"))
         if not folder:
             return
-        choice = QMessageBox.question(self, "Archiv-Check", "Unterordner mitprüfen?",
+        choice = QMessageBox.question(self, self.ui("Archiv-Check"), self.ui("Unterordner mitprüfen?"),
                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
                                       QMessageBox.StandardButton.Cancel)
         if choice == QMessageBox.StandardButton.Cancel:
             return
         paths = list(pdf_files(Path(folder), choice == QMessageBox.StandardButton.Yes))
         if not paths:
-            QMessageBox.information(self, "Archiv-Check", "Keine PDFs gefunden.")
+            QMessageBox.information(self, self.ui("Archiv-Check"), self.ui("Keine PDFs gefunden."))
             return
         tools = self.standard_tools()
         results = self.inspect_pdfs(paths, "Archiv wird geprüft …", lambda path: audit_pdf(path, tools))
         if not results:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Archiv-Check")
+        dialog.setWindowTitle(self.ui("Archiv-Check"))
         layout = QVBoxLayout(dialog)
-        layout.addWidget(QLabel(f"{len(results)} von {len(paths)} PDFs geprüft. "
-                               "Doppelklick öffnet die Datei, bei fehlendem Suchtext an der ersten betroffenen Seite."))
+        layout.addWidget(QLabel(self.ui_format('{0} von {1} PDFs geprüft. Doppelklick öffnet die Datei, bei fehlendem Suchtext an der ersten betroffenen Seite.', len(results), len(paths))))
         table = QTableWidget(len(results), 5)
-        table.setHorizontalHeaderLabels(["Datei", "Öffnen", "PDF/A-Profil", "Normprüfung", "Seiten ohne Suchtext"])
+        table.setHorizontalHeaderLabels([self.ui("Datei"), self.ui("Öffnen"), self.ui("PDF/A-Profil"), self.ui("Normprüfung"), self.ui("Seiten ohne Suchtext")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         table.horizontalHeader().setStretchLastSection(True)
@@ -4550,26 +4604,27 @@ class Window(QMainWindow):
             table.clearSelection()
 
         def report():
-            name, _ = QFileDialog.getSaveFileName(dialog, "Archivbericht speichern", "Archivbericht.xlsx", "Excel (*.xlsx)")
+            name, _ = QFileDialog.getSaveFileName(dialog, self.ui("Archivbericht speichern"), "Archivbericht.xlsx", "Excel (*.xlsx)")
             if not name:
                 return
-            rows = [(str(path.resolve()), result.opening, result.profile.upper(), result.archive,
-                     ", ".join(map(str, result.missing_text)), result.details)
+            rows = [(str(path.resolve()), self.ui(result.opening), result.profile.upper(), self.ui(result.archive),
+                     ", ".join(map(str, result.missing_text)), self.ui(result.details))
                     for row, (path, result) in enumerate(results) if not table.isRowHidden(row)]
             self.save_workbook(name, lambda target: export_linked_sheet(
-                rows, target, "Archiv-Check", ("Datei", "Öffnen", "PDF/A-Profil", "Normprüfung", "Seiten ohne Suchtext",
-                                               "Details"), (65, 24, 18, 25, 28, 85), 1))
+                rows, target, "Archiv-Check", self.ui_columns(("Datei", "Öffnen", "PDF/A-Profil", "Normprüfung",
+                                                               "Seiten ohne Suchtext", "Details")),
+                (65, 24, 18, 25, 28, 85), 1))
 
         def repair():
             selected = {results[index.row()][0]: results[index.row()][1] for index in table.selectionModel().selectedRows()
                         if not table.isRowHidden(index.row()) and results[index.row()][1].missing_text}
             if not selected:
-                QMessageBox.information(dialog, "Suchtext ergänzen", "Bitte Dateien mit Seiten ohne Suchtext auswählen.")
+                QMessageBox.information(dialog, self.ui("Suchtext ergänzen"), self.ui("Bitte Dateien mit Seiten ohne Suchtext auswählen."))
                 return
             if not tools:
-                QMessageBox.information(dialog, "Suchtext ergänzen", "Für geprüfte Kopien wird veraPDF benötigt.")
+                QMessageBox.information(dialog, self.ui("Suchtext ergänzen"), self.ui("Für geprüfte Kopien wird veraPDF benötigt."))
                 return
-            destination = QFileDialog.getExistingDirectory(dialog, "Zielordner für geprüfte Archivkopien")
+            destination = QFileDialog.getExistingDirectory(dialog, self.ui("Zielordner für geprüfte Archivkopien"))
             if not destination:
                 return
             plan = self.batch_preview(list(selected), Path(destination), (), selected)
@@ -4579,8 +4634,8 @@ class Window(QMainWindow):
             done = self.inspect_pdfs(targets, "Archivkopien werden erstellt …",
                                      lambda source: self.repair_archive_copy(source, targets[source], tools))
             result = QMessageBox(dialog)
-            result.setWindowTitle("Archivkopien")
-            result.setText(f"{sum(saved for _, (saved, _) in done)} von {len(plan)} geprüften Kopien gespeichert.")
+            result.setWindowTitle(self.ui("Archivkopien"))
+            result.setText(self.ui_format('{0} von {1} geprüften Kopien gespeichert.', sum((saved for _, (saved, _) in done)), len(plan)))
             result.setDetailedText("\n".join(f"{path.name}: {message}" for path, (_, message) in done))
             result.exec()
 
@@ -4589,8 +4644,8 @@ class Window(QMainWindow):
         table.cellDoubleClicked.connect(open_result)
         layout.addWidget(table)
         actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        actions.addButton("Sichtbare Ergebnisse als Excel", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(report)
-        actions.addButton("Auswahl: Suchtext ergänzen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(repair)
+        actions.addButton(self.ui("Sichtbare Ergebnisse als Excel"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(report)
+        actions.addButton(self.ui("Auswahl: Suchtext ergänzen"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(repair)
         actions.rejected.connect(dialog.reject)
         layout.addWidget(actions)
         dialog.resize(1000, 520)
@@ -4605,7 +4660,7 @@ class Window(QMainWindow):
                 candidate = Path(temp) / target.name
                 export(candidate)
                 os.replace(candidate, target)
-            self.statusBar().showMessage(f"Excel-Liste gespeichert: {target.name}", 7500)
+            self.statusBar().showMessage(self.ui_format('Excel-Liste gespeichert: {0}', target.name), 7500)
             return True
         except Exception as exc:
             self.error(exc)
@@ -4627,7 +4682,7 @@ class Window(QMainWindow):
 
 
     def inspect_pdfs(self, paths, title, inspect, parent=None):
-        progress = QProgressDialog(title, "Abbrechen", 0, len(paths), parent or self)
+        progress = QProgressDialog(title, self.ui("Abbrechen"), 0, len(paths), parent or self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         results = []
@@ -4645,17 +4700,17 @@ class Window(QMainWindow):
 
     def duplicate_check(self, paths=None):
         if paths is None:
-            folder = QFileDialog.getExistingDirectory(self, "Ordner für Dublettenprüfung auswählen")
+            folder = QFileDialog.getExistingDirectory(self, self.ui("Ordner für Dublettenprüfung auswählen"))
             if not folder:
                 return
-            choice = QMessageBox.question(self, "Dubletten prüfen", "Unterordner einbeziehen?",
+            choice = QMessageBox.question(self, self.ui("Dubletten prüfen"), self.ui("Unterordner einbeziehen?"),
                                           QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
                                           QMessageBox.StandardButton.Cancel)
             if choice == QMessageBox.StandardButton.Cancel:
                 return
             paths = list(pdf_files(Path(folder), choice == QMessageBox.StandardButton.Yes, (".pdf", ".xml")))
         if not paths:
-            QMessageBox.information(self, "Dubletten prüfen", "Keine PDF- oder XML-Dateien gefunden.")
+            QMessageBox.information(self, self.ui("Dubletten prüfen"), self.ui("Keine PDF- oder XML-Dateien gefunden."))
             return
         cache = {}
         checked = self.inspect_pdfs(paths, "Dateien werden verglichen …", lambda path: inspect_duplicate(
@@ -4668,13 +4723,12 @@ class Window(QMainWindow):
                   f"Mögliche Doppelbelege: {len(possible)}")
         unavailable = sum(invoice_match_key(source.fields) is None for source in sources)
         dialog = QDialog(self)
-        dialog.setWindowTitle("Dubletten prüfen")
+        dialog.setWindowTitle(self.ui("Dubletten prüfen"))
         layout = QVBoxLayout(dialog)
         status_label = QLabel(status)
         status_label.setWordWrap(True)
         layout.addWidget(status_label)
-        info = QLabel(f"Dateien ohne vergleichbare Rechnungsdaten: {unavailable}. "
-                      "Mögliche Doppelbelege stimmen bei Nummer, Datum, Betrag und Währung überein.")
+        info = QLabel(self.ui_format('Dateien ohne vergleichbare Rechnungsdaten: {0}. Mögliche Doppelbelege stimmen bei Nummer, Datum, Betrag und Währung überein.', unavailable))
         info.setWordWrap(True)
         layout.addWidget(info)
         groups = [*exact, *possible]
@@ -4701,9 +4755,9 @@ class Window(QMainWindow):
             choice.currentIndexChanged.connect(select_group)
             select_group(0)
         else:
-            layout.addWidget(QLabel("In den geprüften Dateien wurden keine Dubletten gefunden."))
+            layout.addWidget(QLabel(self.ui("In den geprüften Dateien wurden keine Dubletten gefunden.")))
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         dialog.resize(1040, 660 if groups else 190)
@@ -4749,7 +4803,7 @@ class Window(QMainWindow):
                 image.setPixmap(drawing)
                 image.resize(drawing.size())
             except Exception:
-                image.setText("Keine Seitenvorschau verfügbar.")
+                image.setText(self.ui("Keine Seitenvorschau verfügbar."))
                 image.adjustSize()
 
         def select(index):
@@ -4796,7 +4850,7 @@ class Window(QMainWindow):
         java = Path(settings.value("einvoice/java", "", str) or settings.value("standards/java", "", str)
                     or tools / "Java/bin/java.exe")
         if not java.is_file():
-            selected, _ = QFileDialog.getOpenFileName(parent, "Java 11 oder neuer auswählen", "", "Java (java.exe)")
+            selected, _ = QFileDialog.getOpenFileName(parent, self.ui("Java 11 oder neuer auswählen"), "", "Java (java.exe)")
             if not selected:
                 return None
             java = Path(selected)
@@ -4811,9 +4865,9 @@ class Window(QMainWindow):
             return []
         stop = Event()
         results = []
-        progress = QProgressDialog("Ausgewählte Belege werden lokal geprüft …", "Nach aktueller Datei abbrechen",
+        progress = QProgressDialog(self.ui("Ausgewählte Belege werden lokal geprüft …"), self.ui("Nach aktueller Datei abbrechen"),
                                    0, len(records), parent)
-        progress.setWindowTitle("Sammelprüfung")
+        progress.setWindowTitle(self.ui("Sammelprüfung"))
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         progress.setAutoReset(False)
@@ -4911,7 +4965,7 @@ class Window(QMainWindow):
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel if destination else QDialogButtonBox.StandardButton.Close)
         if destination:
-            approve = buttons.addButton("Markierte Belege freigeben", QDialogButtonBox.ButtonRole.AcceptRole)
+            approve = buttons.addButton(self.ui("Markierte Belege freigeben"), QDialogButtonBox.ButtonRole.AcceptRole)
 
             def update_button():
                 approve.setEnabled(any(table.item(row, 0).checkState() == Qt.CheckState.Checked
@@ -4933,8 +4987,8 @@ class Window(QMainWindow):
         try:
             data, embedded = invoice_xml(path)
             if data is None:
-                QMessageBox.information(parent, "E-Rechnung prüfen",
-                                        "Diese PDF enthält keine erkannte Rechnungs-XML. Für Bildscans stehen die OCR-Vorschläge bereit.")
+                QMessageBox.information(parent, self.ui("E-Rechnung prüfen"),
+                                        self.ui("Diese PDF enthält keine erkannte Rechnungs-XML. Für Bildscans stehen die OCR-Vorschläge bereit."))
                 return
         except Exception as exc:
             self.error(exc)
@@ -4952,9 +5006,9 @@ class Window(QMainWindow):
             jar, rules = ensure_validator(tools)
             return validate_invoice_xml(data, java, jar, rules)
 
-        progress = QProgressDialog("Rechnungs-XML wird lokal geprüft. Beim ersten Start werden die KoSIT-Prüfregeln geladen.",
+        progress = QProgressDialog(self.ui("Rechnungs-XML wird lokal geprüft. Beim ersten Start werden die KoSIT-Prüfregeln geladen."),
                                    "", 0, 0, parent)
-        progress.setWindowTitle("E-Rechnung prüfen")
+        progress.setWindowTitle(self.ui("E-Rechnung prüfen"))
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setCancelButton(None)
         progress.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
@@ -4980,7 +5034,7 @@ class Window(QMainWindow):
 
     def show_invoice_validation(self, path, embedded, validation, parent):
         dialog = QDialog(parent)
-        dialog.setWindowTitle("E-Rechnung prüfen")
+        dialog.setWindowTitle(self.ui("E-Rechnung prüfen"))
         layout = QVBoxLayout(dialog)
         statuses = {"passed": "Prüfung bestanden", "rejected": "Fehler gefunden",
                     "unsupported": "Rechnungsprofil wird vom Regelpaket nicht unterstützt"}
@@ -4991,12 +5045,12 @@ class Window(QMainWindow):
                         f"{validation.scenario or 'Ohne bestätigtes Prüfszenario'} · {RULES_VERSION}")
         layout.addWidget(summary)
         if embedded:
-            note = QLabel("Geprüft wurde die eingebettete XML. Der PDF-Aufbau und die Übereinstimmung mit der Sichtfassung "
-                          "sind gesondert zu prüfen.")
+            note = QLabel(self.ui("Geprüft wurde die eingebettete XML. Der PDF-Aufbau und die Übereinstimmung mit der Sichtfassung "
+                          "sind gesondert zu prüfen."))
             note.setWordWrap(True)
             layout.addWidget(note)
         table = QTableWidget(len(validation.issues), 5)
-        table.setHorizontalHeaderLabels(["Stufe", "Feld", "Regel", "Fundstelle", "Meldung"])
+        table.setHorizontalHeaderLabels([self.ui("Stufe"), self.ui("Feld"), self.ui("Regel"), self.ui("Fundstelle"), self.ui("Meldung")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.horizontalHeader().setStretchLastSection(True)
@@ -5024,7 +5078,7 @@ class Window(QMainWindow):
             table.currentCellChanged.connect(selected)
             table.setCurrentCell(0, 0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         dialog.resize(1100, 610 if validation.issues else 220)
@@ -5052,21 +5106,21 @@ class Window(QMainWindow):
 
         dialog = InvoiceFolderDialog(self)
         self._invoice_folder_window = dialog
-        dialog.setWindowTitle("Überwachter Rechnungsordner")
+        dialog.setWindowTitle(self.ui("Überwachter Rechnungsordner"))
         layout = QVBoxLayout(dialog)
         location = QLabel()
         location.setTextFormat(Qt.TextFormat.PlainText)
         location.setWordWrap(True)
         layout.addWidget(location)
-        status = QLabel("Die Werkbank überwacht den gewählten Ordner auch bei geschlossenem Rechnungsfenster.")
+        status = QLabel(self.ui("Die Werkbank überwacht den gewählten Ordner auch bei geschlossenem Rechnungsfenster."))
         layout.addWidget(status)
-        layout.addWidget(QLabel("Mit Strg oder Umschalt mehrere Belege auswählen."))
+        layout.addWidget(QLabel(self.ui("Mit Strg oder Umschalt mehrere Belege auswählen.")))
         filter = QComboBox()
         filter.addItems(["Alle", "Neu", "Fehler", "Dubletten", "Archiviert", "Wiedervorlage fällig", "Alle Wiedervorlagen"])
         layout.addWidget(filter)
         table = QTableWidget(0, 7)
-        table.setHorizontalHeaderLabels(["Datei", "Rechnungsnummer", "E-Rechnungsprüfung", "Dubletten",
-                                         "Archiv", "Notiz", "Wiedervorlage"])
+        table.setHorizontalHeaderLabels([self.ui("Datei"), self.ui("Rechnungsnummer"), self.ui("E-Rechnungsprüfung"), self.ui("Dubletten"),
+                                         self.ui("Archiv"), self.ui("Notiz"), self.ui("Wiedervorlage")])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -5077,15 +5131,15 @@ class Window(QMainWindow):
         table.setColumnWidth(3, 165)
         layout.addWidget(table)
         controls = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        controls.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
-        choose = controls.addButton("Ordner wählen", QDialogButtonBox.ButtonRole.ActionRole)
-        review = controls.addButton("Beleg ansehen", QDialogButtonBox.ButtonRole.ActionRole)
-        validate = controls.addButton("Prüfdetails", QDialogButtonBox.ButtonRole.ActionRole)
-        batch = controls.addButton("Auswahl prüfen", QDialogButtonBox.ButtonRole.ActionRole)
-        note = controls.addButton("Notiz", QDialogButtonBox.ButtonRole.ActionRole)
-        reminder = controls.addButton("Wiedervorlage", QDialogButtonBox.ButtonRole.ActionRole)
-        reviewed = controls.addButton("Prüfstatus ändern", QDialogButtonBox.ButtonRole.ActionRole)
-        archive = controls.addButton("Für Archiv freigeben", QDialogButtonBox.ButtonRole.ActionRole)
+        controls.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+        choose = controls.addButton(self.ui("Ordner wählen"), QDialogButtonBox.ButtonRole.ActionRole)
+        review = controls.addButton(self.ui("Beleg ansehen"), QDialogButtonBox.ButtonRole.ActionRole)
+        validate = controls.addButton(self.ui("Prüfdetails"), QDialogButtonBox.ButtonRole.ActionRole)
+        batch = controls.addButton(self.ui("Auswahl prüfen"), QDialogButtonBox.ButtonRole.ActionRole)
+        note = controls.addButton(self.ui("Notiz"), QDialogButtonBox.ButtonRole.ActionRole)
+        reminder = controls.addButton(self.ui("Wiedervorlage"), QDialogButtonBox.ButtonRole.ActionRole)
+        reviewed = controls.addButton(self.ui("Prüfstatus ändern"), QDialogButtonBox.ButtonRole.ActionRole)
+        archive = controls.addButton(self.ui("Für Archiv freigeben"), QDialogButtonBox.ButtonRole.ActionRole)
         controls.rejected.connect(dialog.reject)
         layout.addWidget(controls)
 
@@ -5176,7 +5230,7 @@ class Window(QMainWindow):
                     table.setCurrentCell(row, 0)
                     table.selectRow(row)
                     return
-            status.setText("Der Beleg ist nicht mehr in den fälligen Wiedervorlagen.")
+            status.setText(self.ui("Der Beleg ist nicht mehr in den fälligen Wiedervorlagen."))
 
         dialog.due_entries = due_entries
         dialog.focus_invoice = focus_invoice
@@ -5241,7 +5295,7 @@ class Window(QMainWindow):
             update_actions()
         def change_folder():
             nonlocal settler
-            folder = QFileDialog.getExistingDirectory(dialog, "Rechnungsordner auswählen",
+            folder = QFileDialog.getExistingDirectory(dialog, self.ui("Rechnungsordner auswählen"),
                                                        str(settler.folder) if settler else "")
             if folder:
                 folder = Path(folder).resolve()
@@ -5255,7 +5309,7 @@ class Window(QMainWindow):
         def tick():
             nonlocal future, last_day
             if settler is None:
-                location.setText("Bitte einen Rechnungsordner wählen.")
+                location.setText(self.ui("Bitte einen Rechnungsordner wählen."))
                 return
             location.setText(str(settler.folder))
             if not settler.folder.is_dir():
@@ -5263,7 +5317,7 @@ class Window(QMainWindow):
                     records.clear()
                     refresh()
                 settler.observed.clear()
-                status.setText("Der Rechnungsordner ist derzeit nicht erreichbar.")
+                status.setText(self.ui("Der Rechnungsordner ist derzeit nicht erreichbar."))
                 return
             now = time.monotonic()
             stable = settler.poll(now)
@@ -5302,8 +5356,7 @@ class Window(QMainWindow):
             if changed:
                 refresh()
             update_badge()
-            status.setText(f"{len(records)} Beleg(e) im Eingang · "
-                           f"{max(0, len(settler.observed) - len(records))} warten auf Kopierende oder Prüfung")
+            status.setText(self.ui_format('{0} Beleg(e) im Eingang · {1} warten auf Kopierende oder Prüfung', len(records), max(0, len(settler.observed) - len(records))))
 
         def show_check():
             record = selected()
@@ -5355,7 +5408,7 @@ class Window(QMainWindow):
             editor = QDialog(dialog)
             editor.setWindowTitle("Wiedervorlage für " + record.source.path.name)
             form = QFormLayout(editor)
-            enabled = QCheckBox("Wiedervorlage aktiv")
+            enabled = QCheckBox(self.ui("Wiedervorlage aktiv"))
             enabled.setChecked(True)
             form.addRow(enabled)
             calendar = QDateEdit(QDate(day.year, day.month, day.day) if day else QDate.currentDate())
@@ -5364,13 +5417,13 @@ class Window(QMainWindow):
             calendar.setCalendarPopup(True)
             message = QLineEdit(memo)
             message.setMaxLength(1000)
-            form.addRow("Termin", calendar)
-            form.addRow("Notiz", message)
+            form.addRow(self.ui("Termin"), calendar)
+            form.addRow(self.ui("Notiz"), message)
             enabled.toggled.connect(calendar.setEnabled)
             enabled.toggled.connect(message.setEnabled)
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-            buttons.button(QDialogButtonBox.StandardButton.Save).setText("Speichern")
-            buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+            buttons.button(QDialogButtonBox.StandardButton.Save).setText(self.ui("Speichern"))
+            buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
             buttons.accepted.connect(editor.accept)
             buttons.rejected.connect(editor.reject)
             form.addRow(buttons)
@@ -5382,7 +5435,7 @@ class Window(QMainWindow):
                 settings.remove(key)
             settings.sync()
             if settings.status() != QSettings.Status.NoError:
-                self.error("Die Wiedervorlage konnte nicht dauerhaft gespeichert werden.")
+                self.error(self.ui("Die Wiedervorlage konnte nicht dauerhaft gespeichert werden."))
             refresh()
 
         def check_selection():
@@ -5408,7 +5461,7 @@ class Window(QMainWindow):
         def approve_many(items, name):
             incoming, destination = settler.folder, Path(name).resolve()
             if not destination.is_dir() or destination.is_relative_to(incoming.resolve()):
-                self.error("Bitte einen Archivordner außerhalb des Rechnungsordners auswählen.")
+                self.error(self.ui("Bitte einen Archivordner außerhalb des Rechnungsordners auswählen."))
                 return
             blocked = {}
             for record in items:
@@ -5439,8 +5492,8 @@ class Window(QMainWindow):
             outcomes = self.inspect_pdfs(list(by_path), "Belege werden archiviert …", save, dialog)
             refresh()
             message = QMessageBox(dialog)
-            message.setWindowTitle("Sammelarchivierung")
-            message.setText(f"{sum(success for _, (success, _) in outcomes)} von {len(approved)} freigegebenen Belegen kopiert.")
+            message.setWindowTitle(self.ui("Sammelarchivierung"))
+            message.setText(self.ui_format('{0} von {1} freigegebenen Belegen kopiert.', sum((success for _, (success, _) in outcomes)), len(approved)))
             details = [f"{path.name}: {issue}" for path, (_, issue) in outcomes if issue]
             if details:
                 message.setDetailedText("\n".join(details))
@@ -5451,7 +5504,7 @@ class Window(QMainWindow):
             if not items:
                 return
             record = items[0]
-            name = QFileDialog.getExistingDirectory(dialog, "Archivordner für die Originalkopien auswählen",
+            name = QFileDialog.getExistingDirectory(dialog, self.ui("Archivordner für die Originalkopien auswählen"),
                                                      settings.value("invoice-watch/archive", "", str))
             if not name:
                 return
@@ -5459,7 +5512,7 @@ class Window(QMainWindow):
                 approve_many(items, name)
                 return
             target = Path(name) / record.source.path.name
-            if QMessageBox.question(dialog, "Archivfreigabe", f"Diesen Beleg als unveränderte Kopie ablegen?\n{target}",
+            if QMessageBox.question(dialog, self.ui("Archivfreigabe"), self.ui_format('Diesen Beleg als unveränderte Kopie ablegen?\n{0}', target),
                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                     QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                 return
@@ -5503,7 +5556,7 @@ class Window(QMainWindow):
 
     def invoice_review(self, names=None):
         if names is None:
-            names, _ = QFileDialog.getOpenFileNames(self, "Rechnungen auswählen", "", "PDF und XML (*.pdf *.xml)")
+            names, _ = QFileDialog.getOpenFileNames(self, self.ui("Rechnungen auswählen"), "", "PDF und XML (*.pdf *.xml)")
         if not names:
             return
 
@@ -5518,15 +5571,15 @@ class Window(QMainWindow):
         if not results:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Rechnungseingang")
+        dialog.setWindowTitle(self.ui("Rechnungseingang"))
         layout = QVBoxLayout(dialog)
-        info = QLabel("Vorschläge prüfen und in der Tabelle korrigieren. Die Vorschau markiert die Fundstelle. "
-                      "Bei OCR werden die ersten drei Seiten und die letzte Seite ausgewertet. XML-Werte stammen aus der Quelldatei.")
+        info = QLabel(self.ui("Vorschläge prüfen und in der Tabelle korrigieren. Die Vorschau markiert die Fundstelle. "
+                      "Bei OCR werden die ersten drei Seiten und die letzte Seite ausgewertet. XML-Werte stammen aus der Quelldatei."))
         info.setWordWrap(True)
         layout.addWidget(info)
         split = QSplitter(Qt.Orientation.Vertical)
         table = QTableWidget(len(results), 5)
-        table.setHorizontalHeaderLabels(["Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quelldatei", "Hinweis"])
+        table.setHorizontalHeaderLabels([self.ui("Rechnungsnummer"), self.ui("Rechnungsdatum"), self.ui("Betrag"), self.ui("Quelldatei"), self.ui("Hinweis")])
         table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         for row, (path, (fields, origin, failure)) in enumerate(results):
             for column, value in enumerate([*(field.value if field else "" for field in fields),
@@ -5574,7 +5627,7 @@ class Window(QMainWindow):
                 image.adjustSize()
 
         def save():
-            target, _ = QFileDialog.getSaveFileName(dialog, "Rechnungsliste speichern",
+            target, _ = QFileDialog.getSaveFileName(dialog, self.ui("Rechnungsliste speichern"),
                                                     "Rechnungen.xlsx", "Excel (*.xlsx)")
             if not target:
                 return
@@ -5583,17 +5636,19 @@ class Window(QMainWindow):
                 values = [table.item(row, column).text().strip() for column in range(3)]
                 pages = [str(field.page + 1) if field and field.page is not None and value else "–" for field, value in zip(fields, values)]
                 rows.append((*values, str(path), origin or " / ".join(pages)))
-            if self.save_workbook(target, lambda path: export_invoices(rows, path)):
+            columns = self.ui_columns(("Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quelldatei",
+                                       "Fundseiten (Nr. / Datum / Betrag)"))
+            if self.save_workbook(target, lambda path: export_invoices(rows, path, columns=columns)):
                 dialog.accept()
 
         table.currentCellChanged.connect(preview)
         table.setCurrentCell(0, 0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.addButton("E-Rechnung der Auswahl prüfen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+        buttons.addButton(self.ui("E-Rechnung der Auswahl prüfen"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
             lambda: self.check_einvoice(results[table.currentRow()][0], dialog) if table.currentRow() >= 0 else None)
-        buttons.addButton("Diese Dateien auf Dubletten prüfen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+        buttons.addButton(self.ui("Diese Dateien auf Dubletten prüfen"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
             lambda: self.duplicate_check(list(dict.fromkeys(path for path, _ in results))))
-        buttons.addButton("Geprüfte Liste als Excel speichern", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(save)
+        buttons.addButton(self.ui("Geprüfte Liste als Excel speichern"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(save)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         dialog.resize(1050, 760)
@@ -5606,19 +5661,19 @@ class Window(QMainWindow):
         if missing is None:
             missing = missing_required_fields(session.doc)
         if not missing:
-            QMessageBox.information(self, "Pflichtfelder prüfen", "Keine leeren Pflichtfelder gefunden.")
+            QMessageBox.information(self, self.ui("Pflichtfelder prüfen"), self.ui("Keine leeren Pflichtfelder gefunden."))
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Leere Pflichtfelder")
+        dialog.setWindowTitle(self.ui("Leere Pflichtfelder"))
         layout = QVBoxLayout(dialog)
-        layout.addWidget(QLabel(f"{len(missing)} Pflichtfeld(er) ausfüllen."))
+        layout.addWidget(QLabel(self.ui_format('{0} Pflichtfeld(er) ausfüllen.', len(missing))))
         rows = QListWidget()
         rows.addItems([f"Seite {index + 1} · {name}" for index, _, name in missing])
         rows.setCurrentRow(0)
         rows.itemDoubleClicked.connect(dialog.accept)
         layout.addWidget(rows)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.addButton("Zum Feld", QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.addButton(self.ui("Zum Feld"), QDialogButtonBox.ButtonRole.AcceptRole)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -5628,12 +5683,12 @@ class Window(QMainWindow):
             self.go_page(index)
             box = rect * session.doc[index].rotation_matrix
             self.scroll.ensureVisible(round(box.x0 * self.scale), round(box.y0 * self.scale), 20, 60)
-            self.statusBar().showMessage(f"Pflichtfeld: {missing[rows.currentRow()][2]}", 7500)
+            self.statusBar().showMessage(self.ui_format('Pflichtfeld: {0}', missing[rows.currentRow()][2]), 7500)
 
     def configure_explorer(self):
         launcher = os.environ.get("PDF_WERKBANK_ENTRYPOINT") or os.environ.get("PDF_WERKBANK_LAUNCHER")
         if not launcher:
-            QMessageBox.information(self, "Explorer-Befehle", "Bitte die installierte PDF Werkbank starten.")
+            QMessageBox.information(self, self.ui("Explorer-Befehle"), self.ui("Bitte die installierte PDF Werkbank starten."))
             return
         try:
             import ctypes
@@ -5643,14 +5698,14 @@ class Window(QMainWindow):
             if result != 0:
                 raise OSError("Windows konnte den Ordner Senden an nicht finden.")
             install_explorer_commands(launcher, buffer.value)
-            QMessageBox.information(self, "Explorer-Befehle", "Die Befehle stehen unter Rechtsklick → Senden an. "
-                                    "Unter Windows 11 zuerst Weitere Optionen anzeigen wählen.")
+            QMessageBox.information(self, self.ui("Explorer-Befehle"), self.ui("Die Befehle stehen unter Rechtsklick → Senden an. "
+                                    "Unter Windows 11 zuerst Weitere Optionen anzeigen wählen."))
         except Exception as exc:
             self.error(exc)
 
     def batch_preview(self, paths, target, steps=None, audit_results=None):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Stapelvorschau")
+        dialog.setWindowTitle(self.ui("Stapelvorschau"))
         layout = QVBoxLayout(dialog)
         labels = {"ocr": "OCR", "rotate": "90° nach rechts drehen", "compress": "Komprimieren"}
         operation = (" → ".join(labels[step] for step in ("ocr", "rotate", "compress") if step in steps)
@@ -5711,7 +5766,7 @@ class Window(QMainWindow):
         movement.addStretch()
         layout.addLayout(movement)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        start = buttons.addButton("Verarbeitung starten", QDialogButtonBox.ButtonRole.AcceptRole)
+        start = buttons.addButton(self.ui("Verarbeitung starten"), QDialogButtonBox.ButtonRole.AcceptRole)
         valid = sum(not rows.item(index).data(Qt.ItemDataRole.UserRole)[2] for index in range(rows.count()))
         start.setEnabled(valid >= 2 and valid == len(paths) if steps is None else valid > 0)
         buttons.accepted.connect(dialog.accept)
@@ -5733,17 +5788,17 @@ class Window(QMainWindow):
             if command == "--explorer-workflow":
                 profiles = self.read_batch_profiles(self.favorite_settings)
                 if not profiles:
-                    QMessageBox.information(self, "Gespeicherter Ablauf",
-                                            "Zuerst unter Export & Schutz einen Ablauf speichern.")
+                    QMessageBox.information(self, self.ui("Gespeicherter Ablauf"),
+                                            self.ui("Zuerst unter Export & Schutz einen Ablauf speichern."))
                     return
-                name, ok = QInputDialog.getItem(self, "Gespeicherter Ablauf", f"Ablauf für {len(paths)} PDF(s)",
+                name, ok = QInputDialog.getItem(self, self.ui("Gespeicherter Ablauf"), self.ui_format('Ablauf für {0} PDF(s)', len(paths)),
                                                 sorted(profiles), editable=False)
                 if ok:
                     self.run_batch(paths, profiles[name])
                 return
             if len(paths) < 2:
                 raise ValueError("Bitte mindestens zwei PDFs auswählen.")
-            name, _ = QFileDialog.getSaveFileName(self, "Zusammengeführte PDF speichern",
+            name, _ = QFileDialog.getSaveFileName(self, self.ui("Zusammengeführte PDF speichern"),
                                                  str(paths[0].parent / "Zusammengeführt.pdf"), "PDF (*.pdf)")
             if not name:
                 return
@@ -5768,42 +5823,42 @@ class Window(QMainWindow):
         settings = self.favorite_settings
         templates = form_templates(settings)
         dialog = QDialog(self)
-        dialog.setWindowTitle("Excel-Formularvorlagen")
+        dialog.setWindowTitle(self.ui("Excel-Formularvorlagen"))
         dialog.resize(850, 485)
         layout = QVBoxLayout(dialog)
-        info = QLabel("Lege die Excel-Spalten von oben nach unten fest. Trage pro Zeile im mittleren Feld "
-                      "einen PDF-Feldnamen ein. Doppelklick auf einen gefundenen Feldnamen fügt ihn der gewählten Spalte hinzu.")
+        info = QLabel(self.ui("Lege die Excel-Spalten von oben nach unten fest. Trage pro Zeile im mittleren Feld "
+                      "einen PDF-Feldnamen ein. Doppelklick auf einen gefundenen Feldnamen fügt ihn der gewählten Spalte hinzu."))
         info.setWordWrap(True)
         layout.addWidget(info)
         form = QFormLayout()
         choice = QComboBox()
         name = QLineEdit()
         name.setMaxLength(100)
-        form.addRow("Vorlage", choice)
-        form.addRow("Name beim Speichern", name)
+        form.addRow(self.ui("Vorlage"), choice)
+        form.addRow(self.ui("Name beim Speichern"), name)
         layout.addLayout(form)
         content = QHBoxLayout()
         table = QTableWidget(0, 5)
-        table.setHorizontalHeaderLabels(["Excel-Spalte", "PDF-Feldnamen", "Pflicht", "Eindeutig", "Datum"])
+        table.setHorizontalHeaderLabels([self.ui("Excel-Spalte"), self.ui("PDF-Feldnamen"), self.ui("Pflicht"), self.ui("Eindeutig"), self.ui("Datum")])
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         table.setColumnWidth(0, 190)
         table.setColumnWidth(2, 65)
         table.setColumnWidth(3, 85)
         table.setColumnWidth(4, 65)
-        table.horizontalHeaderItem(3).setToolTip("Der Wert darf im Formularlauf nur einmal vorkommen.")
-        table.horizontalHeaderItem(4).setToolTip("Erwartet ein Excel-Datum, TT.MM.JJJJ oder JJJJ-MM-TT.")
+        table.horizontalHeaderItem(3).setToolTip(self.ui("Der Wert darf im Formularlauf nur einmal vorkommen."))
+        table.horizontalHeaderItem(4).setToolTip(self.ui("Erwartet ein Excel-Datum, TT.MM.JJJJ oder JJJJ-MM-TT."))
         content.addWidget(table, 3)
         fields = QListWidget()
         fields.addItems(available)
         found = QVBoxLayout()
-        found.addWidget(QLabel("Gefundene PDF-Feldnamen"))
+        found.addWidget(QLabel(self.ui("Gefundene PDF-Feldnamen")))
         found.addWidget(fields)
         content.addLayout(found, 1)
         layout.addLayout(content)
         actions = QHBoxLayout()
-        add = QPushButton("Spalte hinzufügen")
-        remove = QPushButton("Spalte entfernen")
-        delete = QPushButton("Vorlage löschen")
+        add = QPushButton(self.ui("Spalte hinzufügen"))
+        remove = QPushButton(self.ui("Spalte entfernen"))
+        delete = QPushButton(self.ui("Vorlage löschen"))
         for button in (add, remove, delete):
             actions.addWidget(button)
         layout.addLayout(actions)
@@ -5811,9 +5866,9 @@ class Window(QMainWindow):
         notice.setWordWrap(True)
         layout.addWidget(notice)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        use = buttons.addButton("Gespeicherte Vorlage verwenden", QDialogButtonBox.ButtonRole.ActionRole)
-        save = buttons.addButton("Vorlage speichern und Vorschau", QDialogButtonBox.ButtonRole.AcceptRole)
-        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        use = buttons.addButton(self.ui("Gespeicherte Vorlage verwenden"), QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton(self.ui("Vorlage speichern und Vorschau"), QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         layout.addWidget(buttons)
         result = None
 
@@ -5909,7 +5964,7 @@ class Window(QMainWindow):
         def delete_template():
             selected = choice.currentData()
             if selected is None or QMessageBox.question(
-                    dialog, "Vorlage löschen", f"„{selected}“ löschen?",
+                    dialog, self.ui("Vorlage löschen"), self.ui_format('„{0}“ löschen?', selected),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                 return
@@ -5954,7 +6009,7 @@ class Window(QMainWindow):
         if not any(self.form_highlights(session, page) for page in session.doc):
             self.form_jump = None
             self.render()
-            QMessageBox.information(preview, "Kein passendes Formularfeld",
+            QMessageBox.information(preview, self.ui("Kein passendes Formularfeld"),
                                     "Gesuchte PDF-Feldnamen:\n" + "\n".join(aliases))
             return
         preview.hide()
@@ -5988,12 +6043,12 @@ class Window(QMainWindow):
             self.form_preview.activateWindow()
             return
         if paths is None:
-            names, _ = QFileDialog.getOpenFileNames(self, "Ausgefüllte PDF-Formulare auswählen", "", "PDF (*.pdf)")
+            names, _ = QFileDialog.getOpenFileNames(self, self.ui("Ausgefüllte PDF-Formulare auswählen"), "", "PDF (*.pdf)")
             if not names:
                 return
             paths = list(dict.fromkeys(Path(name).resolve() for name in names))
         if len(paths) > 1000:
-            self.error("Bitte höchstens 1.000 PDFs auf einmal auswählen.")
+            self.error(self.ui("Bitte höchstens 1.000 PDFs auf einmal auswählen."))
             return
         signatures = {}
 
@@ -6029,7 +6084,7 @@ class Window(QMainWindow):
             title, mappings = template
             columns = [column[0] for column in mappings]
         if len(columns) > 1000 or len(outcomes) * (len(columns) + 2) > 100000:
-            self.error("Zu viele Formularfelder für die Vorschau. Bitte weniger PDFs auswählen.")
+            self.error(self.ui("Zu viele Formularfelder für die Vorschau. Bitte weniger PDFs auswählen."))
             return
         header = ["PDF-Datei", "Hinweis", *columns]
         rows = []
@@ -6051,8 +6106,7 @@ class Window(QMainWindow):
                     "Ein Doppelklick springt zum Formularfeld. Nach dem Speichern der PDF kannst du die Vorschau neu einlesen. "
                     "Betroffene Zellen bleiben beim Export leer. Die Spalte „Hinweis“ hält den Grund fest."
                     if template else "„Fehlt“ bedeutet, dass das Feld in dieser Datei anders heißt oder nicht existiert.")
-        notice = QLabel(f"{len(rows)} von {len(paths)} PDF-Dateien eingelesen. {guidance} "
-                        "Die Werkbank liest den gespeicherten Stand. Passwort- und Signaturfelder werden ausgelassen.")
+        notice = QLabel(self.ui_format('{0} von {1} PDF-Dateien eingelesen. {2} Die Werkbank liest den gespeicherten Stand. Passwort- und Signaturfelder werden ausgelassen.', len(rows), len(paths), guidance))
         notice.setWordWrap(True)
         layout.addWidget(notice)
         table = QTableWidget(len(rows), len(header))
@@ -6086,7 +6140,7 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
 
         def save_export():
-            name, _ = QFileDialog.getSaveFileName(self, "Formulardaten speichern", "Formulardaten.xlsx", "Excel (*.xlsx)")
+            name, _ = QFileDialog.getSaveFileName(self, self.ui("Formulardaten speichern"), "Formulardaten.xlsx", "Excel (*.xlsx)")
             if name:
                 self.save_workbook(name, lambda path: export_linked_sheet(
                     rows, path, "Formulardaten", header, [45, 35, *([24] * len(columns))]))
@@ -6126,18 +6180,18 @@ class Window(QMainWindow):
                 except OSError:
                     current = None
                 if current != previous:
-                    QMessageBox.information(dialog, "Vorschau aktualisieren",
-                                            f"„{path.name}“ hat sich geändert. Bitte zuerst die PDFs neu einlesen.")
+                    QMessageBox.information(dialog, self.ui("Vorschau aktualisieren"),
+                                            self.ui_format('„{0}“ hat sich geändert. Bitte zuerst die PDFs neu einlesen.', path.name))
                     return
             dialog.accept()
 
         table.cellDoubleClicked.connect(open_cell)
         buttons.accepted.connect(accept_current)
-        reload_button = buttons.addButton("PDFs neu einlesen", QDialogButtonBox.ButtonRole.ActionRole)
+        reload_button = buttons.addButton(self.ui("PDFs neu einlesen"), QDialogButtonBox.ButtonRole.ActionRole)
         reload_button.clicked.connect(reload_preview)
-        back = QPushButton("Zur Formularvorschau")
+        back = QPushButton(self.ui("Zur Formularvorschau"))
         back.clicked.connect(lambda: self.export_form_batch(use_template=True))
-        next_page = QPushButton("Nächste Feldseite")
+        next_page = QPushButton(self.ui("Nächste Feldseite"))
         next_page.clicked.connect(lambda: self.next_form_field())
         self.statusBar().addPermanentWidget(back)
         self.statusBar().addPermanentWidget(next_page)
@@ -6152,21 +6206,21 @@ class Window(QMainWindow):
             templates = form_templates(self.favorite_settings)
             if not templates:
                 raise ValueError("Lege zuerst unter „Excel-Formularvorlagen“ eine Feldzuordnung an.")
-            mapping, ok = QInputDialog.getItem(self, "Excel-Eingabevorlage", "Gespeicherte Feldzuordnung",
+            mapping, ok = QInputDialog.getItem(self, self.ui("Excel-Eingabevorlage"), self.ui("Gespeicherte Feldzuordnung"),
                                                sorted(templates, key=str.casefold), editable=False)
             if not ok:
                 return
-            source, _ = QFileDialog.getOpenFileName(self, "PDF-Formular für die Auswahllisten wählen", "", "PDF (*.pdf)")
+            source, _ = QFileDialog.getOpenFileName(self, self.ui("PDF-Formular für die Auswahllisten wählen"), "", "PDF (*.pdf)")
             if not source:
                 return
             with pdf.open(source) as document:
                 if document.needs_pass or not document.is_pdf:
                     raise ValueError("Bitte eine lesbare PDF-Formularvorlage ohne Passwort wählen.")
                 columns = form_entry_columns(document, templates[mapping])
-            name, _ = QFileDialog.getSaveFileName(self, "Excel-Eingabevorlage speichern",
+            name, _ = QFileDialog.getSaveFileName(self, self.ui("Excel-Eingabevorlage speichern"),
                                                  "Formulareingabe.xlsx", "Excel (*.xlsx)")
             if name and self.save_workbook(name, lambda path: export_form_entry(path, columns)):
-                self.statusBar().showMessage("Excel-Vorlage gespeichert. Orange Spaltenüberschriften markieren Pflichtangaben.", 8500)
+                self.statusBar().showMessage(self.ui("Excel-Vorlage gespeichert. Orange Spaltenüberschriften markieren Pflichtangaben."), 8500)
         except Exception as exc:
             self.error(exc)
 
@@ -6175,21 +6229,21 @@ class Window(QMainWindow):
             templates = form_templates(self.favorite_settings)
             if not templates:
                 raise ValueError("Lege zuerst unter „Excel-Formularvorlagen“ eine Feldzuordnung an.")
-            source, _ = QFileDialog.getOpenFileName(self, "PDF-Formularvorlage auswählen", "", "PDF (*.pdf)")
+            source, _ = QFileDialog.getOpenFileName(self, self.ui("PDF-Formularvorlage auswählen"), "", "PDF (*.pdf)")
             if not source:
                 return
             source = Path(source).resolve()
-            workbook, _ = QFileDialog.getOpenFileName(self, "Excel-Daten auswählen", "", "Excel (*.xlsx)")
+            workbook, _ = QFileDialog.getOpenFileName(self, self.ui("Excel-Daten auswählen"), "", "Excel (*.xlsx)")
             if not workbook:
                 return
             workbook = Path(workbook).resolve()
             sheets = workbook_sheets(workbook)
             sheet = sheets[0]
             if len(sheets) > 1:
-                sheet, ok = QInputDialog.getItem(self, "Excel-Daten", "Tabellenblatt", sheets, editable=False)
+                sheet, ok = QInputDialog.getItem(self, self.ui("Excel-Daten"), self.ui("Tabellenblatt"), sheets, editable=False)
                 if not ok:
                     return
-            mapping, ok = QInputDialog.getItem(self, "Formulare aus Excel füllen", "Gespeicherte Feldzuordnung",
+            mapping, ok = QInputDialog.getItem(self, self.ui("Formulare aus Excel füllen"), self.ui("Gespeicherte Feldzuordnung"),
                                                sorted(templates, key=str.casefold), editable=False)
             if not ok:
                 return
@@ -6197,7 +6251,7 @@ class Window(QMainWindow):
             rows = read_form_sheet(workbook, sheet)
             if file_signature(workbook) != stamp:
                 raise ValueError("Die Excel-Datei wurde beim Einlesen geändert. Bitte erneut versuchen.")
-            folder = QFileDialog.getExistingDirectory(self, "Zielordner für die PDF-Kopien", str(source.parent))
+            folder = QFileDialog.getExistingDirectory(self, self.ui("Zielordner für die PDF-Kopien"), str(source.parent))
             if not folder:
                 return
             original = self.form_source_bytes(source)
@@ -6262,17 +6316,17 @@ class Window(QMainWindow):
             self.invoice_folder(show=False)
         dialog = QDialog(self)
         self.open_work_dialog = dialog
-        dialog.setWindowTitle("Offene Arbeiten")
+        dialog.setWindowTitle(self.ui("Offene Arbeiten"))
         dialog.resize(870, 460)
         layout = QVBoxLayout(dialog)
-        start = QCheckBox("Beim Start der Werkbank anzeigen")
+        start = QCheckBox(self.ui("Beim Start der Werkbank anzeigen"))
         start.setChecked(self.favorite_settings.value("work-overview/start", True, bool))
         start.toggled.connect(lambda enabled: self.favorite_settings.setValue("work-overview/start", enabled))
         layout.addWidget(start)
         summary = QLabel()
         layout.addWidget(summary)
         table = QTableWidget(0, 3)
-        table.setHorizontalHeaderLabels(["Bereich", "Eintrag", "Stand"])
+        table.setHorizontalHeaderLabels([self.ui("Bereich"), self.ui("Eintrag"), self.ui("Stand")])
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -6281,8 +6335,8 @@ class Window(QMainWindow):
         table.setColumnWidth(2, 285)
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        refresh = buttons.addButton("Aktualisieren", QDialogButtonBox.ButtonRole.ActionRole)
-        jump = buttons.addButton("Zum Eintrag", QDialogButtonBox.ButtonRole.ActionRole)
+        refresh = buttons.addButton(self.ui("Aktualisieren"), QDialogButtonBox.ButtonRole.ActionRole)
+        jump = buttons.addButton(self.ui("Zum Eintrag"), QDialogButtonBox.ButtonRole.ActionRole)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         entries, base = [], []
@@ -6357,7 +6411,7 @@ class Window(QMainWindow):
 
     def resume_form_fill(self):
         start = self.favorite_settings.value("form-export/run-folder", "", str)
-        name, _ = QFileDialog.getOpenFileName(self, "Gespeicherten Formularlauf öffnen", start,
+        name, _ = QFileDialog.getOpenFileName(self, self.ui("Gespeicherten Formularlauf öffnen"), start,
                                              "Werkbank-Formularlauf (*.werkbanklauf)")
         if name:
             try:
@@ -6428,17 +6482,14 @@ class Window(QMainWindow):
         if len(results) != len(eligible):
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("PDF-Kopien aus Excel prüfen")
+        dialog.setWindowTitle(self.ui("PDF-Kopien aus Excel prüfen"))
         dialog.resize(850, 480)
         layout = QVBoxLayout(dialog)
-        notice = QLabel("Wähle die geprüften Zeilen aus. Mit Doppelklick siehst du die ausgefüllte PDF. "
-                        "Die Spalte „Dateiname“ ist optional. Zahlen und Daten werden als gespeicherte Zellwerte "
-                        "gelesen. Für eine bestimmte Schreibweise speichere die Zelle als Text. "
-                        f"Laufdatei: {run.path.name}")
+        notice = QLabel(self.ui_format('Wähle die geprüften Zeilen aus. Mit Doppelklick siehst du die ausgefüllte PDF. Die Spalte „Dateiname“ ist optional. Zahlen und Daten werden als gespeicherte Zellwerte gelesen. Für eine bestimmte Schreibweise speichere die Zelle als Text. Laufdatei: {0}', run.path.name))
         notice.setWordWrap(True)
         layout.addWidget(notice)
         table = QTableWidget(len(plan), 4)
-        table.setHorizontalHeaderLabels(["Übernehmen", "Excel-Zeile", "PDF-Dateiname", "Prüfergebnis"])
+        table.setHorizontalHeaderLabels([self.ui("Übernehmen"), self.ui("Excel-Zeile"), self.ui("PDF-Dateiname"), self.ui("Prüfergebnis")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setColumnWidth(2, 230)
@@ -6462,13 +6513,13 @@ class Window(QMainWindow):
                 table.setItem(index, column, item)
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
-        excel = buttons.addButton("Excel-Bericht speichern", QDialogButtonBox.ButtonRole.ActionRole)
-        export_fix = buttons.addButton("Fehlerhafte Zeilen exportieren", QDialogButtonBox.ButtonRole.ActionRole)
-        import_fix = buttons.addButton("Korrekturliste übernehmen", QDialogButtonBox.ButtonRole.ActionRole)
+        preview = buttons.addButton(self.ui("Ausgefüllte PDF ansehen"), QDialogButtonBox.ButtonRole.ActionRole)
+        excel = buttons.addButton(self.ui("Excel-Bericht speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+        export_fix = buttons.addButton(self.ui("Fehlerhafte Zeilen exportieren"), QDialogButtonBox.ButtonRole.ActionRole)
+        import_fix = buttons.addButton(self.ui("Korrekturliste übernehmen"), QDialogButtonBox.ButtonRole.ActionRole)
         export_fix.setEnabled(bool(failures and correction_source))
         import_fix.setEnabled(bool(correction_source and run.data.get("correction_id")))
-        save = buttons.addButton("Auswahl als PDFs speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        save = buttons.addButton(self.ui("Auswahl als PDFs speichern"), QDialogButtonBox.ButtonRole.AcceptRole)
         layout.addWidget(buttons)
 
         def selected_paths():
@@ -6476,15 +6527,15 @@ class Window(QMainWindow):
                     if path in eligible and table.item(index, 0).checkState() == Qt.CheckState.Checked]
 
         def export_report():
-            name, _ = QFileDialog.getSaveFileName(self, "Excel-Bericht speichern", str(run.path.with_suffix(".xlsx")),
+            name, _ = QFileDialog.getSaveFileName(self, self.ui("Excel-Bericht speichern"), str(run.path.with_suffix(".xlsx")),
                                                  "Excel (*.xlsx)")
             if name:
-                rows = [(line, filename, states[line]) for line, filename, _, _, _ in plan]
+                rows = [(line, filename, self.ui(states[line])) for line, filename, _, _, _ in plan]
                 self.save_workbook(name, lambda path: export_linked_sheet(
-                    rows, path, "Formularlauf", ("Excel-Zeile", "PDF-Dateiname", "Ergebnis"), (16, 38, 65)))
+                    rows, path, "Formularlauf", self.ui_columns(("Excel-Zeile", "PDF-Dateiname", "Ergebnis")), (16, 38, 65)))
 
         def export_fix_rows():
-            name, _ = QFileDialog.getSaveFileName(dialog, "Fehlerhafte Zeilen exportieren",
+            name, _ = QFileDialog.getSaveFileName(dialog, self.ui("Fehlerhafte Zeilen exportieren"),
                                                  str(run.path.with_name(run.path.stem + "-Korrekturen.xlsx")), "Excel (*.xlsx)")
             if not name:
                 return
@@ -6506,7 +6557,7 @@ class Window(QMainWindow):
                 self.error(exc)
 
         def import_fix_rows():
-            name, _ = QFileDialog.getOpenFileName(dialog, "Bearbeitete Korrekturliste auswählen", "", "Excel (*.xlsx)")
+            name, _ = QFileDialog.getOpenFileName(dialog, self.ui("Bearbeitete Korrekturliste auswählen"), "", "Excel (*.xlsx)")
             if not name:
                 return
             try:
@@ -6518,7 +6569,7 @@ class Window(QMainWindow):
                 updated, changes = correction_changes(Path(name), run.data["correction_id"], baseline, effective,
                                                       run.data["columns"], completed, existing)
                 if not changes:
-                    QMessageBox.information(dialog, "Korrekturliste", "Es wurden keine geänderten Werte gefunden.")
+                    QMessageBox.information(dialog, self.ui("Korrekturliste"), self.ui("Es wurden keine geänderten Werte gefunden."))
                     return
                 if not self.review_form_corrections(dialog, changes):
                     return
@@ -6582,29 +6633,28 @@ class Window(QMainWindow):
         for path, error in saved:
             states[lines[path]] = error or "Gespeichert"
         report = QMessageBox(self)
-        report.setWindowTitle("Formulare aus Excel")
-        report.setText(f"{sum(not error for _, error in saved)} von {len(paths)} ausgewählten PDF-Kopien gespeichert. "
-                       f"Der Lauf kann mit {run.path.name} fortgesetzt werden.")
+        report.setWindowTitle(self.ui("Formulare aus Excel"))
+        report.setText(self.ui_format('{0} von {1} ausgewählten PDF-Kopien gespeichert. Der Lauf kann mit {2} fortgesetzt werden.', sum((not error for _, error in saved)), len(paths), run.path.name))
         errors = [f"{path.name}: {error}" for path, error in saved if error]
         if errors:
             report.setDetailedText("\n".join(errors))
         report.addButton(QMessageBox.StandardButton.Close)
-        export_button = report.addButton("Excel-Bericht speichern", QMessageBox.ButtonRole.ActionRole)
+        export_button = report.addButton(self.ui("Excel-Bericht speichern"), QMessageBox.ButtonRole.ActionRole)
         report.exec()
         if report.clickedButton() is export_button:
             export_report()
 
     def review_form_corrections(self, parent, changes):
         dialog = QDialog(parent)
-        dialog.setWindowTitle("Korrekturen prüfen")
+        dialog.setWindowTitle(self.ui("Korrekturen prüfen"))
         dialog.resize(850, 420)
         layout = QVBoxLayout(dialog)
-        info = QLabel("Diese Werte werden im Formularlauf gespeichert. Die ursprüngliche Excel-Datei bleibt erhalten. "
-                      "Danach prüft die Werkbank den gesamten Stapel erneut.")
+        info = QLabel(self.ui("Diese Werte werden im Formularlauf gespeichert. Die ursprüngliche Excel-Datei bleibt erhalten. "
+                      "Danach prüft die Werkbank den gesamten Stapel erneut."))
         info.setWordWrap(True)
         layout.addWidget(info)
         table = QTableWidget(len(changes), 4)
-        table.setHorizontalHeaderLabels(["Excel-Zelle", "Spalte", "Bisher", "Neu"])
+        table.setHorizontalHeaderLabels([self.ui("Excel-Zelle"), self.ui("Spalte"), self.ui("Bisher"), self.ui("Neu")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         for row, values in enumerate(changes):
@@ -6614,7 +6664,7 @@ class Window(QMainWindow):
                 table.setItem(row, column, item)
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Korrekturen übernehmen")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Korrekturen übernehmen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -6638,7 +6688,7 @@ class Window(QMainWindow):
                 target = self.output_path(" - ausgefüllt", "Feste Formularkopie speichern")
                 if target:
                     save_copy(copy, target)
-                    self.statusBar().showMessage(f"Feste Formularkopie gespeichert: {target.name}", 7500)
+                    self.statusBar().showMessage(self.ui_format('Feste Formularkopie gespeichert: {0}', target.name), 7500)
         except Exception as exc:
             self.error(exc)
 
@@ -6650,12 +6700,12 @@ class Window(QMainWindow):
             fields = capture_scan_fields(session.doc)
             settings = self.favorite_settings
             templates = scan_form_templates(settings)
-            name, ok = QInputDialog.getText(self, "Feldvorlage speichern", "Name", text=session.path.stem)
+            name, ok = QInputDialog.getText(self, self.ui("Feldvorlage speichern"), self.ui("Name"), text=session.path.stem)
             name = name.strip()
             if not ok or not name:
                 return
             if name in templates and QMessageBox.question(
-                    self, "Feldvorlage ersetzen", f"„{name}“ ersetzen?",
+                    self, self.ui("Feldvorlage ersetzen"), self.ui_format('„{0}“ ersetzen?', name),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                 return
@@ -6665,7 +6715,7 @@ class Window(QMainWindow):
             settings.sync()
             if settings.status() != QSettings.Status.NoError:
                 raise OSError("Die Feldvorlage konnte nicht dauerhaft gespeichert werden.")
-            self.statusBar().showMessage(f"Feldvorlage mit {len(fields)} Feld(ern) gespeichert.", 8500)
+            self.statusBar().showMessage(self.ui_format('Feldvorlage mit {0} Feld(ern) gespeichert.', len(fields)), 8500)
         except Exception as exc:
             self.error(exc)
 
@@ -6677,7 +6727,7 @@ class Window(QMainWindow):
             templates = scan_form_templates(self.favorite_settings)
             if not templates:
                 raise ValueError("Speichere zuerst eine PDF mit ausfüllbaren Feldern als Feldvorlage.")
-            name, ok = QInputDialog.getItem(self, "Feldvorlage anwenden", "Vorlage",
+            name, ok = QInputDialog.getItem(self, self.ui("Feldvorlage anwenden"), self.ui("Vorlage"),
                                            sorted(templates, key=str.casefold), editable=False)
             if not ok:
                 return
@@ -6694,7 +6744,7 @@ class Window(QMainWindow):
                 session.undo()
                 raise
             self.changed()
-            self.statusBar().showMessage("Felder übernommen. Speichere eine PDF-Kopie für den Excel-Serienlauf.", 10000)
+            self.statusBar().showMessage(self.ui("Felder übernommen. Speichere eine PDF-Kopie für den Excel-Serienlauf."), 10000)
         except Exception as exc:
             self.error(exc)
 
@@ -6720,16 +6770,16 @@ class Window(QMainWindow):
     def show_scan_source_record(self, record):
         source, workbook = Path(record["scan"]), Path(record["workbook"])
         dialog = QDialog(self)
-        dialog.setWindowTitle("Quellen der fertigen PDF")
+        dialog.setWindowTitle(self.ui("Quellen der fertigen PDF"))
         layout = QVBoxLayout(dialog)
-        location = QLabel(f"Originalscan: {source}\nExcel: {workbook}\nTabellenblatt: {record['sheet']} · Zelle {record['cell']}")
+        location = QLabel(self.ui_format('Originalscan: {0}\nExcel: {1}\nTabellenblatt: {2} · Zelle {3}', source, workbook, record['sheet'], record['cell']))
         location.setTextFormat(Qt.TextFormat.PlainText)
         location.setWordWrap(True)
         location.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(location)
         actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        scan_button = actions.addButton("Originalscan öffnen", QDialogButtonBox.ButtonRole.ActionRole)
-        cell_button = actions.addButton("Zur Excel-Zelle", QDialogButtonBox.ButtonRole.ActionRole)
+        scan_button = actions.addButton(self.ui("Originalscan öffnen"), QDialogButtonBox.ButtonRole.ActionRole)
+        cell_button = actions.addButton(self.ui("Zur Excel-Zelle"), QDialogButtonBox.ButtonRole.ActionRole)
         actions.rejected.connect(dialog.reject)
         layout.addWidget(actions)
 
@@ -6740,7 +6790,7 @@ class Window(QMainWindow):
                 dialog.accept()
                 self.open_path(source)
             except (OSError, ValueError) as exc:
-                self.error(f"Originalscan kann nicht geöffnet werden. {exc}")
+                self.error(self.ui_format('Originalscan kann nicht geöffnet werden. {0}', exc))
 
         scan_button.clicked.connect(original)
         cell_button.clicked.connect(lambda: self.show_scan_excel_cell(dialog, record, workbook))
@@ -6755,7 +6805,7 @@ class Window(QMainWindow):
             if rows.columns.get(heading, "") + str(record["line"]) != record["cell"] or values.get(heading) != record["value"]:
                 raise ValueError(f"Die gespeicherte Zuordnung zu {record['sheet']} · {record['cell']} passt nicht mehr zur aktuellen Excel-Datei.")
             dialog = QDialog(parent)
-            dialog.setWindowTitle(f"Excel · {record['sheet']} · {record['cell']}")
+            dialog.setWindowTitle(self.ui_format('Excel · {0} · {1}', record['sheet'], record['cell']))
             layout = QVBoxLayout(dialog)
             table = QTableWidget(1, len(rows.columns))
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -6766,14 +6816,14 @@ class Window(QMainWindow):
             table.setCurrentCell(0, list(rows.columns).index(heading))
             layout.addWidget(table)
             actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-            open_book = actions.addButton("Excel-Datei öffnen", QDialogButtonBox.ButtonRole.ActionRole)
+            open_book = actions.addButton(self.ui("Excel-Datei öffnen"), QDialogButtonBox.ButtonRole.ActionRole)
             actions.rejected.connect(dialog.reject)
             open_book.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(workbook))))
             layout.addWidget(actions)
             dialog.resize(700, 190)
             dialog.exec()
         except Exception as exc:
-            self.error(f"Excel-Zelle kann nicht angezeigt werden. {exc}")
+            self.error(self.ui_format('Excel-Zelle kann nicht angezeigt werden. {0}', exc))
 
     def pending_scan_job(self, drafts):
         job = self.scan_job_settings()
@@ -6791,14 +6841,14 @@ class Window(QMainWindow):
 
     def configure_inbox_scan_job(self):
         dialog = QMessageBox(self)
-        dialog.setWindowTitle("Excel-Scan-Auftrag")
-        dialog.setText("Wähle eine Excel-Liste, die Kennung, eine Excel-Formularvorlage und einen Zielordner. "
+        dialog.setWindowTitle(self.ui("Excel-Scan-Auftrag"))
+        dialog.setText(self.ui("Wähle eine Excel-Liste, die Kennung, eine Excel-Formularvorlage und einen Zielordner. "
                        "Der Auftrag verwendet offene Entwürfe aus dem Scan-Posteingang. "
-                       "PDF-Kopien entstehen nach deiner Freigabe.")
-        configure = dialog.addButton("Auftrag einrichten", QMessageBox.ButtonRole.AcceptRole)
+                       "PDF-Kopien entstehen nach deiner Freigabe."))
+        configure = dialog.addButton(self.ui("Auftrag einrichten"), QMessageBox.ButtonRole.AcceptRole)
         disable = None
         if self.scan_job_settings():
-            disable = dialog.addButton("Auftrag deaktivieren", QMessageBox.ButtonRole.ActionRole)
+            disable = dialog.addButton(self.ui("Auftrag deaktivieren"), QMessageBox.ButtonRole.ActionRole)
         dialog.addButton(QMessageBox.StandardButton.Cancel)
         dialog.exec()
         if dialog.clickedButton() is configure:
@@ -6848,13 +6898,13 @@ class Window(QMainWindow):
             if not mappings:
                 raise ValueError("Speichere zuerst eine Feldzuordnung unter „Excel-Formularvorlagen“.")
             if not configure_job:
-                names, _ = QFileDialog.getOpenFileNames(self, "Scans für die Excel-Zuordnung auswählen", "", "PDF (*.pdf)")
+                names, _ = QFileDialog.getOpenFileNames(self, self.ui("Scans für die Excel-Zuordnung auswählen"), "", "PDF (*.pdf)")
                 if not names:
                     return
                 paths = list(dict.fromkeys(Path(name).resolve() for name in names))
                 if len(paths) > 60:
                     raise ValueError("Bitte höchstens 60 Scans auf einmal auswählen.")
-            name, _ = QFileDialog.getOpenFileName(self, "Excel-Liste auswählen", "", "Excel (*.xlsx)")
+            name, _ = QFileDialog.getOpenFileName(self, self.ui("Excel-Liste auswählen"), "", "Excel (*.xlsx)")
             if not name:
                 return
             workbook = Path(name).resolve()
@@ -6862,26 +6912,26 @@ class Window(QMainWindow):
             sheets = workbook_sheets(workbook)
             sheet = sheets[0]
             if len(sheets) > 1:
-                sheet, ok = QInputDialog.getItem(self, "Excel-Liste", "Tabellenblatt", sheets, editable=False)
+                sheet, ok = QInputDialog.getItem(self, self.ui("Excel-Liste"), self.ui("Tabellenblatt"), sheets, editable=False)
                 if not ok:
                     return
             rows = read_form_sheet(workbook, sheet)
             if file_signature(workbook) != stamp:
                 raise ValueError("Die Excel-Datei wurde beim Einlesen geändert.")
             headings = sorted(rows.columns, key=lambda heading: ("kundennummer" not in heading.casefold(), heading.casefold()))
-            key, ok = QInputDialog.getItem(self, "Excel-Zeilen zuordnen", "Excel-Spalte mit der Kennung", headings, editable=False)
+            key, ok = QInputDialog.getItem(self, self.ui("Excel-Zeilen zuordnen"), self.ui("Excel-Spalte mit der Kennung"), headings, editable=False)
             if not ok:
                 return
-            label, ok = QInputDialog.getText(self, "Kennung im Scan",
-                                             "Gedruckte Bezeichnung vor der Kennung, z. B. Kundennummer. Leer sucht im ganzen Scan.",
+            label, ok = QInputDialog.getText(self, self.ui("Kennung im Scan"),
+                                             self.ui("Gedruckte Bezeichnung vor der Kennung, z. B. Kundennummer. Leer sucht im ganzen Scan."),
                                              text=key)
             if not ok:
                 return
-            mapping, ok = QInputDialog.getItem(self, "Feldzuordnung", "Excel-Formularvorlage",
+            mapping, ok = QInputDialog.getItem(self, self.ui("Feldzuordnung"), self.ui("Excel-Formularvorlage"),
                                                sorted(mappings, key=str.casefold), editable=False)
             if not ok:
                 return
-            folder = QFileDialog.getExistingDirectory(self, "Zielordner für ausgefüllte PDF-Kopien wählen", str(workbook.parent))
+            folder = QFileDialog.getExistingDirectory(self, self.ui("Zielordner für ausgefüllte PDF-Kopien wählen"), str(workbook.parent))
             if folder:
                 if configure_job:
                     if Path(folder).resolve() == self.inbox_folder().resolve():
@@ -6992,15 +7042,14 @@ class Window(QMainWindow):
             elif any(by_key[item] > 1 for item in identifiers):
                 duplicate_notes[path] = "Mögliche Dublette · Kennung mehrfach im Stapel"
         dialog = QDialog(self)
-        dialog.setWindowTitle("Zuordnung von Scans und Excel-Zeilen prüfen")
+        dialog.setWindowTitle(self.ui("Zuordnung von Scans und Excel-Zeilen prüfen"))
         dialog.resize(960, 520)
         layout = QVBoxLayout(dialog)
-        info = QLabel(f"Schlüsselspalte: {key}. Eindeutige Zuordnungen sind vorausgewählt. "
-                      "Prüfe unklare Treffer und Dubletten vor der Freigabe. Dubletten sind zunächst abgewählt.")
+        info = QLabel(self.ui_format('Schlüsselspalte: {0}. Eindeutige Zuordnungen sind vorausgewählt. Prüfe unklare Treffer und Dubletten vor der Freigabe. Dubletten sind zunächst abgewählt.', key))
         info.setWordWrap(True)
         layout.addWidget(info)
         table = QTableWidget(len(paths), 6)
-        table.setHorizontalHeaderLabels(["Speichern", "Scan", "Gelesene Kennung", "Excel-Zeile", "Ergebnis", "Zieldatei"])
+        table.setHorizontalHeaderLabels([self.ui("Speichern"), self.ui("Scan"), self.ui("Gelesene Kennung"), self.ui("Excel-Zeile"), self.ui("Ergebnis"), self.ui("Zieldatei")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.horizontalHeader().setStretchLastSection(True)
@@ -7009,11 +7058,11 @@ class Window(QMainWindow):
         notice.setWordWrap(True)
         layout.addWidget(notice)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        manual = buttons.addButton("Excel-Zeile zuordnen", QDialogButtonBox.ButtonRole.ActionRole)
-        preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
-        earlier = buttons.addButton("Bisherige PDF öffnen", QDialogButtonBox.ButtonRole.ActionRole)
-        export = buttons.addButton("Zuordnungsprotokoll speichern", QDialogButtonBox.ButtonRole.ActionRole)
-        save = buttons.addButton("Auswahl als PDF-Kopien speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        manual = buttons.addButton(self.ui("Excel-Zeile zuordnen"), QDialogButtonBox.ButtonRole.ActionRole)
+        preview = buttons.addButton(self.ui("Ausgefüllte PDF ansehen"), QDialogButtonBox.ButtonRole.ActionRole)
+        earlier = buttons.addButton(self.ui("Bisherige PDF öffnen"), QDialogButtonBox.ButtonRole.ActionRole)
+        export = buttons.addButton(self.ui("Zuordnungsprotokoll speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton(self.ui("Auswahl als PDF-Kopien speichern"), QDialogButtonBox.ButtonRole.AcceptRole)
         layout.addWidget(buttons)
 
         def set_row(row, message, checked=False):
@@ -7024,8 +7073,9 @@ class Window(QMainWindow):
                 mark.setFlags(mark.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
             mark.setCheckState(Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
             table.setItem(row, 0, mark)
+            message = self.ui(message)
             if path in duplicate_notes:
-                message = f"{duplicate_notes[path]} · {message}"
+                message = f"{self.ui(duplicate_notes[path])} · {message}"
             for column, value in enumerate((path.name, ", ".join(details[path][1]), str(plan[0]) if plan else "",
                                              message, plan[1] if plan else ""), 1):
                 item = QTableWidgetItem(value)
@@ -7083,9 +7133,9 @@ class Window(QMainWindow):
                     method = "Von Hand bestätigt" if path in manual_paths else "Automatisch erkannt"
                 entries.append((str(path), ", ".join(details[path][1]), str(workbook), sheet,
                                 f"{rows.columns[key]}{line}" if plan else "",
-                                row_values[line].get(key, "") if plan else "", method,
-                                str(plan[2]) if plan else "", status, reason))
-            name, _ = QFileDialog.getSaveFileName(parent, "Zuordnungsprotokoll speichern",
+                                row_values[line].get(key, "") if plan else "", self.ui(method),
+                                str(plan[2]) if plan else "", self.ui(status), self.ui(reason)))
+            name, _ = QFileDialog.getSaveFileName(parent, self.ui("Zuordnungsprotokoll speichern"),
                                                  str(folder / "Zuordnungsprotokoll.xlsx"), "Excel (*.xlsx)")
             if not name:
                 return
@@ -7094,8 +7144,8 @@ class Window(QMainWindow):
                     raise ValueError("Wähle einen anderen Namen, damit die Excel-Quelldatei erhalten bleibt.")
                 self.save_workbook(name, lambda target: export_linked_sheet(
                     entries, target, "Zuordnung",
-                    ("Originalscan", "Gelesene Kennung", "Excel-Datei", "Tabellenblatt", "Excel-Zelle",
-                     "Excel-Kennung", "Zuordnung", "Ziel-PDF", "Status", "Grund"),
+                    self.ui_columns(("Originalscan", "Gelesene Kennung", "Excel-Datei", "Tabellenblatt", "Excel-Zelle",
+                                     "Excel-Kennung", "Zuordnung", "Ziel-PDF", "Status", "Grund")),
                     (42, 20, 42, 20, 15, 20, 24, 42, 26, 58), source_column=1))
             except Exception as exc:
                 self.error(exc)
@@ -7133,7 +7183,7 @@ class Window(QMainWindow):
             if not plans:
                 return
             choice = QDialog(dialog)
-            choice.setWindowTitle(f"Excel-Zeile zuordnen · {path.name}")
+            choice.setWindowTitle(self.ui_format('Excel-Zeile zuordnen · {0}', path.name))
             choice.resize(820, 420)
             choice_layout = QVBoxLayout(choice)
             panels = QHBoxLayout()
@@ -7141,11 +7191,11 @@ class Window(QMainWindow):
             scan_panel, excel_panel = QVBoxLayout(), QVBoxLayout()
             panels.addLayout(scan_panel, 1)
             panels.addLayout(excel_panel, 1)
-            scan_panel.addWidget(QLabel("Textausschnitt aus dem Scan"))
+            scan_panel.addWidget(QLabel(self.ui("Textausschnitt aus dem Scan")))
             excerpt = QPlainTextEdit(excerpts.get(path) or "Kein lesbarer Ausschnitt verfügbar.")
             excerpt.setReadOnly(True)
             scan_panel.addWidget(excerpt)
-            excel_panel.addWidget(QLabel(f"Excel · {sheet}"))
+            excel_panel.addWidget(QLabel(self.ui_format('Excel · {0}', sheet)))
             candidates = QComboBox()
             excel_panel.addWidget(candidates)
             values = QPlainTextEdit()
@@ -7168,7 +7218,7 @@ class Window(QMainWindow):
             candidates.currentIndexChanged.connect(show_values)
             show_values()
             actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-            actions.addButton("Zuordnung übernehmen", QDialogButtonBox.ButtonRole.AcceptRole)
+            actions.addButton(self.ui("Zuordnung übernehmen"), QDialogButtonBox.ButtonRole.AcceptRole)
             actions.accepted.connect(choice.accept)
             actions.rejected.connect(choice.reject)
             choice_layout.addWidget(actions)
@@ -7261,13 +7311,13 @@ class Window(QMainWindow):
 
         saved = self.inspect_pdfs(selected, "Ausgefüllte Scan-Kopien werden gespeichert …", store)
         report = QMessageBox(self)
-        report.setWindowTitle("Scans mit Excel-Zeilen füllen")
-        report.setText(f"{sum(not issue for _, issue in saved)} von {len(selected)} gewählten PDF-Kopien gespeichert.")
+        report.setWindowTitle(self.ui("Scans mit Excel-Zeilen füllen"))
+        report.setText(self.ui_format('{0} von {1} gewählten PDF-Kopien gespeichert.', sum((not issue for _, issue in saved)), len(selected)))
         failures = [f"{path.name}: {issue}" for path, issue in saved if issue] + progress_errors
         if failures:
             report.setDetailedText("\n".join(failures))
         report.addButton(QMessageBox.StandardButton.Close)
-        export_result = report.addButton("Zuordnungsprotokoll speichern", QMessageBox.ButtonRole.ActionRole)
+        export_result = report.addButton(self.ui("Zuordnungsprotokoll speichern"), QMessageBox.ButtonRole.ActionRole)
         report.exec()
         if report.clickedButton() is export_result:
             export_assignments(self, saved)
@@ -7277,13 +7327,13 @@ class Window(QMainWindow):
             templates = scan_form_templates(self.favorite_settings)
             if not templates:
                 raise ValueError("Speichere zuerst mindestens eine Scan-Feldvorlage.")
-            names, _ = QFileDialog.getOpenFileNames(self, "Scans für Feldvorlagen auswählen", "", "PDF (*.pdf)")
+            names, _ = QFileDialog.getOpenFileNames(self, self.ui("Scans für Feldvorlagen auswählen"), "", "PDF (*.pdf)")
             if not names:
                 return
             paths = list(dict.fromkeys(Path(name).resolve() for name in names))
             if len(paths) > 60:
                 raise ValueError("Bitte höchstens 60 Scans pro Stapel auswählen.")
-            folder = QFileDialog.getExistingDirectory(self, "Zielordner für ausfüllbare Scan-Kopien wählen",
+            folder = QFileDialog.getExistingDirectory(self, self.ui("Zielordner für ausfüllbare Scan-Kopien wählen"),
                                                        str(paths[0].parent))
             if folder:
                 self.review_scan_field_batch(paths, Path(folder), templates)
@@ -7314,15 +7364,15 @@ class Window(QMainWindow):
         if len(results) != len(paths):
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Feldvorlagen im Scan-Stapel prüfen")
+        dialog.setWindowTitle(self.ui("Feldvorlagen im Scan-Stapel prüfen"))
         dialog.resize(900, 500)
         layout = QVBoxLayout(dialog)
-        info = QLabel("Nur eindeutige Treffer sind vorausgewählt. Mit Doppelklick prüfst du die Positionen auf der PDF "
-                      "oder wählst bei einem unklaren Treffer eine Vorlage.")
+        info = QLabel(self.ui("Nur eindeutige Treffer sind vorausgewählt. Mit Doppelklick prüfst du die Positionen auf der PDF "
+                      "oder wählst bei einem unklaren Treffer eine Vorlage."))
         info.setWordWrap(True)
         layout.addWidget(info)
         table = QTableWidget(len(paths), 5)
-        table.setHorizontalHeaderLabels(["Speichern", "Scan", "Vorlage", "Ergebnis", "Zieldatei"])
+        table.setHorizontalHeaderLabels([self.ui("Speichern"), self.ui("Scan"), self.ui("Vorlage"), self.ui("Ergebnis"), self.ui("Zieldatei")])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.horizontalHeader().setStretchLastSection(True)
@@ -7330,8 +7380,8 @@ class Window(QMainWindow):
             table.setColumnWidth(column, width)
         layout.addWidget(table)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        preview = buttons.addButton("Vorlage wählen oder prüfen", QDialogButtonBox.ButtonRole.ActionRole)
-        save = buttons.addButton("Auswahl als PDF-Kopien speichern", QDialogButtonBox.ButtonRole.AcceptRole)
+        preview = buttons.addButton(self.ui("Vorlage wählen oder prüfen"), QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton(self.ui("Auswahl als PDF-Kopien speichern"), QDialogButtonBox.ButtonRole.AcceptRole)
         layout.addWidget(buttons)
         chosen = {}
 
@@ -7373,7 +7423,7 @@ class Window(QMainWindow):
                 return
             options = list(dict.fromkeys([*matches, *sorted(templates, key=str.casefold)]))
             name, initial, manual = chosen.get(path, (options[0], None, False))
-            name, ok = QInputDialog.getItem(dialog, "Feldvorlage für Scan", path.name, options,
+            name, ok = QInputDialog.getItem(dialog, self.ui("Feldvorlage für Scan"), path.name, options,
                                            current=options.index(name), editable=False)
             if not ok:
                 return
@@ -7430,8 +7480,8 @@ class Window(QMainWindow):
         selected_paths = selected()
         saved = self.inspect_pdfs(selected_paths, "Ausfüllbare Scan-Kopien werden gespeichert …", store)
         report = QMessageBox(self)
-        report.setWindowTitle("Scan-Stapel mit Feldvorlagen")
-        report.setText(f"{sum(not issue for _, issue in saved)} von {len(selected_paths)} gewählten Kopien gespeichert.")
+        report.setWindowTitle(self.ui("Scan-Stapel mit Feldvorlagen"))
+        report.setText(self.ui_format('{0} von {1} gewählten Kopien gespeichert.', sum((not issue for _, issue in saved)), len(selected_paths)))
         failures = [f"{path.name}: {issue}" for path, issue in saved if issue]
         if failures:
             report.setDetailedText("\n".join(failures))
@@ -7445,7 +7495,7 @@ class Window(QMainWindow):
             templates = scan_form_templates(self.favorite_settings)
             if not templates:
                 raise ValueError("Speichere zuerst eine Feldvorlage und öffne den passenden Referenzscan.")
-            name, ok = QInputDialog.getItem(self, "Ausrichtpunkte speichern", "Feldvorlage zum Referenzscan",
+            name, ok = QInputDialog.getItem(self, self.ui("Ausrichtpunkte speichern"), self.ui("Feldvorlage zum Referenzscan"),
                                            sorted(templates, key=str.casefold), editable=False)
             if not ok:
                 return
@@ -7460,7 +7510,7 @@ class Window(QMainWindow):
             self.favorite_settings.sync()
             if self.favorite_settings.status() != QSettings.Status.NoError:
                 raise OSError("Die Ausrichtpunkte konnten nicht dauerhaft gespeichert werden.")
-            self.statusBar().showMessage("Ausrichtpunkte der Feldvorlage gespeichert.", 8500)
+            self.statusBar().showMessage(self.ui("Ausrichtpunkte der Feldvorlage gespeichert."), 8500)
         except Exception as exc:
             self.error(exc)
 
@@ -7504,7 +7554,7 @@ class Window(QMainWindow):
         split.addWidget(scroll)
         split.setStretchFactor(1, 4)
         layout.addWidget(split, 1)
-        required = QCheckBox("Ausgewähltes Feld ist ein Pflichtfeld")
+        required = QCheckBox(self.ui("Ausgewähltes Feld ist ein Pflichtfeld"))
         layout.addWidget(required)
         required.setVisible(not capture)
         status = QLabel()
@@ -7516,7 +7566,7 @@ class Window(QMainWindow):
                                   QDialogButtonBox.ButtonRole.ActionRole)
         manual = buttons.addButton("Zwei Punkte setzen" if capture else "Zwei Punkte von Hand setzen",
                                    QDialogButtonBox.ButtonRole.ActionRole)
-        auto = buttons.addButton("Automatisch ausrichten", QDialogButtonBox.ButtonRole.ActionRole)
+        auto = buttons.addButton(self.ui("Automatisch ausrichten"), QDialogButtonBox.ButtonRole.ActionRole)
         auto.setVisible(not capture)
         layout.addWidget(buttons)
         reference = {field["page"]: field["anchors"] for field in template if "anchors" in field}
@@ -7535,7 +7585,7 @@ class Window(QMainWindow):
                     raw = bytes.fromhex(current[index]["patch"])
                     patch = QImage(raw, 11, 11, 11, QImage.Format.Format_Grayscale8).copy()
                     sample.setPixmap(QPixmap.fromImage(patch).scaled(88, 88))
-                    sample.setToolTip(f"Referenz für Punkt {index + 1}")
+                    sample.setToolTip(self.ui_format('Referenz für Punkt {0}', index + 1))
 
         def align(points, boxes=None):
             index = image.page
@@ -7596,7 +7646,7 @@ class Window(QMainWindow):
                         finish_pick()
                         status.setText(messages[index])
                     else:
-                        status.setText("Klicke jetzt auf Punkt 2.")
+                        status.setText(self.ui("Klicke jetzt auf Punkt 2."))
                     image.anchors = points[:]
                     image.update()
                 except ValueError as exc:
@@ -7604,7 +7654,7 @@ class Window(QMainWindow):
                         points.pop()
                         if capture:
                             patches.pop()
-                    status.setText(f"{exc} Setze den Punkt erneut.")
+                    status.setText(self.ui_format('{0} Setze den Punkt erneut.', exc))
 
             image.pick = picked
             image.setCursor(Qt.CursorShape.CrossCursor)
@@ -7689,7 +7739,7 @@ class Window(QMainWindow):
             candidates = [(page.number, rect, kind) for page in session.doc
                           for kind, rect in form_candidates(page)]
             if not candidates:
-                QMessageBox.information(self, "Formular-Assistent", "Keine passenden Feldumrisse gefunden.")
+                QMessageBox.information(self, self.ui("Formular-Assistent"), self.ui("Keine passenden Feldumrisse gefunden."))
                 return
             review = self.review_candidates("Formular-Assistent", session.doc, candidates,
                                             "Prüfe Kästchen und Linien in der Vorschau und markiere die gewünschten Felder.")
@@ -7711,10 +7761,10 @@ class Window(QMainWindow):
             raise ValueError("Bitte einen größeren Bereich für das Formularfeld aufziehen.")
         types = {"Textfeld": pdf.PDF_WIDGET_TYPE_TEXT, "Kontrollkästchen": pdf.PDF_WIDGET_TYPE_CHECKBOX,
                  "Dropdown": pdf.PDF_WIDGET_TYPE_COMBOBOX}
-        kind, ok = QInputDialog.getItem(self, "Formularfeld erstellen", "Feldtyp", list(types), editable=False)
+        kind, ok = QInputDialog.getItem(self, self.ui("Formularfeld erstellen"), self.ui("Feldtyp"), list(types), editable=False)
         if not ok:
             return False
-        name, ok = QInputDialog.getText(self, "Formularfeld erstellen", "Eindeutiger Feldname")
+        name, ok = QInputDialog.getText(self, self.ui("Formularfeld erstellen"), self.ui("Eindeutiger Feldname"))
         if not ok or not name.strip():
             return False
         session = self.current
@@ -7747,23 +7797,23 @@ class Window(QMainWindow):
         form = QFormLayout(dialog)
         value = QPlainTextEdit(target["text"] if target else "")
         value.setMaximumHeight(140)
-        form.addRow("Text", value)
+        form.addRow(self.ui("Text"), value)
         families = {"Helvetica": "helv", "Helvetica fett": "hebo", "Times": "tiro", "Courier": "cour"}
         family = QComboBox()
         family.addItems(families)
-        form.addRow("Schrift", family)
+        form.addRow(self.ui("Schrift"), family)
         size = QSpinBox()
         size.setRange(5, 96)
         size.setValue(round(target["size"]) if target else 12)
-        form.addRow("Größe", size)
+        form.addRow(self.ui("Größe"), size)
         colors = {"Schwarz": (0, 0, 0), "Blau": (0.06, 0.34, 0.66), "Rot": (0.7, 0.08, 0.13)}
         color = QComboBox()
         color.addItems(colors)
-        form.addRow("Farbe", color)
+        form.addRow(self.ui("Farbe"), color)
         dimensions = []
         custom = None
         if target is None or "paragraph" in target:
-            custom = QCheckBox("Position und Textrahmen in Millimetern einstellen")
+            custom = QCheckBox(self.ui("Position und Textrahmen in Millimetern einstellen"))
             form.addRow(custom)
             visible = page.rect * page.derotation_matrix
             box = pdf.Rect(target["bbox"]) if target else pdf.Rect(point, visible.br - pdf.Point(10, 10))
@@ -7824,11 +7874,11 @@ class Window(QMainWindow):
         if not session:
             return
         if session.doc.needs_pass:
-            self.error("Office-Export ist für passwortgeschützte PDFs deaktiviert.")
+            self.error(self.ui("Office-Export ist für passwortgeschützte PDFs deaktiviert."))
             return
         extension = ".xlsx" if excel else ".docx"
         label = "Excel" if excel else "Word"
-        target, _ = QFileDialog.getSaveFileName(self, f"Nach {label} exportieren",
+        target, _ = QFileDialog.getSaveFileName(self, self.ui_format('Nach {0} exportieren', label),
                                                 str(session.path.with_suffix(extension)), f"{label} (*{extension})")
         if not target:
             return
@@ -7839,7 +7889,7 @@ class Window(QMainWindow):
             writer = export_excel if excel else export_word_layout if layout else export_word
             writer(session.doc, temp)
             os.replace(temp, path)
-            self.statusBar().showMessage(f"Export gespeichert: {path.name}", 6500)
+            self.statusBar().showMessage(self.ui_format('Export gespeichert: {0}', path.name), 6500)
         except Exception as exc:
             self.error(exc)
         finally:
@@ -7848,7 +7898,7 @@ class Window(QMainWindow):
     def standards_source(self):
         session = self.current
         if session and session.doc.needs_pass:
-            self.error("Für diese Kopie wird eine PDF ohne Passwortschutz benötigt.")
+            self.error(self.ui("Für diese Kopie wird eine PDF ohne Passwortschutz benötigt."))
             return None
         return session
 
@@ -7890,19 +7940,19 @@ class Window(QMainWindow):
                     if not self.preview_send(check, summary, "PDF/A mit Originaltext prüfen"):
                         return
                 os.replace(candidate, target)
-            self.statusBar().showMessage(f"Geprüfte PDF/A-Kopie gespeichert: {target.name}", 9000)
+            self.statusBar().showMessage(self.ui_format('Geprüfte PDF/A-Kopie gespeichert: {0}', target.name), 9000)
         except Exception as exc:
             self.error(exc)
 
     def choose_archive_options(self, suggested, run_ocr):
         options = QDialog(self)
-        options.setWindowTitle("Durchsuchbare PDF/A-Archivkopie")
+        options.setWindowTitle(self.ui("Durchsuchbare PDF/A-Archivkopie"))
         form = QFormLayout(options)
-        description = QLabel("Das Seitenbild und vorhandener Suchtext werden übernommen. Ausfüllbare Felder, Anhänge "
-                             "und Signaturen bleiben in der ursprünglichen Datei. veraPDF prüft die Kopie vor dem Speichern.")
+        description = QLabel(self.ui("Das Seitenbild und vorhandener Suchtext werden übernommen. Ausfüllbare Felder, Anhänge "
+                             "und Signaturen bleiben in der ursprünglichen Datei. veraPDF prüft die Kopie vor dem Speichern."))
         description.setWordWrap(True)
         form.addRow(description)
-        recognize = QCheckBox("Seiten ohne Text per OCR erkennen (Deutsch und Englisch)")
+        recognize = QCheckBox(self.ui("Seiten ohne Text per OCR erkennen (Deutsch und Englisch)"))
         recognize.setChecked(run_ocr)
         form.addRow(recognize)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -7911,7 +7961,7 @@ class Window(QMainWindow):
         form.addRow(buttons)
         if options.exec() != QDialog.DialogCode.Accepted:
             return
-        selected, _ = QFileDialog.getSaveFileName(self, "PDF/A-Archivkopie speichern", str(suggested), "PDF-Dateien (*.pdf)")
+        selected, _ = QFileDialog.getSaveFileName(self, self.ui("PDF/A-Archivkopie speichern"), str(suggested), "PDF-Dateien (*.pdf)")
         if not selected:
             return
         return Path(selected if selected.lower().endswith(".pdf") else selected + ".pdf"), recognize.isChecked()
@@ -7922,7 +7972,7 @@ class Window(QMainWindow):
             return
         target, recognize = choices
         if any(target.resolve() == session.path.resolve() for session in self.sessions):
-            self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+            self.error(self.ui("Bitte einen anderen Namen als den einer geöffneten PDF wählen."))
             return
         tools = self.standard_tools()
         if tools is None:
@@ -7937,7 +7987,7 @@ class Window(QMainWindow):
                     candidate.rename(target)
                 else:
                     os.replace(candidate, target)
-            self.statusBar().showMessage(f"Geprüfte Archivkopie gespeichert: {target.name}", 9000)
+            self.statusBar().showMessage(self.ui_format('Geprüfte Archivkopie gespeichert: {0}', target.name), 9000)
             return target
         except Exception as exc:
             self.error(exc)
@@ -7977,11 +8027,11 @@ class Window(QMainWindow):
         java = settings.value("standards/java", "", str) or str(base / "Java" / "bin" / "java.exe")
         jar = settings.value("standards/jar", "", str) or (str(jars[0]) if jars else "")
         if not Path(java).is_file():
-            java, _ = QFileDialog.getOpenFileName(self, "Java für veraPDF auswählen", "", "Java (java.exe)")
+            java, _ = QFileDialog.getOpenFileName(self, self.ui("Java für veraPDF auswählen"), "", "Java (java.exe)")
         if not java:
             return
         if not jar or not Path(jar).is_file():
-            jar, _ = QFileDialog.getOpenFileName(self, "veraPDF-CLI aus dem Ordner bin auswählen", "",
+            jar, _ = QFileDialog.getOpenFileName(self, self.ui("veraPDF-CLI aus dem Ordner bin auswählen"), "",
                                                  "veraPDF CLI (*.jar)")
         if not jar:
             return
@@ -7990,11 +8040,11 @@ class Window(QMainWindow):
         return java, jar
 
     def standard_check(self):
-        label, ok = QInputDialog.getItem(self, "PDF-Norm prüfen", "Prüfprofil",
+        label, ok = QInputDialog.getItem(self, self.ui("PDF-Norm prüfen"), self.ui("Prüfprofil"),
                                           ["PDF/A-2b (Archiv)", "PDF/UA-1 (Barrierefreiheit)"], editable=False)
         if not ok:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF prüfen", "", "PDF-Dateien (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, self.ui("Gespeicherte PDF prüfen"), "", "PDF-Dateien (*.pdf)")
         if not path:
             return
         tools = self.standard_tools()
@@ -8012,7 +8062,7 @@ class Window(QMainWindow):
         result.setWindowTitle(label)
         result.setText("veraPDF-Prüfung bestanden." if passed else "veraPDF hat Abweichungen gefunden.")
         if label.startswith("PDF/UA"):
-            result.setInformativeText("Lesereihenfolge und Qualität von Bildbeschreibungen zusätzlich von Hand prüfen.")
+            result.setInformativeText(self.ui("Lesereihenfolge und Qualität von Bildbeschreibungen zusätzlich von Hand prüfen."))
         if details:
             result.setDetailedText("\n".join(details))
         result.exec()
@@ -8024,18 +8074,18 @@ class Window(QMainWindow):
         try:
             pages = [accessibility_blocks(page) for page in session.doc]
             dialog = QDialog(self)
-            dialog.setWindowTitle("Lesereihenfolge und Bildbeschreibungen")
+            dialog.setWindowTitle(self.ui("Lesereihenfolge und Bildbeschreibungen"))
             dialog.resize(820, 600)
             layout = QVBoxLayout(dialog)
-            info = QLabel("Die Kopie behält das Seitenbild und erhält eine separate Lesestruktur. "
-                          "Formulare und Links werden als Seitenbild übernommen. Für Scans zuerst Texterkennung ausführen.")
+            info = QLabel(self.ui("Die Kopie behält das Seitenbild und erhält eine separate Lesestruktur. "
+                          "Formulare und Links werden als Seitenbild übernommen. Für Scans zuerst Texterkennung ausführen."))
             info.setWordWrap(True)
             layout.addWidget(info)
             form = QFormLayout()
             title = QLineEdit(session.doc.metadata.get("title") or session.path.stem)
             language = QLineEdit("de-DE")
-            form.addRow("Dokumenttitel", title)
-            form.addRow("Sprache", language)
+            form.addRow(self.ui("Dokumenttitel"), title)
+            form.addRow(self.ui("Sprache"), language)
             layout.addLayout(form)
             selector = QComboBox()
             selector.addItems([f"Seite {index + 1}" for index in range(len(pages))])
@@ -8067,7 +8117,7 @@ class Window(QMainWindow):
                 blocks = pages[selector.currentIndex()]
                 role, rect, text = blocks[row]
                 if role in ("Figure", "Artifact"):
-                    choice, accepted = QInputDialog.getItem(dialog, "Bild", "Funktion", ["Bild beschreiben", "Dekorativ"],
+                    choice, accepted = QInputDialog.getItem(dialog, self.ui("Bild"), self.ui("Funktion"), ["Bild beschreiben", "Dekorativ"],
                                                               int(role == "Artifact"), editable=False)
                     if not accepted:
                         return
@@ -8078,7 +8128,7 @@ class Window(QMainWindow):
                         if accepted:
                             blocks[row] = ("Figure", rect, value.strip())
                 else:
-                    choice, accepted = QInputDialog.getItem(dialog, "Textstruktur", "Rolle", list(roles),
+                    choice, accepted = QInputDialog.getItem(dialog, self.ui("Textstruktur"), self.ui("Rolle"), list(roles),
                                                               list(roles.values()).index(role), editable=False)
                     if accepted:
                         blocks[row] = (roles[choice], rect, text)
@@ -8097,10 +8147,10 @@ class Window(QMainWindow):
             layout.addWidget(buttons)
             while dialog.exec() == QDialog.DialogCode.Accepted:
                 if not title.text().strip() or not re.fullmatch(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*", language.text().strip()):
-                    self.error("Bitte Titel und gültige Sprachkennung wie de-DE angeben.")
+                    self.error(self.ui("Bitte Titel und gültige Sprachkennung wie de-DE angeben."))
                     continue
                 if any(role == "Figure" and not text for blocks in pages for role, _, text in blocks):
-                    self.error("Bitte jedem relevanten Bild eine Beschreibung geben oder das Bild als dekorativ markieren.")
+                    self.error(self.ui("Bitte jedem relevanten Bild eine Beschreibung geben oder das Bild als dekorativ markieren."))
                     continue
                 target = self.output_path(" - Lesefassung", "PDF mit Lesestruktur speichern")
                 if target:
@@ -8110,25 +8160,25 @@ class Window(QMainWindow):
                         font = Path(os.environ["WINDIR"]) / "Fonts/arial.ttf"
                         export_accessible(session.doc, candidate, included, title.text().strip(), language.text().strip(), font)
                         os.replace(candidate, target)
-                    self.statusBar().showMessage(f"Lesefassung gespeichert: {target.name}. PDF/UA separat prüfen.", 9000)
+                    self.statusBar().showMessage(self.ui_format('Lesefassung gespeichert: {0}. PDF/UA separat prüfen.', target.name), 9000)
                 return
         except Exception as exc:
             self.error(exc)
 
     def sign_document(self):
         folder = str(self.current.path.parent) if self.current else ""
-        source, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF zum Signieren auswählen", folder,
+        source, _ = QFileDialog.getOpenFileName(self, self.ui("Gespeicherte PDF zum Signieren auswählen"), folder,
                                                 "PDF-Dateien (*.pdf)")
         if not source:
             return
-        certificate, _ = QFileDialog.getOpenFileName(self, "Zertifikat mit privatem Schlüssel auswählen", "",
+        certificate, _ = QFileDialog.getOpenFileName(self, self.ui("Zertifikat mit privatem Schlüssel auswählen"), "",
                                                      "PKCS#12 (*.pfx *.p12)")
         if not certificate:
             return
-        password, ok = QInputDialog.getText(self, "Zertifikat entsperren", "Passwort", QLineEdit.EchoMode.Password)
+        password, ok = QInputDialog.getText(self, self.ui("Zertifikat entsperren"), self.ui("Passwort"), QLineEdit.EchoMode.Password)
         if not ok:
             return
-        target, _ = QFileDialog.getSaveFileName(self, "Signierte PDF speichern",
+        target, _ = QFileDialog.getSaveFileName(self, self.ui("Signierte PDF speichern"),
                                                 str(Path(source).with_stem(Path(source).stem + " - signiert")),
                                                 "PDF-Dateien (*.pdf)")
         if not target:
@@ -8136,22 +8186,22 @@ class Window(QMainWindow):
         target = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
         if target.resolve() == Path(source).resolve() or any(target.resolve() == session.path.resolve()
                                                             for session in self.sessions):
-            self.error("Bitte die signierte Kopie unter einem anderen Namen speichern.")
+            self.error(self.ui("Bitte die signierte Kopie unter einem anderen Namen speichern."))
             return
         try:
             sign_pdf(source, target, certificate, password)
-            self.statusBar().showMessage(f"Signierte Kopie gespeichert: {target.name}", 8000)
+            self.statusBar().showMessage(self.ui_format('Signierte Kopie gespeichert: {0}', target.name), 8000)
             self.open_path(str(target))
         except Exception as exc:
             self.error(exc)
 
     def check_signatures(self):
         folder = str(self.current.path.parent) if self.current else ""
-        source, _ = QFileDialog.getOpenFileName(self, "Gespeicherte PDF zur Signaturprüfung auswählen", folder,
+        source, _ = QFileDialog.getOpenFileName(self, self.ui("Gespeicherte PDF zur Signaturprüfung auswählen"), folder,
                                                 "PDF-Dateien (*.pdf)")
         if not source:
             return
-        trust, _ = QFileDialog.getOpenFileName(self, "Optional: Vertrauenszertifikat wählen oder Abbrechen", "",
+        trust, _ = QFileDialog.getOpenFileName(self, self.ui("Optional: Vertrauenszertifikat wählen oder Abbrechen"), "",
                                                "Zertifikate (*.crt *.cer *.pem *.der)")
         try:
             results = verify_pdf(source, trust or None)
@@ -8159,9 +8209,9 @@ class Window(QMainWindow):
             self.error(exc)
             return
         report = QMessageBox(self)
-        report.setWindowTitle("Digitale Signaturen prüfen")
+        report.setWindowTitle(self.ui("Digitale Signaturen prüfen"))
         if not results:
-            report.setText("Keine Dokumentensignatur gefunden.")
+            report.setText(self.ui("Keine Dokumentensignatur gefunden."))
         else:
             lines = []
             for name, intact, trusted, valid, _ in results:
@@ -8170,37 +8220,37 @@ class Window(QMainWindow):
                                           "Änderungen oder Prüffehler erkannt"))
             report.setText("\n".join(lines))
             report.setDetailedText("\n\n".join(details for *_, details in results))
-        report.setInformativeText("Die Prüfung läuft lokal. Sperrlisten werden nicht aus dem Internet geladen.")
+        report.setInformativeText(self.ui("Die Prüfung läuft lokal. Sperrlisten werden nicht aus dem Internet geladen."))
         report.exec()
 
 
     def protect_copy(self):
         if not self.current:
             return
-        password, ok = QInputDialog.getText(self, "PDF mit Passwort speichern", "Passwort", QLineEdit.EchoMode.Password)
+        password, ok = QInputDialog.getText(self, self.ui("PDF mit Passwort speichern"), self.ui("Passwort"), QLineEdit.EchoMode.Password)
         if not ok or not password:
             return
-        confirm, ok = QInputDialog.getText(self, "Passwort wiederholen", "Passwort", QLineEdit.EchoMode.Password)
+        confirm, ok = QInputDialog.getText(self, self.ui("Passwort wiederholen"), self.ui("Passwort"), QLineEdit.EchoMode.Password)
         if not ok:
             return
         if confirm != password or len(password.encode("utf-8")) > 40:
-            self.error("Die Passwörter müssen übereinstimmen und dürfen höchstens 40 UTF-8-Bytes lang sein.")
+            self.error(self.ui("Die Passwörter müssen übereinstimmen und dürfen höchstens 40 UTF-8-Bytes lang sein."))
             return
         target = self.output_path(" - geschützt", "Passwortgeschützte Kopie speichern")
         if target:
             try:
                 save_copy(self.current.doc, target, encryption=pdf.PDF_ENCRYPT_AES_256,
                           owner_pw=password, user_pw=password, password=password)
-                self.statusBar().showMessage(f"Passwortgeschützte Kopie gespeichert: {target.name}", 6500)
+                self.statusBar().showMessage(self.ui_format('Passwortgeschützte Kopie gespeichert: {0}', target.name), 6500)
             except Exception as exc:
                 self.error(exc)
 
     def batch_process(self):
-        paths, _ = QFileDialog.getOpenFileNames(self, "PDFs für Stapelverarbeitung auswählen", "", "PDF-Dateien (*.pdf)")
+        paths, _ = QFileDialog.getOpenFileNames(self, self.ui("PDFs für Stapelverarbeitung auswählen"), "", "PDF-Dateien (*.pdf)")
         if not paths:
             return
         actions = ["Scans verkleinern", "Alle Seiten nach rechts drehen", "OCR für alle Scan-Seiten"]
-        action, ok = QInputDialog.getItem(self, "Stapelverarbeitung", "Aufgabe", actions, editable=False)
+        action, ok = QInputDialog.getItem(self, self.ui("Stapelverarbeitung"), self.ui("Aufgabe"), actions, editable=False)
         if not ok:
             return
         self.run_batch(paths, (("compress",), ("rotate",), ("ocr",))[actions.index(action)])
@@ -8209,23 +8259,23 @@ class Window(QMainWindow):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         profiles = self.read_batch_profiles(settings)
         dialog = QDialog(self)
-        dialog.setWindowTitle("Gespeicherte Abläufe")
+        dialog.setWindowTitle(self.ui("Gespeicherte Abläufe"))
         form = QFormLayout(dialog)
         existing = QComboBox()
         existing.addItem("Neuer Ablauf")
         existing.addItems(sorted(profiles))
-        form.addRow("Vorlage", existing)
+        form.addRow(self.ui("Vorlage"), existing)
         name = QLineEdit()
-        form.addRow("Name", name)
+        form.addRow(self.ui("Name"), name)
         steps = {key: QCheckBox(label) for key, label in
                  (("ocr", "Texterkennung (Deutsch und Englisch)"),
                   ("rotate", "Alle Seiten nach rechts drehen"), ("compress", "Scans verkleinern"))}
         for check in steps.values():
             form.addRow(check)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
-        save = buttons.addButton("Vorlage speichern", QDialogButtonBox.ButtonRole.ActionRole)
-        run = buttons.addButton("Dateien auswählen und starten", QDialogButtonBox.ButtonRole.AcceptRole)
-        remove = buttons.addButton("Vorlage entfernen", QDialogButtonBox.ButtonRole.ActionRole)
+        save = buttons.addButton(self.ui("Vorlage speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+        run = buttons.addButton(self.ui("Dateien auswählen und starten"), QDialogButtonBox.ButtonRole.AcceptRole)
+        remove = buttons.addButton(self.ui("Vorlage entfernen"), QDialogButtonBox.ButtonRole.ActionRole)
         form.addRow(buttons)
 
         def select(index):
@@ -8249,10 +8299,10 @@ class Window(QMainWindow):
             title = name.text().strip()
             selected = [key for key, check in steps.items() if check.isChecked()]
             if not title or not selected or title == existing.itemText(0):
-                self.error("Bitte einen eigenen Namen und mindestens einen Schritt wählen.")
+                self.error(self.ui("Bitte einen eigenen Namen und mindestens einen Schritt wählen."))
                 return
             if title in profiles and title != existing.currentText() and QMessageBox.question(
-                    dialog, "Vorlage ersetzen?", f"Die Vorlage „{title}“ ersetzen?") != QMessageBox.StandardButton.Yes:
+                    dialog, self.ui("Vorlage ersetzen?"), self.ui_format('Die Vorlage „{0}“ ersetzen?', title)) != QMessageBox.StandardButton.Yes:
                 return
             if title not in profiles:
                 existing.addItem(title)
@@ -8279,18 +8329,18 @@ class Window(QMainWindow):
         selected = [key for key, check in steps.items() if check.isChecked()]
         if not selected:
             return
-        paths, _ = QFileDialog.getOpenFileNames(self, "PDFs für den Ablauf auswählen", "", "PDF-Dateien (*.pdf)")
+        paths, _ = QFileDialog.getOpenFileNames(self, self.ui("PDFs für den Ablauf auswählen"), "", "PDF-Dateien (*.pdf)")
         if paths:
             self.run_batch(paths, selected)
 
     def run_batch(self, paths, steps):
-        folder = QFileDialog.getExistingDirectory(self, "Zielordner für die Kopien auswählen")
+        folder = QFileDialog.getExistingDirectory(self, self.ui("Zielordner für die Kopien auswählen"))
         if not folder:
             return
         plan = self.batch_preview(list(dict.fromkeys(Path(path).resolve() for path in paths)), Path(folder), steps)
         if not plan:
             return
-        progress = QProgressDialog("PDFs werden bearbeitet …", "Abbrechen", 0, len(plan), self)
+        progress = QProgressDialog(self.ui("PDFs werden bearbeitet …"), self.ui("Abbrechen"), 0, len(plan), self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         count, failures = 0, []
@@ -8335,8 +8385,8 @@ class Window(QMainWindow):
         finally:
             progress.close()
         report = QMessageBox(self)
-        report.setWindowTitle("Stapelverarbeitung")
-        report.setText(f"Gespeicherte Kopien: {count}")
+        report.setWindowTitle(self.ui("Stapelverarbeitung"))
+        report.setText(self.ui_format('Gespeicherte Kopien: {0}', count))
         if failures:
             report.setDetailedText("\n".join(failures))
         report.exec()
@@ -8348,12 +8398,12 @@ class Window(QMainWindow):
             return
         page = session.doc[session.page]
         if not page.get_image_info() or any(span["type"] != 3 for span in page.get_texttrace()):
-            self.error("Bitte eine Bild-Scan-Seite wählen. Für Seiten mit normalem PDF-Text ist dieses Werkzeug ungeeignet.")
+            self.error(self.ui("Bitte eine Bild-Scan-Seite wählen. Für Seiten mit normalem PDF-Text ist dieses Werkzeug ungeeignet."))
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Scan-Seite lesbarer machen")
+        dialog.setWindowTitle(self.ui("Scan-Seite lesbarer machen"))
         layout = QVBoxLayout(dialog)
-        explanation = QLabel("Die Vorschau zeigt die aktuelle Seite. Die neue PDF enthält nur diese Seite als Bild.")
+        explanation = QLabel(self.ui("Die Vorschau zeigt die aktuelle Seite. Die neue PDF enthält nur diese Seite als Bild."))
         explanation.setWordWrap(True)
         layout.addWidget(explanation)
         profiles = QComboBox()
@@ -8379,7 +8429,7 @@ class Window(QMainWindow):
 
         profiles.currentIndexChanged.connect(render_preview)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Save).setText("Als neue PDF speichern")
+        buttons.button(QDialogButtonBox.StandardButton.Save).setText(self.ui("Als neue PDF speichern"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -8394,7 +8444,7 @@ class Window(QMainWindow):
                     output_page = result.new_page(width=page.rect.width, height=page.rect.height)
                     output_page.insert_image(output_page.rect, pixmap=raster)
                     save_copy(result, target)
-                self.statusBar().showMessage(f"Verbesserte Scan-Seite gespeichert: {target.name}", 6500)
+                self.statusBar().showMessage(self.ui_format('Verbesserte Scan-Seite gespeichert: {0}', target.name), 6500)
         except Exception as exc:
             self.error(exc)
 
@@ -8404,21 +8454,21 @@ class Window(QMainWindow):
             return
         text = session.doc[session.page].get_text(sort=True).strip()
         if not text:
-            self.error("Auf dieser Seite gibt es noch keinen auswählbaren Text. Erkenne einen Scan zuerst mit OCR.")
+            self.error(self.ui("Auf dieser Seite gibt es noch keinen auswählbaren Text. Erkenne einen Scan zuerst mit OCR."))
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Textvorschläge mit lokaler KI")
+        dialog.setWindowTitle(self.ui("Textvorschläge mit lokaler KI"))
         dialog.resize(950, 570)
         layout = QVBoxLayout(dialog)
-        notice = QLabel("Links kannst du den Textausschnitt kürzen. Vorschläge entstehen auf deinem PC. "
-                        "Die PDF wird dabei nicht verändert. Prüfe insbesondere Namen, Zahlen und Fachbegriffe.")
+        notice = QLabel(self.ui("Links kannst du den Textausschnitt kürzen. Vorschläge entstehen auf deinem PC. "
+                        "Die PDF wird dabei nicht verändert. Prüfe insbesondere Namen, Zahlen und Fachbegriffe."))
         notice.setWordWrap(True)
         layout.addWidget(notice)
         controls = QHBoxLayout()
         mode = QComboBox()
         mode.addItems(["Rechtschreibung und Grammatik", "Klarer formulieren"])
         controls.addWidget(mode)
-        generate = QPushButton("Vorschlag erstellen")
+        generate = QPushButton(self.ui("Vorschlag erstellen"))
         controls.addWidget(generate)
         controls.addStretch()
         layout.addLayout(controls)
@@ -8437,8 +8487,8 @@ class Window(QMainWindow):
         status.setWordWrap(True)
         layout.addWidget(status)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
-        copy = buttons.addButton("Vorschlag kopieren", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+        copy = buttons.addButton(self.ui("Vorschlag kopieren"), QDialogButtonBox.ButtonRole.ActionRole)
         copy.clicked.connect(lambda: QApplication.clipboard().setText(proposed.toPlainText()))
         copy.setEnabled(False)
         proposed.textChanged.connect(lambda: copy.setEnabled(bool(proposed.toPlainText().strip())))
@@ -8466,7 +8516,7 @@ class Window(QMainWindow):
             nonlocal download
             source = original.toPlainText().strip()
             if not source or len(source) > 3800:
-                status.setText("Bitte einen Textausschnitt zwischen 1 und 3.800 Zeichen wählen.")
+                status.setText(self.ui("Bitte einen Textausschnitt zwischen 1 und 3.800 Zeichen wählen."))
                 return
             task = ("Korrigiere nur Rechtschreibung, Zeichensetzung und Grammatik."
                     if mode.currentIndex() == 0 else "Formuliere den Text klarer, ohne seine Bedeutung zu ändern.")
@@ -8475,20 +8525,20 @@ class Window(QMainWindow):
                 proposed.clear()
                 engine.generate(source, task)
                 return
-            answer = QMessageBox.question(dialog, "Sprachmodell herunterladen",
-                                          "PDF Werkbank lädt einmalig ca. 1,1 GB von Hugging Face herunter. "
-                                          "Dein PDF-Text bleibt auf diesem PC. Jetzt herunterladen?",
+            answer = QMessageBox.question(dialog, self.ui("Sprachmodell herunterladen"),
+                                          self.ui("PDF Werkbank lädt einmalig ca. 1,1 GB von Hugging Face herunter. "
+                                          "Dein PDF-Text bleibt auf diesem PC. Jetzt herunterladen?"),
                                           QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                           QMessageBox.StandardButton.No)
             if answer != QMessageBox.StandardButton.Yes:
                 return
             generate.setEnabled(False)
             proposed.clear()
-            status.setText("Sprachmodell wird heruntergeladen …")
+            status.setText(self.ui("Sprachmodell wird heruntergeladen …"))
             if download:
                 download.deleteLater()
             download = ModelDownload(path, dialog)
-            download.progress.connect(lambda percent: status.setText(f"Sprachmodell wird heruntergeladen · {percent} %"))
+            download.progress.connect(lambda percent: status.setText(self.ui_format('Sprachmodell wird heruntergeladen · {0} %', percent)))
             download.failed.connect(failed)
             download.finished.connect(lambda: engine.generate(source, task))
             download.start()
@@ -8508,24 +8558,24 @@ class Window(QMainWindow):
         if not session:
             return
         if session.doc.needs_pass:
-            self.error("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz.")
+            self.error(self.ui("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz."))
             return
         options = QDialog(self)
-        options.setWindowTitle("Für den Versand fertig machen")
+        options.setWindowTitle(self.ui("Für den Versand fertig machen"))
         form = QFormLayout(options)
         pages = QLineEdit(f"1-{len(session.doc)}")
-        pages.setToolTip("Seiten und Reihenfolge, zum Beispiel 1, 3-5, 8")
-        form.addRow("Seiten", pages)
+        pages.setToolTip(self.ui("Seiten und Reihenfolge, zum Beispiel 1, 3-5, 8"))
+        form.addRow(self.ui("Seiten"), pages)
         ocr = QComboBox()
         languages = {"Deutsch und Englisch": "deu+eng", "Deutsch": "deu", "Englisch": "eng"}
         ocr.addItems([*languages, "Ohne Texterkennung"])
-        form.addRow("Texterkennung", ocr)
+        form.addRow(self.ui("Texterkennung"), ocr)
         compression = QComboBox()
         compression.addItems([*COMPRESSION, "Ohne Bildkomprimierung"])
-        form.addRow("Bildqualität", compression)
+        form.addRow(self.ui("Bildqualität"), compression)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Versandkopie vorbereiten")
-        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Versandkopie vorbereiten"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         buttons.accepted.connect(options.accept)
         buttons.rejected.connect(options.reject)
         form.addRow(buttons)
@@ -8561,14 +8611,14 @@ class Window(QMainWindow):
                         os.replace(temp, target)
                     finally:
                         Path(temp).unlink(missing_ok=True)
-                    self.statusBar().showMessage(f"Versandkopie gespeichert: {target.name}", 6500)
+                    self.statusBar().showMessage(self.ui_format('Versandkopie gespeichert: {0}', target.name), 6500)
         except Exception as exc:
             self.error(exc)
 
     def send_ocr(self, doc, indices, language):
         if not language:
             return 0, []
-        progress = QProgressDialog("Texterkennung für die Versandkopie …", "Abbrechen", 0, len(doc), self)
+        progress = QProgressDialog(self.ui("Texterkennung für die Versandkopie …"), self.ui("Abbrechen"), 0, len(doc), self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         root = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
@@ -8615,11 +8665,11 @@ class Window(QMainWindow):
         pages.currentIndexChanged.connect(show_page)
         if review_only:
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-            buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+            buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
         else:
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-            buttons.button(QDialogButtonBox.StandardButton.Save).setText("Kopie speichern")
-            buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+            buttons.button(QDialogButtonBox.StandardButton.Save).setText(self.ui("Kopie speichern"))
+            buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -8632,7 +8682,7 @@ class Window(QMainWindow):
         if not session:
             return
         if session.doc.needs_pass:
-            self.error("Der Versandcheck benötigt eine PDF ohne Passwortschutz.")
+            self.error(self.ui("Der Versandcheck benötigt eine PDF ohne Passwortschutz."))
             return
         text, ok = QInputDialog.getMultiLineText(self, "Versandcheck", "Ein Suchbegriff pro Zeile. Leer lassen, um nur versteckte Inhalte zu entfernen.")
         if not ok:
@@ -8669,11 +8719,10 @@ class Window(QMainWindow):
                         image_pages = [str(page.number + 1) for page in saved if page.get_image_info()]
                     os.replace(candidate, target)
             report = QMessageBox(self)
-            report.setWindowTitle("Versandcheck abgeschlossen")
-            report.setText(f"{target.name}\n{len(review[0])} Bereiche geschwärzt. "
-                           f"{len(findings)} von {len(terms)} Suchbegriffen noch in prüfbaren Inhalten gefunden.")
-            report.setInformativeText("Bildpixel, Vektorschrift ohne Textebene, Skripte und Inhalte verbleibender Anlagen wurden "
-                                      "nicht durchsucht. Die Prüfung ersetzt die Sichtprüfung der Versandkopie nicht.")
+            report.setWindowTitle(self.ui("Versandcheck abgeschlossen"))
+            report.setText(self.ui_format('{0}\n{1} Bereiche geschwärzt. {2} von {3} Suchbegriffen noch in prüfbaren Inhalten gefunden.', target.name, len(review[0]), len(findings), len(terms)))
+            report.setInformativeText(self.ui("Bildpixel, Vektorschrift ohne Textebene, Skripte und Inhalte verbleibender Anlagen wurden "
+                                      "nicht durchsucht. Die Prüfung ersetzt die Sichtprüfung der Versandkopie nicht."))
             details = [f"{term}\n" + "\n".join(locations) for term, locations in findings.items()]
             if image_pages:
                 details.append("Seiten mit Bildern zur Sichtprüfung: " + ", ".join(image_pages))
@@ -8685,7 +8734,7 @@ class Window(QMainWindow):
 
     def verify_redaction(self):
         folder = str(self.current.path.parent) if self.current else ""
-        path, _ = QFileDialog.getOpenFileName(self, "Gespeicherte geschwärzte Kopie auswählen", folder, "PDF-Dateien (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, self.ui("Gespeicherte geschwärzte Kopie auswählen"), folder, "PDF-Dateien (*.pdf)")
         if not path:
             return
         text, ok = QInputDialog.getMultiLineText(self, "Schwärzung prüfen",
@@ -8702,12 +8751,12 @@ class Window(QMainWindow):
             self.error(exc)
             return
         report = QMessageBox(self)
-        report.setWindowTitle("Abschlussprüfung der Schwärzung")
+        report.setWindowTitle(self.ui("Abschlussprüfung der Schwärzung"))
         report.setText(f"{Path(path).name}\n" + (f"{len(findings)} von {len(terms)} Suchbegriffen gefunden."
                                                   if findings else "Keiner der Suchbegriffe wurde gefunden."))
-        report.setInformativeText("Geprüft wurden auslesbarer Text, OCR-Text, Kommentare, Formularfelder, "
+        report.setInformativeText(self.ui("Geprüft wurden auslesbarer Text, OCR-Text, Kommentare, Formularfelder, "
                                   "Lesezeichen, Metadaten und Anlagennamen. Bilder ohne Textebene und "
-                                  "der Inhalt von Anlagen wurden nicht geprüft.")
+                                  "der Inhalt von Anlagen wurden nicht geprüft."))
         if findings:
             report.setDetailedText("\n\n".join(f"{term}\n" + "\n".join(locations)
                                                 for term, locations in findings.items()))
@@ -8722,7 +8771,7 @@ class Window(QMainWindow):
             return None
         path = Path(target if target.lower().endswith(".pdf") else target + ".pdf")
         if any(path.resolve() == session.path.resolve() for session in self.sessions):
-            self.error("Bitte einen anderen Namen als den einer geöffneten PDF wählen.")
+            self.error(self.ui("Bitte einen anderen Namen als den einer geöffneten PDF wählen."))
             return None
         return path
 
@@ -8731,9 +8780,9 @@ class Window(QMainWindow):
         if not session:
             return
         if session.doc.needs_pass:
-            self.error("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz.")
+            self.error(self.ui("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz."))
             return
-        selection, ok = QInputDialog.getText(self, "Seiten extrahieren", "Seiten und Reihenfolge, z. B. 1, 3-5, 8",
+        selection, ok = QInputDialog.getText(self, self.ui("Seiten extrahieren"), self.ui("Seiten und Reihenfolge, z. B. 1, 3-5, 8"),
                                              text=str(session.page + 1))
         if not ok:
             return
@@ -8743,7 +8792,7 @@ class Window(QMainWindow):
             if target:
                 with extract_pages(session.doc, indices) as result:
                     save_copy(result, target)
-                self.statusBar().showMessage(f"{len(indices)} Seiten gespeichert: {target.name}", 6500)
+                self.statusBar().showMessage(self.ui_format('{0} Seiten gespeichert: {1}', len(indices), target.name), 6500)
         except Exception as exc:
             self.error(exc)
 
@@ -8752,10 +8801,10 @@ class Window(QMainWindow):
         if not session:
             return
         if session.doc.needs_pass:
-            self.error("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz.")
+            self.error(self.ui("Diese Funktion ist für passwortgeschützte PDFs deaktiviert. Normale Kopien behalten ihren Schutz."))
             return
-        profile, ok = QInputDialog.getItem(self, "Scan-PDF verkleinern",
-                                          "Bildqualität der Kopie (Text und Formularfelder bleiben erhalten)",
+        profile, ok = QInputDialog.getItem(self, self.ui("Scan-PDF verkleinern"),
+                                          self.ui("Bildqualität der Kopie (Text und Formularfelder bleiben erhalten)"),
                                           list(COMPRESSION), editable=False)
         if not ok:
             return
@@ -8773,13 +8822,13 @@ class Window(QMainWindow):
         saved = max(0, round(100 * (before - after) / before))
         message = (f"{target.name}\n{before / 1024:.0f} KB → {after / 1024:.0f} KB · {saved} % kleiner"
                    if saved else f"{target.name}\nMit diesem Profil wurde die Kopie nicht merklich kleiner.")
-        QMessageBox.information(self, "Komprimierung abgeschlossen", message)
+        QMessageBox.information(self, self.ui("Komprimierung abgeschlossen"), message)
 
     def compare(self):
         session = self.current
         if not session:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Neuere PDF für den Vergleich auswählen", "", "PDF-Dateien (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, self.ui("Neuere PDF für den Vergleich auswählen"), "", "PDF-Dateien (*.pdf)")
         if not path:
             return
         try:
@@ -8798,11 +8847,11 @@ class Window(QMainWindow):
 
     def review_ocr(self, doc, initial):
         dialog = QDialog(self)
-        dialog.setWindowTitle("OCR-Korrektur")
+        dialog.setWindowTitle(self.ui("OCR-Korrektur"))
         dialog.resize(1000, 690)
         layout = QVBoxLayout(dialog)
-        notice = QLabel("Wähle eine Textzeile, um ihre Position im Scan zu sehen. "
-                        "Die Korrektur ändert nur die unsichtbare Textebene.")
+        notice = QLabel(self.ui("Wähle eine Textzeile, um ihre Position im Scan zu sehen. "
+                        "Die Korrektur ändert nur die unsichtbare Textebene."))
         notice.setWordWrap(True)
         layout.addWidget(notice)
         selector = QSpinBox()
@@ -8818,12 +8867,12 @@ class Window(QMainWindow):
         area.setWidget(image)
         split.addWidget(area)
         rows = QTableWidget(0, 1)
-        rows.setHorizontalHeaderLabels(["Erkannter Text · per Doppelklick bearbeiten"])
+        rows.setHorizontalHeaderLabels([self.ui("Erkannter Text · per Doppelklick bearbeiten")])
         rows.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         split.addWidget(rows)
         split.setSizes([490, 500])
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Korrekturen übernehmen")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Korrekturen übernehmen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -8906,7 +8955,7 @@ class Window(QMainWindow):
             return
         choices = {"Deutsch und Englisch": "deu+eng", "Deutsch": "deu", "Englisch": "eng"}
         title = "Sprache für das ganze Dokument" if whole_document else "Sprache der aktuellen Scan-Seite"
-        choice, ok = QInputDialog.getItem(self, "Texterkennung", title, list(choices), editable=False)
+        choice, ok = QInputDialog.getItem(self, self.ui("Texterkennung"), title, list(choices), editable=False)
         if not ok:
             return
         root = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
@@ -8916,14 +8965,14 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
             return
-        progress = QProgressDialog("Scan-Seiten werden erkannt …", "Abbrechen", 0, len(indices), self)
-        progress.setWindowTitle("Texterkennung")
+        progress = QProgressDialog(self.ui("Scan-Seiten werden erkannt …"), self.ui("Abbrechen"), 0, len(indices), self)
+        progress.setWindowTitle(self.ui("Texterkennung"))
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0 if whole_document else 600)
         added, skipped, failed, cancelled = 0, 0, [], False
         try:
             for offset, index in enumerate(indices):
-                progress.setLabelText(f"Seite {index + 1} von {len(session.doc)}")
+                progress.setLabelText(self.ui_format('Seite {0} von {1}', index + 1, len(session.doc)))
                 progress.setValue(offset)
                 QApplication.processEvents()
                 if progress.wasCanceled():
@@ -8952,7 +9001,7 @@ class Window(QMainWindow):
         if cancelled:
             summary.append("Abgebrochen. Fertige Seiten bleiben bearbeitet.")
         report = QMessageBox(self)
-        report.setWindowTitle("Texterkennung abgeschlossen")
+        report.setWindowTitle(self.ui("Texterkennung abgeschlossen"))
         report.setText("\n".join(summary))
         if failed:
             report.setDetailedText("\n".join(f"Seite {index}: {reason}" for index, reason in failed))
@@ -8969,8 +9018,8 @@ class Window(QMainWindow):
 
     def correct_text(self, page, point):
         target = self.text_at(page, point)
-        value, ok = QInputDialog.getText(self, "Text korrigieren",
-                                        "Neuer Text (wird in einer Standardschrift gesetzt)",
+        value, ok = QInputDialog.getText(self, self.ui("Text korrigieren"),
+                                        self.ui("Neuer Text (wird in einer Standardschrift gesetzt)"),
                                         text=target["text"])
         if not ok or value == target["text"]:
             return False
@@ -9043,14 +9092,14 @@ class Window(QMainWindow):
             if len(self.sessions) == before:
                 return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Seiten zwischen PDFs")
+        dialog.setWindowTitle(self.ui("Seiten zwischen PDFs"))
         dialog.resize(750, 550)
         layout = QVBoxLayout(dialog)
-        info = QLabel("Ziehe eine Seite zwischen die Miniaturen des anderen Dokuments. "
-                      "Links zu Seiten, die nicht mit übertragen werden, können entfallen.")
+        info = QLabel(self.ui("Ziehe eine Seite zwischen die Miniaturen des anderen Dokuments. "
+                      "Links zu Seiten, die nicht mit übertragen werden, können entfallen."))
         info.setWordWrap(True)
         layout.addWidget(info)
-        move = QCheckBox("Seite verschieben")
+        move = QCheckBox(self.ui("Seite verschieben"))
         layout.addWidget(move)
         columns = QHBoxLayout()
         layout.addLayout(columns, 1)
@@ -9059,7 +9108,7 @@ class Window(QMainWindow):
         def transfer(from_list, row, to_list, index):
             a, b = (selectors[lists.index(item)].currentIndex() for item in (from_list, to_list))
             if move.isChecked() and len(self.sessions[a].doc) == 1:
-                self.error("Die letzte Seite eines Dokuments kann nur kopiert werden.")
+                self.error(self.ui("Die letzte Seite eines Dokuments kann nur kopiert werden."))
                 return False
             try:
                 self.transfer_page(self.sessions[a], row, self.sessions[b], index, move.isChecked())
@@ -9116,9 +9165,9 @@ class Window(QMainWindow):
             return
         if operation == "delete":
             if count == 1:
-                self.error("Die letzte Seite kann nicht gelöscht werden.")
+                self.error(self.ui("Die letzte Seite kann nicht gelöscht werden."))
                 return
-            if QMessageBox.question(self, "Seite löschen", f"Seite {index + 1} löschen?") != QMessageBox.StandardButton.Yes:
+            if QMessageBox.question(self, self.ui("Seite löschen"), self.ui_format('Seite {0} löschen?', index + 1)) != QMessageBox.StandardButton.Yes:
                 return
         try:
             session.checkpoint({"rotate": "Seite drehen", "move": "Seite umsortieren", "delete": "Seite löschen"}[operation])
@@ -9140,7 +9189,7 @@ class Window(QMainWindow):
     def append(self):
         if not self.current:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "PDF anhängen", "", "PDF-Dateien (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, self.ui("PDF anhängen"), "", "PDF-Dateien (*.pdf)")
         if not path:
             return
         try:
@@ -9157,7 +9206,7 @@ class Window(QMainWindow):
         session = self.current
         if not session:
             return
-        query, ok = QInputDialog.getText(self, "Text suchen", "Suchbegriff", text=self.search_text)
+        query, ok = QInputDialog.getText(self, self.ui("Text suchen"), self.ui("Suchbegriff"), text=self.search_text)
         if not ok:
             return
         previous = self.search_text
@@ -9170,12 +9219,12 @@ class Window(QMainWindow):
                     self.thumbs.setCurrentRow(index)
                     self.render()
                     return
-            self.statusBar().showMessage("Kein Treffer.", 4500)
+            self.statusBar().showMessage(self.ui("Kein Treffer."), 4500)
         self.render()
 
     def search_folder(self):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
-        folder = QFileDialog.getExistingDirectory(self, "PDF-Ordner durchsuchen",
+        folder = QFileDialog.getExistingDirectory(self, self.ui("PDF-Ordner durchsuchen"),
                                                    settings.value("search/folder", "", str))
         if not folder:
             return
@@ -9184,7 +9233,7 @@ class Window(QMainWindow):
             return
         query, recursive, database, filters, fuzzy = options
         settings.setValue("search/folder", folder)
-        progress = QProgressDialog("PDF-Dateien werden durchsucht …", "Abbrechen", 0, 0, self)
+        progress = QProgressDialog(self.ui("PDF-Dateien werden durchsucht …"), self.ui("Abbrechen"), 0, 0, self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         progress.show()
@@ -9207,7 +9256,7 @@ class Window(QMainWindow):
         finally:
             progress.close()
         dialog = QDialog(self)
-        dialog.setWindowTitle("Suchtreffer im Ordner")
+        dialog.setWindowTitle(self.ui("Suchtreffer im Ordner"))
         dialog.resize(820, 460)
         layout = QVBoxLayout(dialog)
         action = "PDFs im Index neu eingelesen" if database else "PDFs eingelesen"
@@ -9215,7 +9264,7 @@ class Window(QMainWindow):
         if state:
             stats += " · " + state
         layout.addWidget(QLabel(stats))
-        layout.addWidget(QLabel("Durchsucht wurde vorhandener Text. Bildseiten ohne OCR liefern keine Treffer."))
+        layout.addWidget(QLabel(self.ui("Durchsucht wurde vorhandener Text. Bildseiten ohne OCR liefern keine Treffer.")))
         rows = QListWidget()
         rows.setWordWrap(True)
         layout.addWidget(rows)
@@ -9226,7 +9275,7 @@ class Window(QMainWindow):
             rows.addItem(item)
         rows.setCurrentRow(0)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        jump = buttons.addButton("Fundstelle öffnen", QDialogButtonBox.ButtonRole.AcceptRole)
+        jump = buttons.addButton(self.ui("Fundstelle öffnen"), QDialogButtonBox.ButtonRole.AcceptRole)
         jump.setEnabled(bool(hits))
         rows.itemDoubleClicked.connect(lambda _: dialog.accept())
         buttons.accepted.connect(dialog.accept)
@@ -9242,7 +9291,7 @@ class Window(QMainWindow):
         elif not self.open_path(str(path)):
             return
         if not 0 <= page < len(self.current.doc):
-            self.statusBar().showMessage("Die PDF wurde seit der Suche geändert. Bitte erneut suchen.", 8000)
+            self.statusBar().showMessage(self.ui("Die PDF wurde seit der Suche geändert. Bitte erneut suchen."), 8000)
             return
         self.search_text = approximation[0] if approximation and approximation[0] else query.strip()
         self.thumbs.setCurrentRow(page)
@@ -9253,27 +9302,27 @@ class Window(QMainWindow):
             box = boxes[0] * target.rotation_matrix
             self.scroll.ensureVisible(round(box.x0 * self.scale), round(box.y0 * self.scale), 25, 65)
         else:
-            self.statusBar().showMessage("Die Fundstelle ist im aktuellen Dokumentstand nicht mehr auffindbar.", 8000)
+            self.statusBar().showMessage(self.ui("Die Fundstelle ist im aktuellen Dokumentstand nicht mehr auffindbar."), 8000)
 
     def folder_search_options(self, folder):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Ordnersuche")
+        dialog.setWindowTitle(self.ui("Ordnersuche"))
         form = QFormLayout(dialog)
         query = QLineEdit()
         name = QLineEdit()
         directory = QLineEdit()
         since = QLineEdit()
-        since.setPlaceholderText("TT.MM.JJJJ")
-        recursive = QCheckBox("Unterordner einbeziehen")
+        since.setPlaceholderText(self.ui("TT.MM.JJJJ"))
+        recursive = QCheckBox(self.ui("Unterordner einbeziehen"))
         recursive.setChecked(True)
-        indexed = QCheckBox("Lokalen Suchindex verwenden")
+        indexed = QCheckBox(self.ui("Lokalen Suchindex verwenden"))
         indexed.setChecked(True)
-        fuzzy = QCheckBox("Typische OCR-Verwechslungen in Nummern berücksichtigen")
+        fuzzy = QCheckBox(self.ui("Typische OCR-Verwechslungen in Nummern berücksichtigen"))
         fuzzy.setChecked(True)
-        notice = QLabel("Der Index speichert auslesbaren PDF-Text lokal auf diesem PC. "
-                        "Für vertrauliche Ordner kannst du ohne Index suchen.")
+        notice = QLabel(self.ui("Der Index speichert auslesbaren PDF-Text lokal auf diesem PC. "
+                        "Für vertrauliche Ordner kannst du ohne Index suchen."))
         notice.setWordWrap(True)
-        form.addRow("Ordner", QLabel(str(folder)))
+        form.addRow(self.ui("Ordner"), QLabel(str(folder)))
         for label, field in (("Suchtext", query), ("Dateiname enthält", name),
                              ("Unterordner enthält", directory), ("Geändert seit", since)):
             form.addRow(label, field)
@@ -9281,8 +9330,8 @@ class Window(QMainWindow):
             form.addRow(widget)
         database = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PDF Werkbank" / "Suchindex" / "ordner-v1.sqlite"
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        reset = buttons.addButton("Index für diesen Ordner löschen", QDialogButtonBox.ButtonRole.ActionRole)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Suchen")
+        reset = buttons.addButton(self.ui("Index für diesen Ordner löschen"), QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Suchen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         form.addRow(buttons)
@@ -9291,7 +9340,7 @@ class Window(QMainWindow):
             try:
                 clear_index(database, folder)
                 indexed.setChecked(False)
-                notice.setText("Der gespeicherte Index dieses Ordners wurde gelöscht. Die PDF-Dateien bleiben erhalten.")
+                notice.setText(self.ui("Der gespeicherte Index dieses Ordners wurde gelöscht. Die PDF-Dateien bleiben erhalten."))
             except Exception as exc:
                 self.error(exc)
 
@@ -9304,7 +9353,7 @@ class Window(QMainWindow):
                 return (query.text().strip(), recursive.isChecked(), database if indexed.isChecked() else None,
                         (name.text().strip(), directory.text().strip(), round(cutoff * 1_000_000_000)), fuzzy.isChecked())
             except ValueError:
-                notice.setText("Bitte einen Suchtext und ein Datum im Format TT.MM.JJJJ eingeben oder das Datum leer lassen.")
+                notice.setText(self.ui("Bitte einen Suchtext und ein Datum im Format TT.MM.JJJJ eingeben oder das Datum leer lassen."))
 
     def undo(self):
         self.change_history(False)
@@ -9331,8 +9380,8 @@ class Window(QMainWindow):
                     if any(session not in self.sessions or not getattr(session, stack_name)
                            or getattr(session, stack_name)[-1] is not entry
                            for session, entry in ((source, first), (destination, second))):
-                        self.error("Für diese Änderung müssen beide PDFs geöffnet sein und dieselbe Verschiebung "
-                                   "als nächsten Schritt im Verlauf haben.")
+                        self.error(self.ui("Für diese Änderung müssen beide PDFs geöffnet sein und dieselbe Verschiebung "
+                                   "als nächsten Schritt im Verlauf haben."))
                         return
                     sessions = [source, destination]
                     matched = record
@@ -9356,13 +9405,13 @@ class Window(QMainWindow):
         if not self.current:
             return
         dialog = QDialog(self)
-        dialog.setWindowTitle("Änderungsverlauf")
+        dialog.setWindowTitle(self.ui("Änderungsverlauf"))
         layout = QVBoxLayout(dialog)
         rows = QListWidget()
         layout.addWidget(rows)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        back = buttons.addButton("Rückgängig", QDialogButtonBox.ButtonRole.ActionRole)
-        forward = buttons.addButton("Wiederholen", QDialogButtonBox.ButtonRole.ActionRole)
+        back = buttons.addButton(self.ui("Rückgängig"), QDialogButtonBox.ButtonRole.ActionRole)
+        forward = buttons.addButton(self.ui("Wiederholen"), QDialogButtonBox.ButtonRole.ActionRole)
         layout.addWidget(buttons)
 
         def refresh():
@@ -9384,20 +9433,20 @@ class Window(QMainWindow):
         if not session:
             return False
         suggested = session.path.with_stem(session.path.stem + " - bearbeitet")
-        target, _ = QFileDialog.getSaveFileName(self, "PDF-Kopie speichern", str(suggested), "PDF-Dateien (*.pdf)")
+        target, _ = QFileDialog.getSaveFileName(self, self.ui("PDF-Kopie speichern"), str(suggested), "PDF-Dateien (*.pdf)")
         if not target:
             return False
         if not target.lower().endswith(".pdf"):
             target += ".pdf"
         if Path(target).resolve() == session.path.resolve():
-            self.error("Bitte für die Kopie einen anderen Dateinamen wählen.")
+            self.error(self.ui("Bitte für die Kopie einen anderen Dateinamen wählen."))
             return False
         try:
             save_copy(session.doc, target, password=session.password, encryption=pdf.PDF_ENCRYPT_KEEP)
         except Exception as exc:
             self.error(exc)
             return False
-        self.statusBar().showMessage(f"Kopie gespeichert: {Path(target).name}", 6500)
+        self.statusBar().showMessage(self.ui_format('Kopie gespeichert: {0}', Path(target).name), 6500)
         session.changed = False
         session.recovery_path = Path(target).resolve()
         session.plan_source_stamp = file_signature(session.recovery_path)
@@ -9413,7 +9462,7 @@ class Window(QMainWindow):
         if not session.changed:
             return True
         self.tabs.setCurrentIndex(index)
-        result = QMessageBox.question(self, "Änderungen speichern?", f"Bearbeitete Kopie von {session.path.name} speichern?",
+        result = QMessageBox.question(self, self.ui("Änderungen speichern?"), self.ui_format('Bearbeitete Kopie von {0} speichern?', session.path.name),
                                       QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard |
                                       QMessageBox.StandardButton.Cancel)
         if result == QMessageBox.StandardButton.Save:
@@ -9459,18 +9508,18 @@ class Window(QMainWindow):
         printers.sort(key=lambda device: ("samsung" not in device.printerName().casefold(),
                                           device.printerName().casefold()))
         options = QDialog(self)
-        options.setWindowTitle("Broschürendruck")
+        options.setWindowTitle(self.ui("Broschürendruck"))
         form = QFormLayout(options)
         selection = QLineEdit(f"1-{len(session.doc)}")
-        form.addRow("PDF-Seiten", selection)
+        form.addRow(self.ui("PDF-Seiten"), selection)
         devices = QComboBox()
         devices.addItems([device.printerName() for device in printers] + ["Nur Druck-PDF speichern"])
-        form.addRow("Ausgabe", devices)
-        guide = QLabel("A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.")
+        form.addRow(self.ui("Ausgabe"), devices)
+        guide = QLabel(self.ui("A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden."))
         guide.setWordWrap(True)
         form.addRow(guide)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Faltvorschau")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Faltvorschau"))
         buttons.accepted.connect(options.accept)
         buttons.rejected.connect(options.reject)
         form.addRow(buttons)
@@ -9505,11 +9554,11 @@ class Window(QMainWindow):
 
     def booklet_preview(self, booklet, sheets, printer):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Faltvorschau")
+        dialog.setWindowTitle(self.ui("Faltvorschau"))
         dialog.resize(930, 460)
         layout = QVBoxLayout(dialog)
         blanks = sum(index is None for sheet in sheets for side in sheet for index in side)
-        layout.addWidget(QLabel(f"A4 quer · {len(sheets)} Blatt · {blanks} leere Heftseiten · Duplex an der kurzen Kante"))
+        layout.addWidget(QLabel(self.ui_format('A4 quer · {0} Blatt · {1} leere Heftseiten · Duplex an der kurzen Kante', len(sheets), blanks)))
         preview = QHBoxLayout()
         layout.addLayout(preview, 1)
         panels = []
@@ -9523,15 +9572,15 @@ class Window(QMainWindow):
             panels.append((heading, picture))
         row = QHBoxLayout()
         layout.addLayout(row)
-        row.addWidget(QLabel("Blatt"))
+        row.addWidget(QLabel(self.ui("Blatt")))
         sheet_number = QSpinBox()
         sheet_number.setRange(1, len(sheets))
         row.addWidget(sheet_number)
-        row.addWidget(QLabel(f"von {len(sheets)}"))
+        row.addWidget(QLabel(self.ui_format('von {0}', len(sheets))))
         row.addStretch()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        save = buttons.addButton("Druck-PDF speichern", QDialogButtonBox.ButtonRole.ActionRole)
-        print_button = buttons.addButton("Jetzt drucken", QDialogButtonBox.ButtonRole.AcceptRole)
+        save = buttons.addButton(self.ui("Druck-PDF speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+        print_button = buttons.addButton(self.ui("Jetzt drucken"), QDialogButtonBox.ButtonRole.AcceptRole)
         print_button.setEnabled(printer is not None)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
@@ -9556,7 +9605,7 @@ class Window(QMainWindow):
             if target:
                 try:
                     save_copy(booklet, target)
-                    self.statusBar().showMessage(f"Druck-PDF gespeichert: {target.name}", 6500)
+                    self.statusBar().showMessage(self.ui_format('Druck-PDF gespeichert: {0}', target.name), 6500)
                 except Exception as exc:
                     self.error(exc)
 
@@ -9565,7 +9614,7 @@ class Window(QMainWindow):
         show(1)
         if dialog.exec() == QDialog.DialogCode.Accepted and printer is not None:
             print_pages(booklet, printer, range(len(booklet)))
-            self.statusBar().showMessage("Broschüren-Druckauftrag übergeben.", 6500)
+            self.statusBar().showMessage(self.ui("Broschüren-Druckauftrag übergeben."), 6500)
 
     def print_dialog(self, samsung=False):
         session = self.current
@@ -9573,7 +9622,7 @@ class Window(QMainWindow):
             return
         devices = QPrinterInfo.availablePrinters()
         if not devices:
-            self.error("Windows meldet keinen installierten Drucker.")
+            self.error(self.ui("Windows meldet keinen installierten Drucker."))
             return
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         if samsung:
@@ -9585,10 +9634,10 @@ class Window(QMainWindow):
             if device is None and candidates:
                 device = candidates[0]
             if device is None:
-                self.error("Windows meldet keinen Samsung-Drucker. Verwende Datei → Drucken für einen anderen Drucker.")
+                self.error(self.ui("Windows meldet keinen Samsung-Drucker. Verwende Datei → Drucken für einen anderen Drucker."))
                 return
             if QPrinter.DuplexMode.DuplexLongSide not in device.supportedDuplexModes():
-                self.error("Der ausgewählte Samsung-Treiber meldet keinen Duplexdruck an der langen Kante.")
+                self.error(self.ui("Der ausgewählte Samsung-Treiber meldet keinen Duplexdruck an der langen Kante."))
                 return
             printer = QPrinter(device, QPrinter.PrinterMode.HighResolution)
             printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
@@ -9608,7 +9657,7 @@ class Window(QMainWindow):
             end = min(end, printer.toPage())
         indices = list(range(start - 1, end))
         options = QDialog(self)
-        options.setWindowTitle("Duplex und Seitenfolge")
+        options.setWindowTitle(self.ui("Duplex und Seitenfolge"))
         form = QFormLayout(options)
         duplex = QComboBox()
         device = QPrinterInfo.printerInfo(printer.printerName())
@@ -9619,16 +9668,16 @@ class Window(QMainWindow):
             if mode in supported:
                 duplex.addItem(label, mode)
         duplex.setCurrentIndex(max(0, duplex.findData(printer.duplex())))
-        form.addRow("Duplex", duplex)
+        form.addRow(self.ui("Duplex"), duplex)
         subset = QComboBox()
         subset.addItems(["Alle ausgewählten Seiten", "Nur ungerade Seiten", "Nur gerade Seiten"])
-        subset.setToolTip("Für manuelles Wenden kannst du zwei getrennte Druckaufträge starten.")
-        form.addRow("Seiten", subset)
+        subset.setToolTip(self.ui("Für manuelles Wenden kannst du zwei getrennte Druckaufträge starten."))
+        form.addRow(self.ui("Seiten"), subset)
         order = QComboBox()
         order.addItems(["Vorwärts", "Rückwärts"])
-        form.addRow("Reihenfolge", order)
+        form.addRow(self.ui("Reihenfolge"), order)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Vorschau")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Vorschau"))
         buttons.accepted.connect(options.accept)
         buttons.rejected.connect(options.reject)
         form.addRow(buttons)
@@ -9640,7 +9689,7 @@ class Window(QMainWindow):
         if reverse:
             indices.reverse()
         if not indices:
-            self.error("Die Auswahl enthält keine Seiten.")
+            self.error(self.ui("Die Auswahl enthält keine Seiten."))
             return
         printer.setDuplex(duplex.currentData())
         printer.setPageOrder(QPrinter.PageOrder.FirstPageFirst)
@@ -9651,11 +9700,11 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
             return
-        self.statusBar().showMessage("Druckauftrag übergeben.", 6500)
+        self.statusBar().showMessage(self.ui("Druckauftrag übergeben."), 6500)
 
     def confirm_print(self, doc, indices, printer):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Druckvorschau")
+        dialog.setWindowTitle(self.ui("Druckvorschau"))
         layout = QVBoxLayout(dialog)
         duplex = printer.duplex() != QPrinter.DuplexMode.DuplexNone
         sheets = print_sheets(indices, duplex)
@@ -9699,15 +9748,15 @@ class Window(QMainWindow):
                 preview = print_preview_image(doc, index, printer, 340 if duplex else 390)
                 image.setPixmap(preview)
                 image.resize(preview.size())
-            count.setText(f"Blatt {position + 1} von {len(sheets)}")
+            count.setText(self.ui_format('Blatt {0} von {1}', position + 1, len(sheets)))
             prev.setEnabled(position > 0)
             next_button.setEnabled(position < len(sheets) - 1)
 
         prev.clicked.connect(lambda: show_sheet(-1))
         next_button.clicked.connect(lambda: show_sheet(1))
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Jetzt drucken")
-        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Jetzt drucken"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -9718,25 +9767,25 @@ class Window(QMainWindow):
 
     def show_program_info(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle(f"Info zu {APP_TITLE}")
+        dialog.setWindowTitle(self.ui("Info zu PDF Digital"))
         layout = QVBoxLayout(dialog)
         title = QLabel(APP_TITLE + " " + ".".join(map(str, VERSION)))
         title.setStyleSheet("font-size: 20px; font-weight: bold;")
         layout.addWidget(title)
-        layout.addWidget(QLabel(APP_SLOGAN))
-        details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
+        layout.addWidget(QLabel(self.ui(APP_SLOGAN)))
+        details = QLabel(self.ui("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
                          "Neu in dieser Version: Scan-Dubletten prüfen und aus fertigen PDFs "
-                         "zum Originalscan oder zur Excel-Zelle springen.")
+                         "zum Originalscan oder zur Excel-Zelle springen."))
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
-        buttons.addButton("Update-Info", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(self.update_info)
-        buttons.addButton("Lizenz anzeigen", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+        buttons.addButton(self.ui("Update-Info"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(self.update_info)
+        buttons.addButton(self.ui("Lizenz anzeigen"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
             lambda: self.show_program_license(dialog))
-        buttons.addButton("Projekt auf GitHub", QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl("https://github.com/aheinen1971-cmd/pdf-werkbank")))
+        buttons.addButton(self.ui("Projekt auf GitHub"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/aheinen1971-cmd/pdf-digital")))
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         dialog.resize(550, 260)
@@ -9749,14 +9798,14 @@ class Window(QMainWindow):
             self.error(exc)
             return
         dialog = QDialog(parent)
-        dialog.setWindowTitle(f"Lizenz · {APP_TITLE}")
+        dialog.setWindowTitle(self.ui_format('Lizenz · {0}', APP_TITLE))
         layout = QVBoxLayout(dialog)
         text = QPlainTextEdit()
         text.setReadOnly(True)
         text.setPlainText(content)
         layout.addWidget(text)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Schließen")
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         dialog.resize(720, 580)
@@ -9764,7 +9813,7 @@ class Window(QMainWindow):
 
 
     def usb_update_dialog(self):
-        name, _ = QFileDialog.getOpenFileName(self, "Signiertes USB-Update wählen", "", "Windows-Update (*-Windows.zip)")
+        name, _ = QFileDialog.getOpenFileName(self, self.ui("Signiertes USB-Update wählen"), "", "Windows-Update (*-Windows.zip)")
         if not name:
             return
         package = Path(name)
@@ -9773,9 +9822,8 @@ class Window(QMainWindow):
             if version_tuple(version) <= VERSION:
                 raise ValueError("Das USB-Update ist nicht neuer als die laufende Version.")
             current = ".".join(map(str, VERSION))
-            if QMessageBox.question(self, "Signiertes USB-Update",
-                                    f"Die Projektsignatur ist gültig. Version {version} vorbereiten?\n"
-                                    f"Die Werkbank sichert vorher den Arbeitsstand von Version {current}.",
+            if QMessageBox.question(self, self.ui("Signiertes USB-Update"),
+                                    self.ui_format('Die Projektsignatur ist gültig. Version {0} vorbereiten?\nDie Werkbank sichert vorher den Arbeitsstand von Version {1}.', version, current),
                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                     QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
                 return
@@ -9784,19 +9832,18 @@ class Window(QMainWindow):
                 return stage_usb_update(package, VERSION)
 
             installed = self.run_usb_update_job("USB-Update wird vorbereitet …", prepare)
-            QMessageBox.information(self, "USB-Update bereit",
-                                    f"Version {installed} ist bereit. Schließe die Werkbank und öffne sie erneut "
-                                    "über deinen bisherigen Starter.")
+            QMessageBox.information(self, self.ui("USB-Update bereit"),
+                                    self.ui_format('Version {0} ist bereit. Schließe die Werkbank und öffne sie erneut über deinen bisherigen Starter.', installed))
         except Exception as exc:
             self.error(exc)
 
     def usb_update_export(self):
-        folder = QFileDialog.getExistingDirectory(self, "USB-Stick oder Zielordner auswählen")
+        folder = QFileDialog.getExistingDirectory(self, self.ui("USB-Stick oder Zielordner auswählen"))
         if not folder:
             return
         try:
             target = self.run_usb_update_job("Signierte Freigabe wird geladen …", lambda: export_usb_update(Path(folder)))
-            QMessageBox.information(self, "USB-Update gespeichert", f"Signiertes Update gespeichert in:\n{target}")
+            QMessageBox.information(self, self.ui("USB-Update gespeichert"), self.ui_format('Signiertes Update gespeichert in:\n{0}', target))
         except Exception as exc:
             self.error(exc)
 
@@ -9833,14 +9880,14 @@ class Window(QMainWindow):
                 status += "\n" + str(exc)
         pending = prepared_update(VERSION)
         check = getattr(self, "update_result", "Noch keine Update-Suche in dieser Sitzung.")
-        QMessageBox.information(self, "Update-Info",
+        QMessageBox.information(self, self.ui("Update-Info"),
                                 f"Version {label}\n\n{status}\n\n{check}\n"
                                 + (f"Signiertes Update bereit: {pending.name}\n" if pending else "")
                                 + "\nWindows-Herausgebersignatur und Virenscan sind separate Prüfungen.")
 
 
     def check_online(self):
-        self.statusBar().showMessage("Suche nach Updates …", 6000)
+        self.statusBar().showMessage(self.ui("Suche nach Updates …"), 6000)
         self.release_check.check(manual=True)
 
     def show_online_update(self, update, success, manual):
@@ -9848,7 +9895,7 @@ class Window(QMainWindow):
             " Versuche es später erneut oder nutze „Info → Update vom USB-Stick“.")
         self.update_result = "Update-Suche abgeschlossen." if success else failure
         if prepared_update(VERSION):
-            self.statusBar().showMessage("Ein Update ist bereit und startet beim nächsten Öffnen.", 8000)
+            self.statusBar().showMessage(self.ui("Ein Update ist bereit und startet beim nächsten Öffnen."), 8000)
             return
         if not update:
             if manual:
@@ -9856,7 +9903,7 @@ class Window(QMainWindow):
                 self.statusBar().showMessage(message, 8000)
             return
         if self.update_process is not None:
-            self.statusBar().showMessage("Ein Update wird bereits vorbereitet.", 8000)
+            self.statusBar().showMessage(self.ui("Ein Update wird bereits vorbereitet."), 8000)
             return
         version, digest, size = update
         worker = Path(__file__).with_name("update_worker.py")
@@ -9865,9 +9912,9 @@ class Window(QMainWindow):
                 [sys.executable, str(worker), version, digest, str(size)],
                 creationflags=subprocess.CREATE_NO_WINDOW)
         except OSError:
-            self.statusBar().showMessage("Das Update konnte nicht vorbereitet werden.", 8000)
+            self.statusBar().showMessage(self.ui("Das Update konnte nicht vorbereitet werden."), 8000)
             return
-        self.statusBar().showMessage(f"Update {version} wird im Hintergrund vorbereitet.", 8000)
+        self.statusBar().showMessage(self.ui_format('Update {0} wird im Hintergrund vorbereitet.', version), 8000)
         self.update_timer.start(1000)
 
     def finish_online_update(self):
@@ -9896,7 +9943,7 @@ class Window(QMainWindow):
         launcher = os.environ.get("PDF_WERKBANK_ENTRYPOINT") or os.environ.get("PDF_WERKBANK_LAUNCHER")
         icon = Path(__file__).with_name("pdf-werkbank.ico")
         if not launcher or not Path(launcher).is_file() or not icon.is_file():
-            self.error("Bitte PDF Werkbank über die Windows-EXE starten.")
+            self.error(self.ui("Bitte PDF Werkbank über die Windows-EXE starten."))
             return
 
         def write(key, name, value):
@@ -9920,18 +9967,18 @@ class Window(QMainWindow):
 
     def choose_update_folder(self):
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
-        folder = QFileDialog.getExistingDirectory(self, "Vertrauenswürdigen Update-Ordner auswählen",
+        folder = QFileDialog.getExistingDirectory(self, self.ui("Vertrauenswürdigen Update-Ordner auswählen"),
                                                    settings.value("updates", "", str))
         if folder:
             result = QMessageBox.question(
-                self, "Automatische Updates",
-                "Beim Start führt PDF Werkbank neuere Programmdateien aus diesem Ordner aus. "
-                "Die EXE und ihre signierte Freigabe müssen zusammen im Ordner liegen. Aktivieren?")
+                self, self.ui("Automatische Updates"),
+                self.ui("Beim Start führt PDF Werkbank neuere Programmdateien aus diesem Ordner aus. "
+                "Die EXE und ihre signierte Freigabe müssen zusammen im Ordner liegen. Aktivieren?"))
             if result == QMessageBox.StandardButton.Yes:
                 settings.setValue("updates", folder)
-                self.statusBar().showMessage("Automatische Updates aus dem gewählten Ordner aktiviert.", 6500)
+                self.statusBar().showMessage(self.ui("Automatische Updates aus dem gewählten Ordner aktiviert."), 6500)
         elif settings.value("updates", "", str):
-            if QMessageBox.question(self, "Updates", "Automatische Updates deaktivieren?") == QMessageBox.StandardButton.Yes:
+            if QMessageBox.question(self, self.ui("Updates"), self.ui("Automatische Updates deaktivieren?")) == QMessageBox.StandardButton.Yes:
                 settings.remove("updates")
 
 
@@ -9963,6 +10010,12 @@ def main():
     app.setApplicationDisplayName(APP_TITLE)
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("pdf-werkbank.ico"))))
     settings = QSettings("PDF Werkbank", "PDF Werkbank")
+    language = settings.value("view/language", "de", str)
+    if language in UI_LANGUAGES:
+        translator = QTranslator(app)
+        translations = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+        if translator.load(QLocale(language), "qtbase", "_", translations):
+            app.installTranslator(translator)
     folder = settings.value("updates", "", str)
     label = ".".join(map(str, VERSION))
     active = settings.value("update/last-active-version", "", str)

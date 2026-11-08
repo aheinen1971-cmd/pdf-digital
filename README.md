@@ -1,13 +1,25 @@
-# PDF Digital 1.53.0 für Windows
+# PDF Digital 1.54.0 für Windows
 
 **Alles finden und bearbeiten**
+
+### Sprache der Oberfläche
+
+Unter **Ansicht → Sprache** kannst du zwischen Deutsch, Englisch,
+Französisch, Spanisch, Niederländisch, Italienisch, Portugiesisch,
+Polnisch, Tschechisch, Dänisch, Schwedisch, Norwegisch (Bokmål), Finnisch,
+Türkisch, Ukrainisch, Griechisch, Japanisch, Koreanisch, Arabisch und
+Hebräisch wechseln. Die Auswahl gilt ab dem nächsten Programmstart.
+Die Übersetzung umfasst die Menüs, Dialogtexte, viele Fachmeldungen
+und Überschriften der Excel-Berichte. Excel-Feldnamen für den Import
+behalten ihre festgelegte Schreibweise. Für einzelne Meldungen gilt
+Deutsch als Rückfallsprache.
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.53.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.54.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -17,7 +29,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.53.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.54.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung

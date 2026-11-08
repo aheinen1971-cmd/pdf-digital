@@ -687,10 +687,9 @@ def export_excel(doc, path):
     package(path, name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml", contents)
 
 
-def export_invoices(rows, path):
-    export_linked_sheet(rows, path, "Rechnungen",
-                        ("Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quelldatei", "Fundseiten (Nr. / Datum / Betrag)"),
-                        (24, 18, 22, 65, 42), 4)
+def export_invoices(rows, path, *, columns=("Rechnungsnummer", "Rechnungsdatum", "Betrag", "Quelldatei",
+                                           "Fundseiten (Nr. / Datum / Betrag)")):
+    export_linked_sheet(rows, path, "Rechnungen", columns, (24, 18, 22, 65, 42), 4)
 
 
 def export_linked_sheet(rows, path, title, header, widths, source_column=None, extra_sheets=(), entry_columns=None,
