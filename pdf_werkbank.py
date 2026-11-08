@@ -70,8 +70,9 @@ from preferences import (DEFAULT_FAVORITES, FORM_RULES, FORM_TEMPLATES, GROUPS, 
                          read_package, validate_form_templates)
 from archive_run import ArchiveRun
 from form_run import FormRun
-from scan_form import (SCAN_FORM_TEMPLATES, apply_scan_fields, capture_scan_fields, check_scan_target,
-                       scan_form_templates, validate_scan_templates)
+from scan_form import (SCAN_FORM_TEMPLATES, aligned_boxes, anchor_image, apply_scan_fields, capture_anchor,
+                       capture_scan_fields, check_scan_target, locate_anchor, scan_form_templates,
+                       validate_scan_templates)
 from project_move import (MAX_PROJECT, import_project, project_sources, read_project, scan_destinations,
                           write_project)
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
@@ -84,7 +85,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 46, 0)
+VERSION = (1, 47, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -823,6 +824,7 @@ class ScanFieldPreview(QLabel):
         super().__init__()
         self.fields, self.select = fields, select
         self.page, self.selected, self.drag = -1, None, None
+        self.anchors, self.pick, self.allow_drag = [], None, True
         self.setCursor(Qt.CursorShape.OpenHandCursor)
 
     def bounds(self, field):
@@ -842,10 +844,21 @@ class ScanFieldPreview(QLabel):
             painter.setPen(QPen(QColor("#9a4900" if active else "#20558c"), 2))
             painter.drawRect(box)
             painter.drawText(box.adjusted(3, 0, -3, 0), Qt.AlignmentFlag.AlignVCenter, field["name"])
+        for number, (x, y) in enumerate(self.anchors, 1):
+            point = QPointF(x * self.width(), y * self.height())
+            painter.setPen(QPen(QColor("#147344"), 2))
+            painter.setBrush(QColor("#d7ffe8"))
+            painter.drawEllipse(point, 9, 9)
+            painter.drawText(QRectF(point.x() - 9, point.y() - 9, 18, 18), Qt.AlignmentFlag.AlignCenter, str(number))
         painter.end()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+            if self.pick:
+                self.pick([event.position().x() / self.width(), event.position().y() / self.height()])
+                return
+            if not self.allow_drag:
+                return
             order = [i for i, field in enumerate(self.fields) if field["page"] == self.page]
             if self.selected in order:
                 order.remove(self.selected)
@@ -970,6 +983,7 @@ class Window(QMainWindow):
             ("Signaturen", [("Digital signieren", self.sign_document), ("Signaturen prüfen", self.check_signatures)]),
             ("Formular", [("Feld erstellen", lambda: self.set_mode("Feld")), ("Felder vorschlagen", self.suggest_fields),
                           ("Feldvorlage speichern", self.save_scan_field_template), ("Feldvorlage anwenden", self.use_scan_field_template),
+                          ("Ausrichtpunkte speichern", self.set_scan_template_anchors),
                           ("Pflichtfelder prüfen", self.check_required_fields), ("Feste Formularkopie", self.flatten_form_copy),
                           ("Formulare nach Excel", self.export_form_batch),
                           ("Excel-Formularvorlagen", lambda: self.export_form_batch(use_template=True)),
@@ -6599,14 +6613,42 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
-    def preview_scan_field_template(self, doc, template):
+    def set_scan_template_anchors(self):
+        session = self.current
+        if not session:
+            return
+        try:
+            templates = scan_form_templates(self.favorite_settings)
+            if not templates:
+                raise ValueError("Speichere zuerst eine Feldvorlage und öffne den passenden Referenzscan.")
+            name, ok = QInputDialog.getItem(self, "Ausrichtpunkte speichern", "Feldvorlage zum Referenzscan",
+                                           sorted(templates, key=str.casefold), editable=False)
+            if not ok:
+                return
+            if any(field["page"] >= len(session.doc) for field in templates[name]):
+                raise ValueError("Der Referenzscan hat zu wenige Seiten für diese Feldvorlage.")
+            adjusted = self.preview_scan_field_template(session.doc, templates[name], capture=True)
+            if adjusted is None:
+                return
+            templates[name] = adjusted
+            validate_scan_templates(templates)
+            self.favorite_settings.setValue(SCAN_FORM_TEMPLATES, json.dumps(templates, ensure_ascii=False))
+            self.favorite_settings.sync()
+            if self.favorite_settings.status() != QSettings.Status.NoError:
+                raise OSError("Die Ausrichtpunkte konnten nicht dauerhaft gespeichert werden.")
+            self.statusBar().showMessage("Ausrichtpunkte der Feldvorlage gespeichert.", 8500)
+        except Exception as exc:
+            self.error(exc)
+
+    def preview_scan_field_template(self, doc, template, capture=False):
         fields = [{**field, "box": field["box"][:]} for field in template]
         dialog = QDialog(self)
-        dialog.setWindowTitle("Feldvorlage auf dem Scan ausrichten")
+        dialog.setWindowTitle("Ausrichtpunkte im Referenzscan setzen" if capture else "Feldvorlage auf dem Scan ausrichten")
         dialog.resize(960, 740)
         layout = QVBoxLayout(dialog)
-        hint = QLabel("Ziehe die Felder mit der Maus an die passende Stelle. "
-                      "Die Vorlage folgt der sichtbaren Seitenausrichtung. Drehe falsch ausgerichtete Scans vorab.")
+        hint = QLabel("Wähle zwei markante, weit auseinanderliegende Druckpunkte. "
+                      "Am besten eignen sich unterschiedliche Ecken oder Buchstaben."
+                      if capture else "Prüfe den Ausrichtungsvorschlag. Felder lassen sich weiterhin einzeln ziehen.")
         hint.setWordWrap(True)
         layout.addWidget(hint)
         pages = QComboBox()
@@ -6615,8 +6657,14 @@ class Window(QMainWindow):
             pages.addItem(f"Seite {index + 1}", index)
         layout.addWidget(pages)
         split = QSplitter()
+        sidebar = QWidget()
+        side_layout = QVBoxLayout(sidebar)
         listing = QListWidget()
-        split.addWidget(listing)
+        side_layout.addWidget(listing)
+        samples = [QLabel(), QLabel()]
+        for sample in samples:
+            side_layout.addWidget(sample)
+        split.addWidget(sidebar)
         scroll = QScrollArea()
         scroll.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -6627,16 +6675,116 @@ class Window(QMainWindow):
                     break
 
         image = ScanFieldPreview(fields, select)
+        image.allow_drag = not capture
         scroll.setWidget(image)
         split.addWidget(scroll)
         split.setStretchFactor(1, 4)
         layout.addWidget(split, 1)
         required = QCheckBox("Ausgewähltes Feld ist ein Pflichtfeld")
         layout.addWidget(required)
+        required.setVisible(not capture)
+        status = QLabel()
+        status.setWordWrap(True)
+        layout.addWidget(status)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Felder übernehmen")
-        reset = buttons.addButton("Positionen auf dieser Seite zurücksetzen", QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Ausrichtpunkte speichern" if capture else "Felder übernehmen")
+        reset = buttons.addButton("Ausrichtpunkte dieser Seite entfernen" if capture else "Positionen zurücksetzen",
+                                  QDialogButtonBox.ButtonRole.ActionRole)
+        manual = buttons.addButton("Zwei Punkte setzen" if capture else "Zwei Punkte von Hand setzen",
+                                   QDialogButtonBox.ButtonRole.ActionRole)
+        auto = buttons.addButton("Automatisch ausrichten", QDialogButtonBox.ButtonRole.ActionRole)
+        auto.setVisible(not capture)
         layout.addWidget(buttons)
+        reference = {field["page"]: field["anchors"] for field in template if "anchors" in field}
+        markers, messages = {}, {}
+        first_visit = set()
+
+        def finish_pick():
+            image.pick = None
+            image.setCursor(Qt.CursorShape.OpenHandCursor if image.allow_drag else Qt.CursorShape.ArrowCursor)
+
+        def show_samples():
+            current = reference.get(image.page, [])
+            for index, sample in enumerate(samples):
+                sample.setVisible(index < len(current))
+                if index < len(current):
+                    raw = bytes.fromhex(current[index]["patch"])
+                    patch = QImage(raw, 11, 11, 11, QImage.Format.Format_Grayscale8).copy()
+                    sample.setPixmap(QPixmap.fromImage(patch).scaled(88, 88))
+                    sample.setToolTip(f"Referenz für Punkt {index + 1}")
+
+        def align(points):
+            index = image.page
+            before = [field for field in template if field["page"] == index]
+            after = [field for field in fields if field["page"] == index]
+            page = doc[index].rect
+            boxes = aligned_boxes(before, reference[index], points, page.width / page.height)
+            for field, box in zip(after, boxes):
+                field["box"] = box
+            markers[index] = points
+            image.anchors = points
+            image.update()
+
+        def auto_align():
+            finish_pick()
+            index = image.page
+            try:
+                raster = anchor_image(doc[index])
+                points = [locate_anchor(raster, anchor) for anchor in reference[index]]
+                if any(point is None for point in points):
+                    raise ValueError("Mindestens ein Ausrichtpunkt war nicht eindeutig.")
+                align(points)
+                messages[index] = "Automatisch ausgerichtet. Prüfe den Vorschlag vor dem Übernehmen."
+            except (RuntimeError, ValueError) as exc:
+                messages[index] = f"{exc} Du kannst die Punkte von Hand setzen."
+            status.setText(messages[index])
+
+        def start_pick():
+            finish_pick()
+            index = image.page
+            points, patches = [], []
+            try:
+                raster = anchor_image(doc[index]) if capture else None
+            except (RuntimeError, ValueError) as exc:
+                status.setText(str(exc))
+                return
+            image.anchors = []
+            image.update()
+            status.setText("Klicke auf Punkt 1." if capture else "Klicke auf die Stelle, die Punkt 1 im Referenzscan entspricht.")
+
+            def picked(point):
+                try:
+                    if capture:
+                        anchor = capture_anchor(raster, point)
+                        patches.append(anchor)
+                        point = anchor["point"]
+                    points.append(point)
+                    if len(points) == 2:
+                        if capture:
+                            rect = doc[index].rect
+                            aligned_boxes([], patches, points, rect.width / rect.height)
+                            reference[index] = patches[:]
+                            messages[index] = "Zwei Ausrichtpunkte gespeichert. Du kannst zur nächsten Seite wechseln."
+                            show_samples()
+                        else:
+                            align(points)
+                            messages[index] = "Nach den manuell gesetzten Punkten ausgerichtet."
+                        markers[index] = points[:]
+                        finish_pick()
+                        status.setText(messages[index])
+                    else:
+                        status.setText("Klicke jetzt auf Punkt 2.")
+                    image.anchors = points[:]
+                    image.update()
+                except ValueError as exc:
+                    if len(points) == 2:
+                        points.pop()
+                        if capture:
+                            patches.pop()
+                    status.setText(f"{exc} Setze den Punkt erneut.")
+
+            image.pick = picked
+            image.setCursor(Qt.CursorShape.CrossCursor)
 
         def show_field():
             item = listing.currentItem()
@@ -6650,6 +6798,7 @@ class Window(QMainWindow):
         def show_page():
             image.page = pages.currentData()
             image.drag = None
+            finish_pick()
             page = doc[image.page]
             rendered = pixmap(page, min(640 / page.rect.width, 710 / page.rect.height))
             image.setPixmap(rendered)
@@ -6662,11 +6811,29 @@ class Window(QMainWindow):
                     item.setData(Qt.ItemDataRole.UserRole, index)
                     listing.addItem(item)
             listing.setCurrentRow(0)
+            has_reference = image.page in reference
+            show_samples()
+            auto.setEnabled(has_reference)
+            manual.setEnabled(capture or has_reference)
+            image.anchors = markers.get(image.page, [anchor["point"] for anchor in reference.get(image.page, [])] if capture else [])
+            status.setText(messages.get(image.page, "Zwei Punkte für diese Seite setzen." if capture else
+                                        "Für diese Seite sind keine Ausrichtpunkte gespeichert. Du kannst die Felder einzeln ziehen."))
+            if not capture and has_reference and image.page not in first_visit:
+                first_visit.add(image.page)
+                auto_align()
 
         def reset_page():
+            finish_pick()
+            if capture:
+                reference.pop(image.page, None)
+                show_samples()
             for field, initial in zip(fields, template):
                 if field["page"] == image.page:
                     field["box"] = initial["box"][:]
+            markers.pop(image.page, None)
+            image.anchors = []
+            messages[image.page] = "Ausrichtpunkte entfernt." if capture else "Ursprüngliche Feldpositionen wiederhergestellt."
+            status.setText(messages[image.page])
             image.update()
 
         def set_required(enabled):
@@ -6677,10 +6844,19 @@ class Window(QMainWindow):
         pages.currentIndexChanged.connect(show_page)
         required.toggled.connect(set_required)
         reset.clicked.connect(reset_page)
+        auto.clicked.connect(auto_align)
+        manual.clicked.connect(start_pick)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         show_page()
-        return fields if dialog.exec() == QDialog.DialogCode.Accepted else None
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        if capture:
+            for field in fields:
+                field.pop("anchors", None)
+            for index, anchors in reference.items():
+                next(field for field in fields if field["page"] == index)["anchors"] = anchors
+        return fields
 
     def suggest_fields(self):
         session = self.current
@@ -8726,8 +8902,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Ausfüllbare Scan-Felder als Vorlage speichern "
-                         "und in der Vorschau auf weiteren Scans ausrichten.")
+                         "Neu in dieser Version: Scan-Feldvorlagen mit zwei Referenzpunkten "
+                         "automatisch oder von Hand ausrichten.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
