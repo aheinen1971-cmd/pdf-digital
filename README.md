@@ -1,11 +1,11 @@
-# PDF Werkbank 1.44.0 für Windows
+# PDF Werkbank 1.45.0 für Windows
 
 PDFs lokal bearbeiten, drucken, vergleichen und durchsuchen. PDF Werkbank
 speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.44.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.45.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -15,7 +15,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.44.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.45.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -231,6 +231,10 @@ der Messliste. Excel enthält auch die Stückzahlen.
   Die Datumsregel akzeptiert Excel-Datumszellen sowie TT.MM.JJJJ und
   JJJJ-MM-TT. Fehlerhafte Zeilen können nach der Korrektur über
   **Formularlauf fortsetzen** erneut geprüft werden.
+  **Fehlerhafte Zeilen exportieren** erzeugt eine separate Korrekturliste
+  mit markierten Zellen. Bearbeite die Wertespalten und übernimm die
+  Datei mit **Korrekturliste übernehmen**. Die Änderungsvorschau zeigt
+  alte und neue Werte. Die Korrekturen werden im Formularlauf gespeichert.
   Doppelklick auf eine zugeordnete Zelle springt zur PDF-Seite und markiert
   die Felder. **Nächste Feldseite** führt zu weiteren Fundstellen.
   **Zur Formularvorschau** bringt dich zurück. Nach dem Speichern einer

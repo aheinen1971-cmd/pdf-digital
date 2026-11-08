@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
+import hashlib
+import json
 import os
 import posixpath
 import re
@@ -23,6 +25,10 @@ class FormSheetRows(list):
         super().__init__()
         self.columns = {}
         self.date_cells = {}
+
+
+CORRECTION_SHEET = "Korrekturen"
+CORRECTION_META = ("Werkbank-Zeile", "Werkbank-Lauf", "Werkbank-Stand", "Fehler")
 
 
 def workbook_xml(archive, name):
@@ -165,6 +171,102 @@ def read_form_sheet(path, sheet):
     if not rows:
         raise ValueError("Das Tabellenblatt braucht eine Kopfzeile und mindestens eine Datenzeile.")
     return rows
+
+
+def row_token(rows, line, row, issues):
+    dates = {}
+    for name in row:
+        if (line, name) in rows.date_cells:
+            value = rows.date_cells[line, name]
+            dates[name] = value.isoformat() if value is not None else None
+    payload = json.dumps([rows.columns, row, issues, dates], ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def corrected_form_rows(rows, corrections):
+    result = FormSheetRows()
+    result.columns = rows.columns
+    result.date_cells = rows.date_cells.copy()
+    for line, row, issues in rows:
+        entry = corrections.get(str(line))
+        if entry and entry["base"] == row_token(rows, line, row, issues):
+            corrected_cells = {f"Formel oder Zellfehler in {rows.columns[heading]}{line}"
+                               for heading in entry["values"] if heading in rows.columns}
+            issues = [issue for issue in issues if issue not in corrected_cells]
+            for heading in entry["values"]:
+                result.date_cells.pop((line, heading), None)
+            row = {**row, **entry["values"]}
+        elif entry:
+            issues = [*issues, "Excel-Zeile geändert · gespeicherte Korrektur prüfen oder ersetzen"]
+        result.append((line, row, issues))
+    return result
+
+
+def correction_columns(rows, mappings):
+    relevant = {column[0] for column in mappings}
+    return {f"{letter} · {heading}": heading for heading, letter in rows.columns.items()
+            if heading in relevant or heading.casefold() == "dateiname"}
+
+
+def correction_value(rows, line, heading, value):
+    day = rows.date_cells.get((line, heading))
+    return f"{day.day:02d}.{day.month:02d}.{day.year:04d}" if day else value
+
+
+def export_corrections(path, identifier, rows, mappings, failures):
+    columns = correction_columns(rows, mappings)
+    output, marks = [], set()
+    for line, row, issues in rows:
+        error = failures.get(line)
+        if not error:
+            continue
+        output.append((str(line), identifier, row_token(rows, line, row, issues), error,
+                       *(correction_value(rows, line, heading, row.get(heading, "")) for heading in columns.values())))
+        current = len(output) + 1
+        marks.add((current, len(CORRECTION_META)))
+        for index, (heading, original) in enumerate(columns.items(), len(CORRECTION_META) + 1):
+            address = heading.split(" · ", 1)[0] + str(line)
+            if re.search(rf"(?<![A-Z0-9]){address}(?![A-Z0-9])", error) or f"Pflichtwert fehlt: {original}" in error:
+                marks.add((current, index))
+    export_linked_sheet(output, path, CORRECTION_SHEET, [*CORRECTION_META, *columns],
+                        [16, 22, 22, 52, *([28] * len(columns))], marked_cells=marks)
+
+
+def correction_changes(path, identifier, baseline, effective, mappings, completed, existing):
+    incoming = read_form_sheet(path, CORRECTION_SHEET)
+    columns = correction_columns(effective, mappings)
+    if set(incoming.columns) != set(CORRECTION_META) | set(columns):
+        raise ValueError("Die Spalten der Korrekturliste passen nicht mehr zum Formularlauf.")
+    original = {line: (row, issues) for line, row, issues in baseline}
+    current = {line: (row, issues) for line, row, issues in effective}
+    updated, changes, used = existing.copy(), [], set()
+    for imported_line, imported, errors in incoming:
+        line = imported[CORRECTION_META[0]]
+        if (errors or imported[CORRECTION_META[1]] != identifier or not re.fullmatch(r"[1-9][0-9]{0,7}", line)
+                or int(line) not in current or line in used):
+            raise ValueError(f"Ungültige Angaben in Zeile {imported_line} der Korrekturliste.")
+        used.add(line)
+        number = int(line)
+        if number in completed:
+            raise ValueError(f"Excel-Zeile {line} ist bereits fertig und kann nicht korrigiert werden.")
+        row, issues = current[number]
+        if imported[CORRECTION_META[2]] != row_token(effective, number, row, issues):
+            raise ValueError(f"Excel-Zeile {line} wurde seit dem Export geändert. Erstelle eine neue Korrekturliste.")
+        base_row, base_issues = original[number]
+        base_token = row_token(baseline, number, base_row, base_issues)
+        previous = existing.get(line, {})
+        values = previous["values"].copy() if previous.get("base") == base_token else {}
+        for heading, original_heading in columns.items():
+            old = correction_value(effective, number, original_heading, row.get(original_heading, ""))
+            new = correction_value(incoming, imported_line, heading, imported[heading])
+            if new != old:
+                values[original_heading] = new
+                changes.append((f"{baseline.columns[original_heading]}{line}", original_heading, old, new))
+        if values:
+            updated[line] = {"base": base_token, "values": values}
+        else:
+            updated.pop(line, None)
+    return updated, changes
 
 
 def form_row_plan(doc, columns, rows, target, source):
@@ -564,17 +666,18 @@ def export_invoices(rows, path):
                         (24, 18, 22, 65, 42), 4)
 
 
-def export_linked_sheet(rows, path, title, header, widths, source_column=None, extra_sheets=(), entry_columns=None):
+def export_linked_sheet(rows, path, title, header, widths, source_column=None, extra_sheets=(), entry_columns=None,
+                        marked_cells=()):
     namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
     workbook = Element("workbook", {"xmlns": namespace, "xmlns:r": OFFICE_NS})
     sheets = SubElement(workbook, "sheets")
     links = Element("Relationships", xmlns=REL_NS)
     name = "xl/workbook.xml"
     contents = {name: workbook, "xl/_rels/workbook.xml.rels": links}
-    if entry_columns:
+    if entry_columns or marked_cells:
         contents["xl/styles.xml"] = form_entry_styles(namespace)
         SubElement(links, "Relationship", Id="rIdStyles", Target="styles.xml", Type=OFFICE_NS + "/styles")
-        if any(options for _, _, options in entry_columns):
+        if entry_columns and any(options for _, _, options in entry_columns):
             names = SubElement(workbook, "definedNames")
             for index, (_, _, options) in enumerate(entry_columns, 1):
                 if options:
@@ -594,7 +697,7 @@ def export_linked_sheet(rows, path, title, header, widths, source_column=None, e
         columns = SubElement(sheet, "cols")
         for index, width in enumerate(widths, 1):
             column = SubElement(columns, "col", min=str(index), max=str(index), width=str(width), customWidth="1")
-            if entry_columns and number == 1:
+            if (entry_columns or marked_cells) and number == 1:
                 column.set("style", "1")
         data = SubElement(sheet, "sheetData")
         hyperlinks = None
@@ -609,6 +712,8 @@ def export_linked_sheet(rows, path, title, header, widths, source_column=None, e
                     cell = SubElement(row, "c", r=address, t="inlineStr")
                     if entry_columns and number == 1 and index == 1:
                         cell.set("s", "2" if entry_columns[column - 1][1] else "3")
+                    elif number == 1 and (index, column) in marked_cells:
+                        cell.set("s", "4")
                     SubElement(SubElement(cell, "is"), "t", {"xml:space": "preserve"}).text = safe_text(value)
             if source_column and index > 1 and values[source_column - 1]:
                 if hyperlinks is None:
@@ -646,12 +751,14 @@ def form_entry_styles(namespace):
         SubElement(border, side)
     base = {"numFmtId": "0", "fontId": "0", "fillId": "0", "borderId": "0"}
     SubElement(SubElement(styles, "cellStyleXfs", count="1"), "xf", base)
-    formats = SubElement(styles, "cellXfs", count="4")
+    formats = SubElement(styles, "cellXfs", count="5")
     SubElement(formats, "xf", {**base, "xfId": "0"})
     SubElement(formats, "xf", {**base, "xfId": "0", "numFmtId": "49", "applyNumberFormat": "1"})
     for fill in ("2", "0"):
         SubElement(formats, "xf", {**base, "xfId": "0", "fontId": "1", "applyFont": "1",
                                     "fillId": fill, "applyFill": "1"})
+    SubElement(formats, "xf", {**base, "xfId": "0", "numFmtId": "49", "applyNumberFormat": "1",
+                                "fillId": "2", "applyFill": "1"})
     SubElement(SubElement(styles, "cellStyles", count="1"), "cellStyle", name="Normal", xfId="0", builtinId="0")
     return styles
 

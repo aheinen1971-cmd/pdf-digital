@@ -48,6 +48,7 @@ from update_worker import (SIGNER, digest_file, export_usb_update, prepared_upda
                            usb_update_info, verified_launcher, version_tuple)
 
 from office_export import (export_word, export_word_layout, export_excel, export_form_entry, export_invoices, export_linked_sheet,
+                           corrected_form_rows, correction_changes, export_corrections,
                            fill_form, form_entry_columns, form_fields, form_row_plan, map_form_values, read_form_sheet,
                            read_form_values, workbook_sheets)
 from intake import (EXPLORER_COMMANDS, audit_pdf, duplicate_groups, explorer_paths, inspect_duplicate,
@@ -81,7 +82,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 44, 0)
+VERSION = (1, 45, 0)
 POINTS_PER_MM = 72 / 25.4
 THUMB_HEIGHT = 122
 RENDER_BUDGET = 64 * 1024 * 1024
@@ -6058,7 +6059,7 @@ class Window(QMainWindow):
                 plan = form_row_plan(document, templates[mapping], rows, target, source)
             run = FormRun.begin(target, source, hashlib.sha256(original).hexdigest(), workbook, sheet, templates[mapping])
             self.favorite_settings.setValue("form-export/run-folder", str(target))
-            self.run_form_fill(run.path, original, plan, stamp)
+            self.run_form_fill(run.path, original, plan, stamp, rows)
         except Exception as exc:
             self.error(exc)
 
@@ -6207,7 +6208,7 @@ class Window(QMainWindow):
             except Exception as exc:
                 self.error(exc)
 
-    def run_form_fill(self, journal, original=None, plan=None, stamp=None):
+    def run_form_fill(self, journal, original=None, plan=None, stamp=None, rows=None):
         lock = QLockFile(str(journal) + ".lock")
         lock.setStaleLockTime(0)
         if not lock.tryLock(0):
@@ -6215,21 +6216,27 @@ class Window(QMainWindow):
         try:
             run = FormRun.load(journal)
             self.remember_form_run(journal)
+            source = Path(run.data["source"])
+            workbook = Path(run.data["workbook"])
             if original is None:
-                source = Path(run.data["source"])
                 original = self.form_source_bytes(source)
                 if hashlib.sha256(original).hexdigest() != run.data["source_hash"]:
                     raise ValueError("Die PDF-Vorlage wurde geändert. Für eine neue Vorlage starte einen neuen Formularlauf.")
-                workbook = Path(run.data["workbook"])
-                stamp = file_signature(workbook)
-                rows = read_form_sheet(workbook, run.data["sheet"])
-                if file_signature(workbook) != stamp:
-                    raise ValueError("Die Excel-Datei wurde beim Einlesen geändert. Bitte erneut versuchen.")
-                with pdf.open(stream=original, filetype="pdf") as document:
-                    plan = form_row_plan(document, run.data["columns"], rows, journal.parent, source)
-            completed = run.reconcile(plan)
-            run.remember_overview(len(plan), stamp)
-            self.review_form_fill(original, plan, run, completed)
+            while True:
+                if rows is None:
+                    stamp = file_signature(workbook)
+                    rows = read_form_sheet(workbook, run.data["sheet"])
+                    if file_signature(workbook) != stamp:
+                        raise ValueError("Die Excel-Datei wurde beim Einlesen geändert. Bitte erneut versuchen.")
+                effective = corrected_form_rows(rows, run.data.get("corrections", {}))
+                if plan is None:
+                    with pdf.open(stream=original, filetype="pdf") as document:
+                        plan = form_row_plan(document, run.data["columns"], effective, journal.parent, source)
+                completed = run.reconcile(plan)
+                run.remember_overview(len(plan), stamp)
+                if self.review_form_fill(original, plan, run, completed, (rows, effective, stamp)) is not True:
+                    break
+                rows = plan = None
         finally:
             lock.unlock()
 
@@ -6238,7 +6245,7 @@ class Window(QMainWindow):
         self.favorite_settings.setValue("form-export/runs", list(dict.fromkeys([str(journal), *recent]))[:200])
         self.favorite_settings.sync()
 
-    def review_form_fill(self, original, plan, run, completed):
+    def review_form_fill(self, original, plan, run, completed, correction_source=None):
         def filled(path):
             document = pdf.open(stream=original, filetype="pdf")
             try:
@@ -6280,9 +6287,12 @@ class Window(QMainWindow):
         table.setColumnWidth(2, 230)
         table.horizontalHeader().setStretchLastSection(True)
         states = {}
+        failures = {}
         for index, (line, name, path, _, issues) in enumerate(plan):
             issue = completed.get(line) or " · ".join(issues) or results.get(path, "")
             states[line] = issue or "Offen"
+            if issue and line not in completed:
+                failures[line] = issue
             mark = QTableWidgetItem()
             mark.setCheckState(Qt.CheckState.Unchecked if issue else Qt.CheckState.Checked)
             if issue:
@@ -6297,6 +6307,10 @@ class Window(QMainWindow):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel)
         preview = buttons.addButton("Ausgefüllte PDF ansehen", QDialogButtonBox.ButtonRole.ActionRole)
         excel = buttons.addButton("Excel-Bericht speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        export_fix = buttons.addButton("Fehlerhafte Zeilen exportieren", QDialogButtonBox.ButtonRole.ActionRole)
+        import_fix = buttons.addButton("Korrekturliste übernehmen", QDialogButtonBox.ButtonRole.ActionRole)
+        export_fix.setEnabled(bool(failures and correction_source))
+        import_fix.setEnabled(bool(correction_source and run.data.get("correction_id")))
         save = buttons.addButton("Auswahl als PDFs speichern", QDialogButtonBox.ButtonRole.AcceptRole)
         layout.addWidget(buttons)
 
@@ -6311,6 +6325,53 @@ class Window(QMainWindow):
                 rows = [(line, filename, states[line]) for line, filename, _, _, _ in plan]
                 self.save_workbook(name, lambda path: export_linked_sheet(
                     rows, path, "Formularlauf", ("Excel-Zeile", "PDF-Dateiname", "Ergebnis"), (16, 38, 65)))
+
+        def export_fix_rows():
+            name, _ = QFileDialog.getSaveFileName(dialog, "Fehlerhafte Zeilen exportieren",
+                                                 str(run.path.with_name(run.path.stem + "-Korrekturen.xlsx")), "Excel (*.xlsx)")
+            if not name:
+                return
+            try:
+                if Path(name).resolve() == Path(run.data["workbook"]).resolve():
+                    raise ValueError("Bitte speichere die Korrekturliste als separate Excel-Datei.")
+                if not run.data.get("correction_id"):
+                    run.data["correction_id"] = uuid.uuid4().hex
+                    try:
+                        run.write()
+                    except Exception:
+                        del run.data["correction_id"]
+                        raise
+                _, effective, _ = correction_source
+                if self.save_workbook(name, lambda path: export_corrections(
+                        path, run.data["correction_id"], effective, run.data["columns"], failures)):
+                    import_fix.setEnabled(True)
+            except Exception as exc:
+                self.error(exc)
+
+        def import_fix_rows():
+            name, _ = QFileDialog.getOpenFileName(dialog, "Bearbeitete Korrekturliste auswählen", "", "Excel (*.xlsx)")
+            if not name:
+                return
+            try:
+                baseline, effective, stamp = correction_source
+                workbook = Path(run.data["workbook"])
+                if file_signature(workbook) != stamp:
+                    raise ValueError("Die ursprüngliche Excel-Datei wurde geändert. Öffne den Formularlauf erneut.")
+                existing = run.data.get("corrections", {})
+                updated, changes = correction_changes(Path(name), run.data["correction_id"], baseline, effective,
+                                                      run.data["columns"], completed, existing)
+                if not changes:
+                    QMessageBox.information(dialog, "Korrekturliste", "Es wurden keine geänderten Werte gefunden.")
+                    return
+                if not self.review_form_corrections(dialog, changes):
+                    return
+                if file_signature(workbook) != stamp:
+                    raise ValueError("Die ursprüngliche Excel-Datei wurde geändert. Öffne den Formularlauf erneut.")
+                FormRun.from_data(run.path, {**run.data, "corrections": updated}).write()
+                run.data["corrections"] = updated
+                dialog.done(2)
+            except Exception as exc:
+                self.error(exc)
 
         def refresh(*_):
             row = table.currentRow()
@@ -6333,11 +6394,16 @@ class Window(QMainWindow):
         table.itemChanged.connect(refresh)
         preview.clicked.connect(lambda: show_preview(table.currentRow()))
         excel.clicked.connect(export_report)
+        export_fix.clicked.connect(export_fix_rows)
+        import_fix.clicked.connect(import_fix_rows)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         table.setCurrentCell(0, 1)
         refresh()
-        if dialog.exec() != QDialog.DialogCode.Accepted:
+        result = dialog.exec()
+        if result == 2:
+            return True
+        if result != QDialog.DialogCode.Accepted:
             return
 
         lines = {path: line for line, _, path, _, _ in plan if path in eligible}
@@ -6370,6 +6436,32 @@ class Window(QMainWindow):
         report.exec()
         if report.clickedButton() is export_button:
             export_report()
+
+    def review_form_corrections(self, parent, changes):
+        dialog = QDialog(parent)
+        dialog.setWindowTitle("Korrekturen prüfen")
+        dialog.resize(850, 420)
+        layout = QVBoxLayout(dialog)
+        info = QLabel("Diese Werte werden im Formularlauf gespeichert. Die ursprüngliche Excel-Datei bleibt erhalten. "
+                      "Danach prüft die Werkbank den gesamten Stapel erneut.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        table = QTableWidget(len(changes), 4)
+        table.setHorizontalHeaderLabels(["Excel-Zelle", "Spalte", "Bisher", "Neu"])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for row, values in enumerate(changes):
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, column, item)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Korrekturen übernehmen")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        return dialog.exec() == QDialog.DialogCode.Accepted
 
     def flatten_form_copy(self):
         session = self.standards_source()
@@ -8437,8 +8529,8 @@ class Window(QMainWindow):
         layout.addWidget(title)
         details = QLabel("PDFs bearbeiten, scannen, prüfen, messen und drucken.\n"
                          "Quellcode unter AGPL-3.0-only.\n\n"
-                         "Neu in dieser Version: Doppelte Werte und ungültige Datumsangaben "
-                         "in Excel-Formularläufen mit Zelladresse erkennen.")
+                         "Neu in dieser Version: Fehlerhafte Formularzeilen als Excel-Korrekturliste "
+                         "exportieren und mit Änderungsvorschau wieder übernehmen.")
         details.setWordWrap(True)
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

@@ -49,6 +49,18 @@ class FormRun:
             if not isinstance(value, str) or not Path(value).is_absolute() or Path(value).suffix.lower() != suffix:
                 raise ValueError("Ungültiger Eingabepfad im Formularlauf.")
         validate_form_templates({"Serienlauf": data.get("columns")})
+        corrections = data.get("corrections", {})
+        identifier = data.get("correction_id")
+        if (identifier is not None and (not isinstance(identifier, str) or not re.fullmatch(r"[0-9a-f]{32}", identifier))
+                or not isinstance(corrections, dict) or len(corrections) > 500 or (corrections and identifier is None)):
+            raise ValueError("Ungültige Korrekturliste im Formularlauf.")
+        for line, entry in corrections.items():
+            if (not re.fullmatch(r"[1-9][0-9]{0,7}", line) or not isinstance(entry, dict)
+                    or not valid_digest(entry.get("base")) or not isinstance(entry.get("values"), dict)
+                    or not 1 <= len(entry["values"]) <= 101 or any(
+                        not isinstance(name, str) or not 1 <= len(name) <= 120
+                        or not isinstance(value, str) or len(value) > 32767 for name, value in entry["values"].items())):
+                raise ValueError("Ungültige korrigierte Zeile im Formularlauf.")
         overview = data.get("overview")
         if overview is not None and (
                 not isinstance(overview, list) or len(overview) != 4
@@ -65,7 +77,10 @@ class FormRun:
         return cls(path, data)
 
     def write(self):
-        atomic_write(self.path, json.dumps(self.data, ensure_ascii=False).encode("utf-8"))
+        raw = json.dumps(self.data, ensure_ascii=False).encode("utf-8")
+        if len(raw) > 2 * 1024 * 1024:
+            raise ValueError("Der gespeicherte Formularlauf ist zu groß.")
+        atomic_write(self.path, raw)
 
     def remember_overview(self, total, workbook_stamp):
         overview = [total, *workbook_stamp]
