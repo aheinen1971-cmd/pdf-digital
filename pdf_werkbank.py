@@ -1375,7 +1375,8 @@ class Window(QMainWindow):
                            if not unicodedata.combining(char))
 
         commands = [(self.ui(label), self.ui(group), callback,
-                     key(f"{self.ui(label)} {self.ui(group)} {label} {group} {aliases.get(label, '')}"))
+                     key(f"{self.ui(label)} {self.ui(group)} {label} {group} "
+                         f"{aliases.get(label, '')} {self.ui(aliases.get(label, ''))}"))
                     for group, actions in self.groups for label, callback in actions]
         dialog = QDialog(self)
         dialog.setWindowTitle(self.ui("Befehl suchen"))

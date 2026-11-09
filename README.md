@@ -333,7 +333,9 @@ bleiben beim Neustart erhalten.
 - **Strg+K** öffnet die Befehlssuche. Mit Pfeiltasten und Eingabe lässt
   sich eine Funktion aus den Registerkarten starten.
   Auch Begriffe wie „zusammenfügen“, „komprimieren“ und „aufteilen“
-  finden die passenden PDF-Werkzeuge.
+  finden die passenden PDF-Werkzeuge. Für Zusammenfügen, Komprimieren,
+  Aufteilen, Schwärzen und Texterkennung gibt es zusätzliche Suchbegriffe
+  in allen 20 Oberflächensprachen.
 - Rückgängig/Wiederholen bewahrt bis zu acht Bearbeitungsstände.
   Stände über 4 MiB werden in automatisch entfernten temporären Dateien
   gehalten, um den dauerhaften Arbeitsspeicherbedarf zu reduzieren.
