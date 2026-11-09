@@ -51,7 +51,8 @@ def validate_groups(groups):
     for group, value in groups.items():
         if group == "favorites":
             valid = isinstance(value, list) and len(value) <= 100 and all(
-                short_text(key, 130) and (key in COMMANDS or key.startswith("profile:") and len(key) > 8)
+                short_text(key, 130) and (key in COMMANDS or key.startswith("profile:") and len(key) > 8
+                                        or key.startswith("tool:") and len(key) > 5)
                 for key in value)
         elif group == "workflows":
             valid = isinstance(value, dict) and len(value) <= 100 and all(

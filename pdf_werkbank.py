@@ -86,7 +86,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 57, 0)
+VERSION = (1, 58, 0)
 APP_TITLE = "PDF Digital"
 APP_SLOGAN = "Alles finden und bearbeiten"
 UI_LANGUAGES = {
@@ -1126,6 +1126,7 @@ class Window(QMainWindow):
                       ("Offline-Bereitschaft prüfen", self.offline_readiness_dialog),
                       ("Update vom USB-Stick", self.usb_update_dialog), ("Update für USB speichern", self.usb_update_export)]),
         ]
+        self.extend_favorite_commands()
         for name, _ in self.groups:
             self.tools.addTab(self.ui(name))
         layout.addWidget(self.tools)
@@ -1323,21 +1324,126 @@ class Window(QMainWindow):
 
     def populate_favorite_menu(self):
         self.favorite_menu.clear()
+        customize = self.favorite_menu.addAction(self.ui("Werkzeugleiste anpassen"))
+        customize.triggered.connect(self.customize_toolbar)
+        self.favorite_menu.addSeparator()
         profiles = self.favorite_menu.addMenu(self.ui("Gespeicherte Abläufe"))
         profiles.setEnabled(any(key.startswith("profile:") for key in self.favorite_commands))
         for key, (label, _) in self.favorite_commands.items():
+            if key.startswith("tool:"):
+                continue  # The searchable editor lists the complete tool catalogue.
             action = (profiles if key.startswith("profile:") else self.favorite_menu).addAction(self.ui(label))
             action.setCheckable(True)
             action.setChecked(key in self.favorite_keys)
             action.toggled.connect(lambda checked, key=key: self.pin_favorite(key, checked))
 
     def pin_favorite(self, key, enabled):
-        if enabled and key not in self.favorite_keys:
-            self.favorite_keys.append(key)
-        elif not enabled and key in self.favorite_keys:
-            self.favorite_keys.remove(key)
-        self.favorite_settings.setValue("toolbar/favorites", self.favorite_keys)
+        keys = list(self.favorite_keys)
+        if enabled and key not in keys:
+            keys.append(key)
+        elif not enabled and key in keys:
+            keys.remove(key)
+        try:
+            self.save_favorites(keys)
+        except (ValueError, OSError) as exc:
+            self.error(exc)
+
+    def extend_favorite_commands(self):
+        for _, commands in self.groups:
+            for label, callback in commands:
+                if not any(callback == run for _, run in self.favorite_commands.values()):
+                    self.favorite_commands.setdefault("tool:" + label, (label, callback))
+        saved = self.favorite_settings.value("toolbar/favorites", DEFAULT_FAVORITES)
+        if not isinstance(saved, list): saved = DEFAULT_FAVORITES
+        self.favorite_keys = list(dict.fromkeys(key for key in saved if isinstance(key, str) and key in self.favorite_commands))[:100]
+        self.populate_favorite_menu()
         self.refresh_favorites()
+
+    def save_favorites(self, keys):
+        if len(keys) > 100 or len(set(keys)) != len(keys) or any(key not in self.favorite_commands for key in keys):
+            raise ValueError(self.ui("Höchstens 100 Werkzeuge auswählen."))
+        previous = self.favorite_settings.value("toolbar/favorites", DEFAULT_FAVORITES)
+        self.favorite_settings.setValue("toolbar/favorites", list(keys))
+        self.favorite_settings.sync()
+        if self.favorite_settings.status() != QSettings.Status.NoError:
+            self.favorite_settings.setValue("toolbar/favorites", previous)
+            self.favorite_settings.sync()
+            raise OSError(self.ui("Die Einträge konnten nicht gespeichert werden."))
+        self.favorite_keys = list(keys)
+        self.refresh_favorites()
+
+    def customize_toolbar(self):
+        self.profile_commands()
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.ui("Werkzeugleiste anpassen"))
+        dialog.setLayoutDirection(self.layoutDirection())
+        layout = QVBoxLayout(dialog)
+        hint = QLabel(self.ui("Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl."))
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+        search = QLineEdit()
+        search.setPlaceholderText(self.ui("Suchen"))
+        search.setAccessibleName(self.ui("Suchen"))
+        layout.addWidget(search)
+        rows = QListWidget()
+        rows.setObjectName("toolbar-tools")
+        rows.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        rows.setDefaultDropAction(Qt.DropAction.MoveAction)
+        rows.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        layout.addWidget(rows)
+
+        def filter_rows(query):
+            for i in range(rows.count()):
+                item = rows.item(i)
+                item.setHidden(query.casefold() not in item.text().casefold())
+
+        def fill(keys):
+            rows.clear()
+            keys = [key for key in keys if key in self.favorite_commands]
+            for key in keys + [key for key in self.favorite_commands if key not in keys]:
+                label = self.favorite_commands[key][0]
+                text = (self.ui("Gespeicherte Abläufe") + " · " + key[len("profile:"):]) if key.startswith("profile:") else self.ui(label)
+                item = QListWidgetItem(text)
+                item.setData(Qt.ItemDataRole.UserRole, key)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsDragEnabled)
+                item.setCheckState(Qt.CheckState.Checked if key in keys else Qt.CheckState.Unchecked)
+                rows.addItem(item)
+            filter_rows(search.text())
+
+        def move(delta):
+            source = rows.currentRow()
+            target = source + delta
+            while 0 <= target < rows.count() and rows.item(target).isHidden(): target += delta
+            if source >= 0 and 0 <= target < rows.count():
+                item = rows.takeItem(source)
+                rows.insertItem(target, item)
+                rows.setCurrentItem(item)
+
+        controls = QHBoxLayout()
+        for label, callback in (("Nach oben", lambda: move(-1)), ("Nach unten", lambda: move(1)),
+                                ("Standardauswahl", lambda: fill(DEFAULT_FAVORITES))):
+            button = QPushButton(self.ui(label))
+            button.clicked.connect(callback)
+            controls.addWidget(button)
+        layout.addLayout(controls)
+        buttons = QDialogButtonBox()
+        buttons.addButton(self.ui("Speichern"), QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.addButton(self.ui("Abbrechen"), QDialogButtonBox.ButtonRole.RejectRole)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        search.textChanged.connect(filter_rows)
+        fill(self.favorite_keys)
+        dialog.resize(580, 600)
+        while dialog.exec() == QDialog.DialogCode.Accepted:
+            keys = [rows.item(i).data(Qt.ItemDataRole.UserRole) for i in range(rows.count())
+                    if rows.item(i).checkState() == Qt.CheckState.Checked]
+            try:
+                self.save_favorites(keys)
+                self.populate_favorite_menu()
+                return
+            except (ValueError, OSError) as exc:
+                self.error(exc)
 
     def refresh_favorites(self):
         for action in self.favorite_actions:
@@ -1345,6 +1451,8 @@ class Window(QMainWindow):
             action.deleteLater()
         self.favorite_actions.clear()
         for key in self.favorite_keys:
+            if key not in self.favorite_commands:
+                continue
             label, callback = self.favorite_commands[key]
             action = self.favorite_toolbar.addAction(self.ui(label))
             action.triggered.connect(lambda _=False, run=callback: run())
@@ -2435,7 +2543,9 @@ class Window(QMainWindow):
         if "archive" in selection and new_archive:
             settings.setValue("invoice-watch/archive", new_archive)
             settings.sync()
-        self.refresh_favorites()
+        self.favorite_settings.sync()
+        self.profile_commands()
+        self.extend_favorite_commands()
         if self.open_work_dialog is not None:
             self.open_work_dialog.refresh_entries()
         if warnings:

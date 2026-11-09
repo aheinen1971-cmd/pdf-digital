@@ -1210,7 +1210,13 @@
     "Archivfreigaben und Belegnotizen": "Archive approvals and document notes",
     "Ordner und Formularläufe": "Folders and form runs",
     "Einstellungen": "Settings",
-    "Scanprofil": "Scan profile"
+    "Scanprofil": "Scan profile",
+    "Werkzeugleiste anpassen": "Customize toolbar",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Tick tools and drag to reorder. Only Save applies your selection.",
+    "Höchstens 100 Werkzeuge auswählen.": "Select no more than 100 tools.",
+    "Nach oben": "Move up",
+    "Nach unten": "Move down",
+    "Standardauswahl": "Default selection"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2423,7 +2429,13 @@
     "Archivfreigaben und Belegnotizen": "Validations d’archivage et notes",
     "Ordner und Formularläufe": "Dossiers et traitements de formulaires",
     "Einstellungen": "Paramètres",
-    "Scanprofil": "Profil de numérisation"
+    "Scanprofil": "Profil de numérisation",
+    "Werkzeugleiste anpassen": "Personnaliser la barre d’outils",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Cochez les outils et faites-les glisser pour les trier. Seul Enregistrer applique la sélection.",
+    "Höchstens 100 Werkzeuge auswählen.": "Sélectionnez au maximum 100 outils.",
+    "Nach oben": "Monter",
+    "Nach unten": "Descendre",
+    "Standardauswahl": "Sélection par défaut"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3636,7 +3648,13 @@
     "Archivfreigaben und Belegnotizen": "Aprobaciones de archivo y notas",
     "Ordner und Formularläufe": "Carpetas y procesos de formularios",
     "Einstellungen": "Ajustes",
-    "Scanprofil": "Perfil de escaneo"
+    "Scanprofil": "Perfil de escaneo",
+    "Werkzeugleiste anpassen": "Personalizar barra de herramientas",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Marque herramientas y arrástrelas para ordenarlas. Solo Guardar aplica la selección.",
+    "Höchstens 100 Werkzeuge auswählen.": "Seleccione como máximo 100 herramientas.",
+    "Nach oben": "Subir",
+    "Nach unten": "Bajar",
+    "Standardauswahl": "Selección predeterminada"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -4849,7 +4867,13 @@
     "Archivfreigaben und Belegnotizen": "Archiefgoedkeuringen en documentnotities",
     "Ordner und Formularläufe": "Mappen en formulierverwerkingen",
     "Einstellungen": "Instellingen",
-    "Scanprofil": "Scanprofiel"
+    "Scanprofil": "Scanprofiel",
+    "Werkzeugleiste anpassen": "Werkbalk aanpassen",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Vink gereedschappen aan en versleep ze om te sorteren. Alleen Opslaan past uw keuze toe.",
+    "Höchstens 100 Werkzeuge auswählen.": "Selecteer maximaal 100 gereedschappen.",
+    "Nach oben": "Omhoog",
+    "Nach unten": "Omlaag",
+    "Standardauswahl": "Standaardselectie"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6062,7 +6086,13 @@
     "Archivfreigaben und Belegnotizen": "Approvazioni di archiviazione e note",
     "Ordner und Formularläufe": "Cartelle ed elaborazioni di moduli",
     "Einstellungen": "Impostazioni",
-    "Scanprofil": "Profilo di scansione"
+    "Scanprofil": "Profilo di scansione",
+    "Werkzeugleiste anpassen": "Personalizza barra degli strumenti",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Seleziona gli strumenti e trascinali per ordinarli. Solo Salva applica la selezione.",
+    "Höchstens 100 Werkzeuge auswählen.": "Seleziona al massimo 100 strumenti.",
+    "Nach oben": "Sposta su",
+    "Nach unten": "Sposta giù",
+    "Standardauswahl": "Selezione predefinita"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7275,7 +7305,13 @@
     "Archivfreigaben und Belegnotizen": "Aprovações de arquivo e notas",
     "Ordner und Formularläufe": "Pastas e processos de formulários",
     "Einstellungen": "Definições",
-    "Scanprofil": "Perfil de digitalização"
+    "Scanprofil": "Perfil de digitalização",
+    "Werkzeugleiste anpassen": "Personalizar barra de ferramentas",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Selecione ferramentas e arraste para ordenar. Só Guardar aplica a seleção.",
+    "Höchstens 100 Werkzeuge auswählen.": "Selecione no máximo 100 ferramentas.",
+    "Nach oben": "Subir",
+    "Nach unten": "Descer",
+    "Standardauswahl": "Seleção predefinida"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8488,7 +8524,13 @@
     "Archivfreigaben und Belegnotizen": "Zatwierdzenia archiwizacji i notatki",
     "Ordner und Formularläufe": "Foldery i przebiegi formularzy",
     "Einstellungen": "Ustawienia",
-    "Scanprofil": "Profil skanowania"
+    "Scanprofil": "Profil skanowania",
+    "Werkzeugleiste anpassen": "Dostosuj pasek narzędzi",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Zaznacz narzędzia i przeciągaj, aby zmienić kolejność. Tylko Zapisz zatwierdza wybór.",
+    "Höchstens 100 Werkzeuge auswählen.": "Wybierz najwyżej 100 narzędzi.",
+    "Nach oben": "W górę",
+    "Nach unten": "W dół",
+    "Standardauswahl": "Wybór domyślny"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -9701,7 +9743,13 @@
     "Archivfreigaben und Belegnotizen": "Schválení archivace a poznámky",
     "Ordner und Formularläufe": "Složky a zpracování formulářů",
     "Einstellungen": "Nastavení",
-    "Scanprofil": "Profil skenování"
+    "Scanprofil": "Profil skenování",
+    "Werkzeugleiste anpassen": "Přizpůsobit panel nástrojů",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Zaškrtněte nástroje a přetažením je seřaďte. Výběr se použije až po uložení.",
+    "Höchstens 100 Werkzeuge auswählen.": "Vyberte nejvýše 100 nástrojů.",
+    "Nach oben": "Nahoru",
+    "Nach unten": "Dolů",
+    "Standardauswahl": "Výchozí výběr"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -10914,7 +10962,13 @@
     "Archivfreigaben und Belegnotizen": "Arkivgodkendelser og bilagsnoter",
     "Ordner und Formularläufe": "Mapper og formularforløb",
     "Einstellungen": "Indstillinger",
-    "Scanprofil": "Scanningsprofil"
+    "Scanprofil": "Scanningsprofil",
+    "Werkzeugleiste anpassen": "Tilpas værktøjslinje",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Markér værktøjer, og træk for at ændre rækkefølgen. Kun Gem anvender valget.",
+    "Höchstens 100 Werkzeuge auswählen.": "Vælg højst 100 værktøjer.",
+    "Nach oben": "Flyt op",
+    "Nach unten": "Flyt ned",
+    "Standardauswahl": "Standardvalg"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12127,7 +12181,13 @@
     "Archivfreigaben und Belegnotizen": "Arkivgodkännanden och dokumentanteckningar",
     "Ordner und Formularläufe": "Mappar och formulärkörningar",
     "Einstellungen": "Inställningar",
-    "Scanprofil": "Skanningsprofil"
+    "Scanprofil": "Skanningsprofil",
+    "Werkzeugleiste anpassen": "Anpassa verktygsfält",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Markera verktyg och dra för att ändra ordningen. Endast Spara tillämpar valet.",
+    "Höchstens 100 Werkzeuge auswählen.": "Välj högst 100 verktyg.",
+    "Nach oben": "Flytta upp",
+    "Nach unten": "Flytta ned",
+    "Standardauswahl": "Standardval"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -13340,7 +13400,13 @@
     "Archivfreigaben und Belegnotizen": "Arkivgodkjenninger og bilagsnotater",
     "Ordner und Formularläufe": "Mapper og skjemakjøringer",
     "Einstellungen": "Innstillinger",
-    "Scanprofil": "Skanneprofil"
+    "Scanprofil": "Skanneprofil",
+    "Werkzeugleiste anpassen": "Tilpass verktøylinje",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Merk verktøy og dra for å endre rekkefølgen. Bare Lagre bruker valget.",
+    "Höchstens 100 Werkzeuge auswählen.": "Velg høyst 100 verktøy.",
+    "Nach oben": "Flytt opp",
+    "Nach unten": "Flytt ned",
+    "Standardauswahl": "Standardvalg"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -14553,7 +14619,13 @@
     "Archivfreigaben und Belegnotizen": "Arkistoinnin hyväksynnät ja muistiinpanot",
     "Ordner und Formularläufe": "Kansiot ja lomakeajot",
     "Einstellungen": "Asetukset",
-    "Scanprofil": "Skannausprofiili"
+    "Scanprofil": "Skannausprofiili",
+    "Werkzeugleiste anpassen": "Mukauta työkalupalkkia",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Valitse työkalut ja järjestä vetämällä. Vain Tallenna ottaa valinnan käyttöön.",
+    "Höchstens 100 Werkzeuge auswählen.": "Valitse enintään 100 työkalua.",
+    "Nach oben": "Siirrä ylös",
+    "Nach unten": "Siirrä alas",
+    "Standardauswahl": "Oletusvalinta"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -15766,7 +15838,13 @@
     "Archivfreigaben und Belegnotizen": "Arşiv onayları ve belge notları",
     "Ordner und Formularläufe": "Klasörler ve form işlemleri",
     "Einstellungen": "Ayarlar",
-    "Scanprofil": "Tarama profili"
+    "Scanprofil": "Tarama profili",
+    "Werkzeugleiste anpassen": "Araç çubuğunu özelleştir",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Araçları işaretleyin ve sürükleyerek sıralayın. Seçim yalnızca Kaydet ile uygulanır.",
+    "Höchstens 100 Werkzeuge auswählen.": "En fazla 100 araç seçin.",
+    "Nach oben": "Yukarı taşı",
+    "Nach unten": "Aşağı taşı",
+    "Standardauswahl": "Varsayılan seçim"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -16979,7 +17057,13 @@
     "Archivfreigaben und Belegnotizen": "Схвалення архівації та нотатки",
     "Ordner und Formularläufe": "Папки та запуски форм",
     "Einstellungen": "Налаштування",
-    "Scanprofil": "Профіль сканування"
+    "Scanprofil": "Профіль сканування",
+    "Werkzeugleiste anpassen": "Налаштувати панель інструментів",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Позначте інструменти й перетягніть для впорядкування. Вибір застосовується лише після збереження.",
+    "Höchstens 100 Werkzeuge auswählen.": "Виберіть щонайбільше 100 інструментів.",
+    "Nach oben": "Угору",
+    "Nach unten": "Униз",
+    "Standardauswahl": "Типовий вибір"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -18192,7 +18276,13 @@
     "Archivfreigaben und Belegnotizen": "Εγκρίσεις αρχειοθέτησης και σημειώσεις",
     "Ordner und Formularläufe": "Φάκελοι και εκτελέσεις φορμών",
     "Einstellungen": "Ρυθμίσεις",
-    "Scanprofil": "Προφίλ σάρωσης"
+    "Scanprofil": "Προφίλ σάρωσης",
+    "Werkzeugleiste anpassen": "Προσαρμογή γραμμής εργαλείων",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "Επιλέξτε εργαλεία και σύρετε για ταξινόμηση. Μόνο η Αποθήκευση εφαρμόζει την επιλογή.",
+    "Höchstens 100 Werkzeuge auswählen.": "Επιλέξτε έως 100 εργαλεία.",
+    "Nach oben": "Προς τα πάνω",
+    "Nach unten": "Προς τα κάτω",
+    "Standardauswahl": "Προεπιλεγμένη επιλογή"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -19405,7 +19495,13 @@
     "Archivfreigaben und Belegnotizen": "アーカイブ承認と文書メモ",
     "Ordner und Formularläufe": "フォルダーとフォーム処理",
     "Einstellungen": "設定",
-    "Scanprofil": "スキャン設定"
+    "Scanprofil": "スキャン設定",
+    "Werkzeugleiste anpassen": "ツールバーをカスタマイズ",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "ツールにチェックを付け、ドラッグで並べ替えます。「保存」でのみ選択が適用されます。",
+    "Höchstens 100 Werkzeuge auswählen.": "ツールは100個まで選択できます。",
+    "Nach oben": "上へ",
+    "Nach unten": "下へ",
+    "Standardauswahl": "標準の選択"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -20618,7 +20714,13 @@
     "Archivfreigaben und Belegnotizen": "보관 승인 및 문서 메모",
     "Ordner und Formularläufe": "폴더 및 양식 작업",
     "Einstellungen": "설정",
-    "Scanprofil": "스캔 프로필"
+    "Scanprofil": "스캔 프로필",
+    "Werkzeugleiste anpassen": "도구 모음 사용자 지정",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "도구를 선택하고 끌어서 순서를 바꾸세요. 저장을 눌러야 선택이 적용됩니다.",
+    "Höchstens 100 Werkzeuge auswählen.": "도구는 최대 100개까지 선택할 수 있습니다.",
+    "Nach oben": "위로",
+    "Nach unten": "아래로",
+    "Standardauswahl": "기본 선택"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -21831,7 +21933,13 @@
     "Archivfreigaben und Belegnotizen": "موافقات الأرشفة وملاحظات المستندات",
     "Ordner und Formularläufe": "المجلدات وعمليات النماذج",
     "Einstellungen": "الإعدادات",
-    "Scanprofil": "ملف إعداد المسح"
+    "Scanprofil": "ملف إعداد المسح",
+    "Werkzeugleiste anpassen": "تخصيص شريط الأدوات",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "حدّد الأدوات واسحب لترتيبها. لا يُطبّق الاختيار إلا عند الحفظ.",
+    "Höchstens 100 Werkzeuge auswählen.": "اختر 100 أداة كحد أقصى.",
+    "Nach oben": "إلى أعلى",
+    "Nach unten": "إلى أسفل",
+    "Standardauswahl": "الاختيار الافتراضي"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -23044,6 +23152,12 @@
     "Archivfreigaben und Belegnotizen": "אישורי ארכיון והערות למסמכים",
     "Ordner und Formularläufe": "תיקיות והרצות טפסים",
     "Einstellungen": "הגדרות",
-    "Scanprofil": "פרופיל סריקה"
+    "Scanprofil": "פרופיל סריקה",
+    "Werkzeugleiste anpassen": "התאמה אישית של סרגל הכלים",
+    "Werkzeuge anhaken und durch Ziehen sortieren. Nur Speichern übernimmt die Auswahl.": "סמנו כלים וגררו לשינוי הסדר. הבחירה מוחלת רק בלחיצה על שמירה.",
+    "Höchstens 100 Werkzeuge auswählen.": "ניתן לבחור עד 100 כלים.",
+    "Nach oben": "למעלה",
+    "Nach unten": "למטה",
+    "Standardauswahl": "בחירת ברירת מחדל"
   }
 }

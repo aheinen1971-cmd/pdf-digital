@@ -1,4 +1,4 @@
-# PDF Digital 1.57.0 für Windows
+# PDF Digital 1.58.0 für Windows
 
 **Alles finden und bearbeiten**
 
@@ -19,7 +19,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.57.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.58.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -29,7 +29,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.57.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.58.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -343,6 +343,21 @@ der Messliste. Excel enthält auch die Stückzahlen.
   gemeinsame feste PDF-Auswahlwerte und Kontrollkästchen.
 
 ## Favoriten
+
+**Favoriten → Werkzeugleiste anpassen** zeigt die verfügbaren Menüwerkzeuge
+und gespeicherten Abläufe in einer durchsuchbaren Liste. Hake die gewünschten
+Werkzeuge an und ziehe sie in die gewünschte Reihenfolge. Alternativ stehen
+**Nach oben** und **Nach unten** bereit. Auch Textbausteine, Lesestellen und
+die Sitzungsoption sind auswählbar. **Speichern** übernimmt Auswahl und
+Reihenfolge; **Abbrechen** lässt die Leiste unverändert. **Standardauswahl**
+setzt zunächst nur die Vorschau zurück und muss ebenfalls gespeichert werden.
+
+Bis zu 100 Werkzeuge sind möglich. Eine leere Auswahl bleibt über das feste
+Favoriten-Menü bearbeitbar. Bei wenig Platz verwendet die Werkzeugleiste ihr
+Überlaufmenü. Auswahl und Reihenfolge bleiben nach Neustart erhalten und sind
+in Einstellungs-Export und Arbeitsstand-Sicherung enthalten. Neuere Werkzeug-
+Kennungen werden von älteren Programmversionen möglicherweise nicht erkannt.
+Vorhandene Favoriten werden beim ersten Start dieser Version beibehalten.
 
 Über **Favoriten** oberhalb der Registerkarten lassen sich häufige
 Funktionen anheften oder ausblenden. Scannen, Samsung → Posteingang,
