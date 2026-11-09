@@ -1,4 +1,4 @@
-# PDF Digital 1.56.0 für Windows
+# PDF Digital 1.57.0 für Windows
 
 **Alles finden und bearbeiten**
 
@@ -19,7 +19,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.56.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.57.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -29,7 +29,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.56.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.57.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -110,6 +110,28 @@ der Ordner eingelesen ist.
   zum jeweiligen Dokument.
 
 ## Arbeitsstand sichern
+
+Neu in 1.57: Die auswählbare Gruppe **Textbausteine, Lesestellen und
+Arbeitsmappen** nimmt diese lokalen Einträge in die Sicherung auf, auch
+bei einer passwortgeschützten Sicherung. Die Vorschau zeigt neue und
+bereits vorhandene Einträge. Bei gleichem Vorlagennamen beziehungsweise
+derselben Lesestelle bleibt der lokale Eintrag erhalten; es wird nichts
+stillschweigend überschrieben. Alte Sicherungen ohne diese Gruppe löschen
+keine persönlichen Einträge. Die PDF-Dateien selbst werden nicht mitkopiert.
+
+**Ansicht → Sitzung fortsetzen** bietet eine abschaltbare Startoption.
+Nach normalem Schließen werden die zuletzt offenen gespeicherten PDFs,
+Seitenpositionen und der aktive Tab wieder geöffnet. Die Option ist anfangs
+ausgeschaltet. Passwörter werden nicht gespeichert. Speichern, Verwerfen
+und Abbrechen beim Schließen gelten weiterhin; verworfene Änderungen
+werden nicht wiederhergestellt. Fehlende Dateien werden gemeldet,
+Seitenpositionen auf die vorhandene Seitenzahl begrenzt. Ausdrücklich
+geöffnete Dateien und die Wiederherstellung nach einem Absturz haben Vorrang.
+
+In beiden Vergleichsansichten lassen sich beide Seiten mit **Gemeinsam
+scrollen** koppeln und mit **Gemeinsamer Zoom** gemeinsam von 50 bis 200 %
+vergrößern. Die Scrollkopplung gleicht die relative Position an; sie ist
+keine automatische Zuordnung einzelner Absätze. Die Kopplung ist abschaltbar.
 
 **Datei → Arbeitsstand sichern** speichert Einstellungen, lokale Messlisten
 und den Verlauf der Rechnungsfreigaben und Notizen. Beim Import können

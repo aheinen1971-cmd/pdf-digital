@@ -77,7 +77,7 @@ with TemporaryDirectory(ignore_cleanup_errors=True) as temporary:
         row_count = table.rowCount()
         next(box for box in dialog.findChildren(QCheckBox) if "Messlisten" in box.text()).setChecked(False)
         assert table.rowCount() < row_count
-        next(button for button in dialog.findChildren(QPushButton) if "neu zuordnen" in button.text()).click()
+        next(button for button in dialog.findChildren(QPushButton) if button.text() == "Archivordner neu zuordnen").click()
         assert any("Datei geprüft" == table.item(row, 2).text() for row in range(table.rowCount()))
         return QDialog.DialogCode.Rejected
 

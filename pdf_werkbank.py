@@ -79,14 +79,14 @@ from project_move import (MAX_PROJECT, import_project, project_sources, read_pro
 from work_backup import (BACKUP_GROUPS, MAX_PASSWORD, MIN_PASSWORD, BackupPasswordRequired,
                          app_backup_root, archive_remap, automatic_backup, backup_check_rows, backup_preview,
                          default_scan_inbox, location_plan, location_roots, read_backup, reminder_date,
-                         restore_backup, restore_locations, write_backup)
+                         restore_backup, restore_locations, write_backup, validate_tabs)
 from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT, Measurement,
                           PlanMeasurements, calibrated_scale, decode_plans, distance, draw_plan_copy, encode_plans,
                           format_measure, plan_entries, plan_page_key, plan_token, polygon_area, store_path, stored_bytes,
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 56, 0)
+VERSION = (1, 57, 0)
 APP_TITLE = "PDF Digital"
 APP_SLOGAN = "Alles finden und bearbeiten"
 UI_LANGUAGES = {
@@ -302,9 +302,9 @@ def align_pages(left, right):
 
 
 
-def compare_images(left, right):
+def compare_images(left, right, zoom=1.0):
     pages = [page for page in (left, right) if page is not None]
-    scale = 660 / max(max(page.rect.width, page.rect.height) for page in pages)
+    scale = 660 * zoom / max(max(page.rect.width, page.rect.height) for page in pages)
     raster = [page.get_pixmap(matrix=pdf.Matrix(scale, scale), alpha=False) if page is not None else None
               for page in (left, right)]
     if any(image is None for image in raster):
@@ -347,9 +347,11 @@ class CompareDialog(QDialog):
     def __init__(self, parent, left, right, names, pairs, save_review=False):
         super().__init__(parent)
         self.save_review = save_review
-        if save_review:
+        if parent is not None:
             self.setLayoutDirection(parent.layoutDirection())
-        self.ui = parent.ui if save_review else lambda text: text
+        self.ui = parent.ui if parent is not None else lambda text: text
+        self.compare_zoom = 1.0
+        self.syncing = False
         self.setWindowTitle(self.ui("PDF-Versionen vergleichen"))
         self.resize(1090, 790)
         self.docs = (left, right)
@@ -383,6 +385,24 @@ class CompareDialog(QDialog):
             self.areas.append(area)
             panels.addWidget(panel)
         layout.addWidget(panels, 1)
+        controls = QHBoxLayout()
+        self.sync_scroll = QCheckBox(self.ui("Gemeinsam scrollen"))
+        self.sync_scroll.setChecked(True)
+        controls.addWidget(self.sync_scroll)
+        controls.addWidget(QLabel(self.ui("Gemeinsamer Zoom")))
+        self.zoom_control = QSpinBox()
+        self.zoom_control.setRange(50, 200)
+        self.zoom_control.setSingleStep(25)
+        self.zoom_control.setSuffix(" %")
+        self.zoom_control.setValue(100)
+        self.zoom_control.valueChanged.connect(self.set_compare_zoom)
+        controls.addWidget(self.zoom_control)
+        layout.addLayout(controls)
+        for side, area in enumerate(self.areas):
+            for horizontal in (False, True):
+                bar = area.horizontalScrollBar() if horizontal else area.verticalScrollBar()
+                bar.valueChanged.connect(lambda value, side=side, horizontal=horizontal: self.sync_position(side, horizontal))
+        self.sync_scroll.toggled.connect(lambda enabled: (self.sync_position(0, False), self.sync_position(0, True)) if enabled else None)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         if save_review:
             buttons.button(QDialogButtonBox.StandardButton.Close).setText(parent.ui("Schließen"))
@@ -401,6 +421,33 @@ class CompareDialog(QDialog):
             self.pages.setCurrentIndex(first_change)
         else:
             self.render_pair(0)
+
+    def sync_position(self, side, horizontal):
+        if self.syncing or not self.sync_scroll.isChecked():
+            return
+        source, target = self.areas[side], self.areas[1 - side]
+        source = source.horizontalScrollBar() if horizontal else source.verticalScrollBar()
+        target = target.horizontalScrollBar() if horizontal else target.verticalScrollBar()
+        self.syncing = True
+        try:
+            target.setValue(round(source.value() / max(1, source.maximum()) * target.maximum()))
+        finally:
+            self.syncing = False
+
+    def set_compare_zoom(self, value):
+        positions = [(area.horizontalScrollBar().value() / max(1, area.horizontalScrollBar().maximum()),
+                      area.verticalScrollBar().value() / max(1, area.verticalScrollBar().maximum())) for area in self.areas]
+        self.compare_zoom = value / 100
+        self.render_pair(self.pages.currentIndex())
+        def restore():
+            self.syncing = True
+            try:
+                for area, (x, y) in zip(self.areas, positions):
+                    area.horizontalScrollBar().setValue(round(x * area.horizontalScrollBar().maximum()))
+                    area.verticalScrollBar().setValue(round(y * area.verticalScrollBar().maximum()))
+            finally:
+                self.syncing = False
+        QTimer.singleShot(0, restore)
 
     def next_change(self):
         current = self.pages.currentIndex()
@@ -440,9 +487,9 @@ class CompareDialog(QDialog):
         a, b, _ = self.pairs[index]
         left = self.docs[0][a] if a is not None else None
         right = self.docs[1][b] if b is not None else None
-        images, changed = compare_images(left, right)
+        images, changed = compare_images(left, right, self.compare_zoom)
         changes = list(text_changes(left, right))
-        scale = 660 / max(max(page.rect.width, page.rect.height) for page in (left, right) if page is not None)
+        scale = 660 * self.compare_zoom / max(max(page.rect.width, page.rect.height) for page in (left, right) if page is not None)
         for side, (page, image) in enumerate(zip((left, right), images)):
             if page is None or not changes:
                 continue
@@ -1018,6 +1065,7 @@ class Window(QMainWindow):
                        ("Wiederholen", self.redo), ("Änderungsverlauf", self.edit_history),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
+                         ("Sitzung fortsetzen", self.session_options),
                          ("Lesestellen", self.reading_places),
                          ("Zu Seite springen", self.jump_to_page),
                          ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid),
@@ -2190,6 +2238,7 @@ class Window(QMainWindow):
 
     def backup_check_dialog(self, data):
         dialog = QDialog(self)
+        dialog.setLayoutDirection(self.layoutDirection())
         dialog.setWindowTitle(self.ui("Rücksicherung testen"))
         dialog.resize(840, 420)
         layout = QVBoxLayout(dialog)
@@ -2206,7 +2255,7 @@ class Window(QMainWindow):
         table.setColumnWidth(2, 245)
         for row, values in enumerate(rows):
             for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
+                item = QTableWidgetItem(self.ui(value) if column != 1 else value)
                 item.setToolTip(value)
                 table.setItem(row, column, item)
         layout.addWidget(table)
@@ -2263,13 +2312,14 @@ class Window(QMainWindow):
 
     def restore_backup_dialog(self, data, settings):
         dialog = QDialog(self)
+        dialog.setLayoutDirection(self.layoutDirection())
         dialog.setWindowTitle(self.ui("Backup prüfen und wiederherstellen"))
         layout = QVBoxLayout(dialog)
         info = QLabel(self.ui("Wähle die Gruppen für die Wiederherstellung. Abweichende lokale Messlisten bleiben erhalten."))
         info.setWordWrap(True)
         layout.addWidget(info)
-        checks = {key: QCheckBox(label) for key, label in BACKUP_GROUPS.items()}
-        choices = QHBoxLayout()
+        checks = {key: QCheckBox(self.ui(label)) for key, label in BACKUP_GROUPS.items()}
+        choices = QVBoxLayout()
         for box in checks.values():
             box.setChecked(True)
             choices.addWidget(box)
@@ -2300,14 +2350,15 @@ class Window(QMainWindow):
             _, _, path_rows = location_plan(locations, replacements)
             for entry in base_rows + remap_rows + path_rows:
                 group = {"Einstellungen": "settings", "Messlisten": "plans",
-                         "Ordner und Läufe": "locations"}.get(entry[0], "archive")
+                         "Ordner und Läufe": "locations", "Textbausteine": "personal", "Lesestellen": "personal", "Arbeitsmappen": "personal"}.get(entry[0], "archive")
                 if checks[group].isChecked():
                     rows.append(entry)
             table.setRowCount(len(rows))
             for row, values in enumerate(rows):
                 for column, value in enumerate(values):
-                    item = QTableWidgetItem(value)
-                    item.setToolTip(value)
+                    shown = value if column == 1 and values[0] != "Einstellungen" else self.ui(value)
+                    item = QTableWidgetItem(shown)
+                    item.setToolTip(shown)
                     table.setItem(row, column, item)
 
         def choose_archive():
@@ -2359,6 +2410,7 @@ class Window(QMainWindow):
         show_rows()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Ausgewählte Gruppen übernehmen"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -9748,11 +9800,75 @@ class Window(QMainWindow):
             self.switch_doc(self.tabs.currentIndex())
             self.write_recovery()
 
+    def session_options(self):
+        dialog = QDialog(self)
+        dialog.setLayoutDirection(self.layoutDirection())
+        dialog.setWindowTitle(self.ui("Sitzung fortsetzen"))
+        layout = QVBoxLayout(dialog)
+        box = QCheckBox(self.ui("Geöffnete PDFs beim nächsten Start wieder öffnen"))
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        box.setChecked(settings.value("session/resume", False, bool))
+        layout.addWidget(box)
+        info = QLabel(self.ui("Nur gespeicherte Dateien und Seitenpositionen werden gemerkt, keine Passwörter. Ungespeicherte Änderungen müssen vor dem Schließen gespeichert werden."))
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        buttons = QDialogButtonBox()
+        buttons.addButton(self.ui("Speichern"), QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.addButton(self.ui("Schließen"), QDialogButtonBox.ButtonRole.RejectRole)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            settings.setValue("session/resume", box.isChecked())
+            if not box.isChecked(): settings.remove("session/tabs")
+            settings.sync()
+            if settings.status() != QSettings.Status.NoError:
+                self.error(self.ui("Die Einträge konnten nicht gespeichert werden."))
+
+    def remember_session(self, active):
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        if not settings.value("session/resume", False, bool):
+            return
+        records = validate_tabs([dict(path=str(session.recovery_path.resolve()), page=session.page,
+                                      active=session is active) for session in self.sessions])
+        settings.setValue("session/tabs", json.dumps(records, ensure_ascii=False))
+        settings.sync()
+        if settings.status() != QSettings.Status.NoError:
+            raise OSError(self.ui("Die Einträge konnten nicht gespeichert werden."))
+
+    def resume_session(self):
+        if self.sessions:
+            return  # Crash recovery and explicitly opened files take priority.
+        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        if not settings.value("session/resume", False, bool):
+            return
+        try:
+            records = validate_tabs(json.loads(settings.value("session/tabs", "[]", str)))
+            active, missing = None, []
+            for entry in records:
+                if not Path(entry["path"]).is_file():
+                    missing.append(entry["path"])
+                    continue
+                session = self.open_path(entry["path"], page=entry["page"])
+                if session and entry.get("active"): active = session
+            if active: self.tabs.setCurrentIndex(self.sessions.index(active))
+            if missing:
+                QMessageBox.information(self, self.ui("Dateien fehlen"), "\n".join(missing))
+        except (OSError, ValueError, TypeError) as exc:
+            self.error(self.ui(str(exc)))
+
     def closeEvent(self, event):
+        active = self.current
         for index in range(len(self.sessions)):
             if not self.confirm_close(index):
                 event.ignore()
                 return
+        try:
+            self.remember_session(active)
+        except (OSError, ValueError) as exc:
+            self.error(self.ui(str(exc)))
+            event.ignore()
+            return
         if self.recovery:
             try:
                 self.recovery.clear(self.recovery.folder, self.recovery.lock)
@@ -10367,6 +10483,8 @@ def main():
         for path in arguments:
             if Path(path).is_file():
                 window.open_path(path)
+        if not arguments:
+            window.resume_session()
         if not arguments and settings.value("work-overview/start", True, bool):
             window.show_open_work()
 

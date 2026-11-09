@@ -86,6 +86,9 @@ with TemporaryDirectory() as folder:
 
     def choose_search_result():
         dialog = app.activeModalWidget()
+        if dialog is None or dialog.findChild(QListWidget) is None:
+            QTimer.singleShot(10, choose_search_result)
+            return
         seen.append(dialog.findChild(QListWidget).item(0).text())
         dialog.accept()
 

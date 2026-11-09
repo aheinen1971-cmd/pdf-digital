@@ -23,6 +23,7 @@ from update_worker import digest_file, version_tuple
 
 
 BACKUP_GROUPS = {"settings": "Favoriten und gespeicherte Einstellungen",
+                 "personal": "Textbausteine, Lesestellen und Arbeitsmappen",
                  "plans": "Messlisten und Maßstäbe",
                  "archive": "Archivfreigaben und Belegnotizen",
                  "locations": "Ordner und Formularläufe"}
@@ -36,6 +37,72 @@ ENCRYPTED_VERSION = b"\x01"
 MIN_PASSWORD = 8
 MAX_PASSWORD = 1024
 HEX = r"[a-f0-9]{64}"
+PERSONAL_KEYS = {"snippets": "personal/snippets", "reading": "personal/reading", "workspaces": "workspace/maps"}
+
+
+def validate_tabs(records):
+    if not isinstance(records, list) or len(records) > 100:
+        raise ValueError("Ungültige persönliche Sicherungsdaten.")
+    for item in records:
+        if (not isinstance(item, dict) or not set(item) <= {"path", "page", "active"}
+                or not absolute_path(item.get("path")) or type(item.get("page")) is not int
+                or not 0 <= item["page"] <= 1000000
+                or type(item.get("active", False)) is not bool):
+            raise ValueError("Ungültige persönliche Sicherungsdaten.")
+    return records
+
+
+def validate_personal(data):
+    if not isinstance(data, dict) or not data.keys() <= PERSONAL_KEYS.keys():
+        raise ValueError("Ungültige persönliche Sicherungsdaten.")
+    if len(json.dumps(data, ensure_ascii=False).encode("utf-8")) > 4 * 1024 * 1024:
+        raise ValueError("Ungültige persönliche Sicherungsdaten.")
+    snippets, reading, maps = data.get("snippets", []), data.get("reading", []), data.get("workspaces", {})
+    if (not isinstance(snippets, list) or not isinstance(reading, list) or not isinstance(maps, dict)
+            or max(len(snippets), len(reading), len(maps)) > 100):
+        raise ValueError("Ungültige persönliche Sicherungsdaten.")
+    names, positions = set(), set()
+    for item in snippets:
+        if (not isinstance(item, dict) or set(item) != {"name", "text", "size", "font", "color"}
+                or not isinstance(item["name"], str) or not 0 < len(item["name"].strip()) <= 100
+                or item["name"] in names or not isinstance(item["text"], str) or not 0 < len(item["text"]) <= 10000
+                or type(item["size"]) is not int or not 5 <= item["size"] <= 96
+                or type(item["font"]) is not int or item["font"] not in range(3)
+                or type(item["color"]) is not int or item["color"] not in range(3)):
+            raise ValueError("Ungültige persönliche Sicherungsdaten.")
+        names.add(item["name"])
+    for item in reading:
+        if (not isinstance(item, dict) or set(item) != {"path", "page", "note", "digest"}
+                or not absolute_path(item["path"]) or type(item["page"]) is not int
+                or not 0 <= item["page"] <= 1000000 or not isinstance(item["note"], str)
+                or len(item["note"]) > 4000 or not isinstance(item["digest"], str)
+                or not re.fullmatch(HEX, item["digest"])):
+            raise ValueError("Ungültige persönliche Sicherungsdaten.")
+        key = (os.path.normcase(item["path"]), item["page"])
+        if key in positions:
+            raise ValueError("Ungültige persönliche Sicherungsdaten.")
+        positions.add(key)
+    for name, records in maps.items():
+        if not isinstance(name, str) or not 0 < len(name.strip()) <= 100:
+            raise ValueError("Ungültige persönliche Sicherungsdaten.")
+        validate_tabs(records)
+    return {"snippets": snippets, "reading": reading, "workspaces": maps}
+
+
+def capture_personal(settings):
+    return validate_personal({key: json.loads(settings.value(path, "{}" if key == "workspaces" else "[]", str))
+                              for key, path in PERSONAL_KEYS.items()})
+
+
+def merge_personal(incoming, local):
+    incoming, local = validate_personal(incoming), validate_personal(local)
+    merged = {"workspaces": {**incoming["workspaces"], **local["workspaces"]}}
+    for key in ("snippets", "reading"):
+        identity = (lambda item: item["name"]) if key == "snippets" else (lambda item: (os.path.normcase(item["path"]), item["page"]))
+        values = {identity(item): item for item in incoming[key]}
+        values.update({identity(item): item for item in local[key]})
+        merged[key] = list(values.values())
+    return validate_personal(merged)
 ARCHIVE_KEY = r"invoice-watch/(archived|archived-digest|note|reviewed)/" + HEX
 REMINDER_KEY = r"invoice-watch/reminder/" + HEX
 
@@ -213,6 +280,7 @@ def write_backup(target, settings, root, password=None):
         entries["plans/" + relative] = data
         plan_times[relative] = path.stat().st_mtime_ns
     entries["meta.json"] = json.dumps({"plan_times": plan_times, "reminders": reminders,
+                                      "personal": capture_personal(settings),
                                       "form_templates": form_templates(settings),
                                       "scan_form_templates": scan_form_templates(settings),
                                       "dark_mode": settings.value("view/dark-mode", False, bool),
@@ -324,12 +392,25 @@ def read_backup_zip(source):
         if dark_mode is not None and type(dark_mode) is not bool:
             raise ValueError("Ungültige Darstellungseinstellung im Backup.")
         locations = validate_locations(metadata.get("locations", {}))
+        personal = validate_personal(metadata.get("personal", {}))
     return {"settings": groups, "plans": plans, "archive": history, "plan_times": times,
             "archive_root": archive_root, "form_templates": templates, "scan_form_templates": scan_templates,
-            "locations": locations, "dark_mode": dark_mode}
+            "locations": locations, "dark_mode": dark_mode, "personal": personal}
 
 
 def restore_backup(data, selection, settings, root, mapped=None):
+    if "personal" in selection:
+        merged = merge_personal(data.get("personal", {}), capture_personal(settings))
+        previous = {path: settings.value(path) for path in PERSONAL_KEYS.values()}
+        for key, path in PERSONAL_KEYS.items():
+            settings.setValue(path, json.dumps(merged[key], ensure_ascii=False))
+        settings.sync()
+        if settings.status().value != 0:
+            for path, value in previous.items():
+                if value is None: settings.remove(path)
+                else: settings.setValue(path, value)
+            settings.sync()
+            raise OSError("Die Einträge konnten nicht gespeichert werden.")
     if "settings" in selection:
         templates = data.get("form_templates")
         scan_templates = data.get("scan_form_templates")
@@ -410,6 +491,16 @@ def backup_preview(data, settings, root):
     rows = [("Einstellungen", GROUPS[key], "Bereits gleich" if value == local_groups.get(key)
              else "Übernehmen – ersetzt die lokalen Einstellungen dieser Gruppe")
             for key, value in data["settings"].items()]
+    local = capture_personal(settings)
+    incoming = validate_personal(data.get("personal", {}))
+    for key, label in (("snippets", "Textbausteine"), ("reading", "Lesestellen"), ("workspaces", "Arbeitsmappen")):
+        identity = (lambda item: item["name"]) if key == "snippets" else (lambda item: (os.path.normcase(item["path"]), item["page"]))
+        saved = local[key] if key == "workspaces" else {identity(item): item for item in local[key]}
+        items = incoming[key].items() if key == "workspaces" else ((identity(item), item) for item in incoming[key])
+        for name, value in items:
+            state = "Bereits gleich" if saved.get(name) == value else "Lokaler Eintrag bleibt erhalten" if name in saved else "Übernehmen"
+            display = str(name) if key != "reading" else f'{Path(value["path"]).name} · {value["page"] + 1}'
+            rows.append((label, display, state))
     if data.get("scan_form_templates"):
         local_scans = scan_form_templates(settings)
         for name, fields in data["scan_form_templates"].items():
@@ -455,6 +546,13 @@ def reminder_date(value):
 
 def backup_check_rows(data):
     rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
+    personal = validate_personal(data.get("personal", {}))
+    rows.extend(("Textbausteine", item["name"], "Lesbar") for item in personal["snippets"])
+    rows.extend(("Arbeitsmappen", name, "Lesbar") for name in personal["workspaces"])
+    paths = {item["path"] for item in personal["reading"]}
+    paths.update(item["path"] for records in personal["workspaces"].values() for item in records)
+    rows.extend(("Lesestellen", path, "Datei vorhanden" if local_path(Path(path)) and Path(path).is_file()
+                 else "Netzwerkpfad nicht geprüft" if not local_path(Path(path)) else "Datei fehlt") for path in sorted(paths))
     rows.extend(("Excel-Formularvorlage", name, "Lesbar") for name in data.get("form_templates", {}))
     rows.extend(("Scan-Feldvorlage", name, "Lesbar") for name in data.get("scan_form_templates", {}))
     _, _, paths = location_plan(data.get("locations", {"folders": {}, "runs": {}}), {})
