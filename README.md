@@ -1,4 +1,4 @@
-# PDF Digital 1.55.0 für Windows
+# PDF Digital 1.56.0 für Windows
 
 **Alles finden und bearbeiten**
 
@@ -19,7 +19,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.55.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.56.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -29,7 +29,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.55.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.56.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -439,6 +439,31 @@ Suchindex, Arbeitsmappen und gespeicherte Ordnerpfade sind davon getrennt.
   Sie fragt keine Online-Sperrlisten ab.
 
 ## Wiederherstellung und gespeicherte Abläufe
+
+- **Datei → Vergleichen und speichern** zeigt die Datei, die ursprünglich
+  geöffnet wurde, neben der aktuellen Bearbeitung einschließlich ungespeicherter
+  Änderungen. Farbige Bereiche zeigen sichtbare Unterschiede. **Kopie speichern**
+  führt anschließend zur Dateiauswahl; Schließen oder Abbrechen speichert nichts.
+  Fehlt die Originaldatei, bleibt die Bearbeitung offen. Eine extern geänderte
+  Originaldatei wird vor dem Vergleich gemeldet. Der Vergleich ist eine visuelle
+  und textliche Hilfe, keine Prüfung sämtlicher Metadaten oder PDF-Signaturen.
+- **Dokument → Textbausteine** speichert bis zu 100 benannte mehrzeilige Texte
+  mit Schriftgröße, Schriftart und Farbe lokal. Nach **Einfügen** einen Rahmen
+  auf der PDF-Seite aufziehen. Der Text erhält keinen Stempelrahmen und wird
+  nicht automatisch verkleinert: Bei Platzmangel erscheint eine Meldung.
+  Rückgängig und Wiederholen funktionieren auch für Textbausteine. Die Einträge
+  können bearbeitet und nach Bestätigung entfernt werden. Windows-Schriften
+  Arial, Times New Roman und Courier New werden aus dem System verwendet.
+- **Ansicht → Lesestellen** speichert die aktuelle Seite und eine optionale
+  Notiz. Bei ungespeicherten Änderungen wird zuerst eine Kopie angeboten.
+  **Öffnen** öffnet die gespeicherte Datei an dieser Seite in einem eigenen Tab;
+  bestehende Bearbeitungen werden nicht ersetzt. Fehlende oder veränderte Dateien
+  werden gemeldet, die Lesestelle bleibt erhalten. Pro Datei und Seite wird eine
+  Notiz geführt, insgesamt höchstens 100 Lesestellen. Notizen können bearbeitet
+  und Einträge nach Bestätigung entfernt werden. Notizen und Textbausteine liegen
+  in lokalen Programmeinstellungen, nicht in den PDF-Dateien; PDF-Passwörter
+  werden darin nicht gespeichert. Sie sind noch nicht Teil des selektiven
+  Einstellungs-Exports.
 
 - Nach einem unerwarteten Ende bietet PDF Werkbank an, offene Tabs und
   ungespeicherte Änderungen wiederherzustellen. Änderungen werden lokal

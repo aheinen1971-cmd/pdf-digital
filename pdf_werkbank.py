@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 import hashlib
+import html
 import json
 import os
 import re
@@ -85,7 +86,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 55, 0)
+VERSION = (1, 56, 0)
 APP_TITLE = "PDF Digital"
 APP_SLOGAN = "Alles finden und bearbeiten"
 UI_LANGUAGES = {
@@ -343,20 +344,24 @@ def compare_images(left, right):
 
 
 class CompareDialog(QDialog):
-    def __init__(self, parent, left, right, names, pairs):
+    def __init__(self, parent, left, right, names, pairs, save_review=False):
         super().__init__(parent)
-        self.setWindowTitle("PDF-Versionen vergleichen")
+        self.save_review = save_review
+        if save_review:
+            self.setLayoutDirection(parent.layoutDirection())
+        self.ui = parent.ui if save_review else lambda text: text
+        self.setWindowTitle(self.ui("PDF-Versionen vergleichen"))
         self.resize(1090, 790)
         self.docs = (left, right)
         self.pairs = pairs
         layout = QVBoxLayout(self)
-        legend = QLabel("Links: bisherige Fassung   ·   Rechts: neue Fassung   ·   Farbige Flächen: sichtbare Unterschiede")
+        legend = QLabel(self.ui("Farbige Flächen zeigen Unterschiede.") if save_review else "Links: bisherige Fassung   ·   Rechts: neue Fassung   ·   Farbige Flächen: sichtbare Unterschiede")
         legend.setWordWrap(True)
         layout.addWidget(legend)
         self.pages = QComboBox()
         for a, b, tag in pairs:
             state = "Hinzugefügt" if a is None else "Entfernt" if b is None else "Abgeglichen" if tag == "equal" else "Prüfen"
-            self.pages.addItem(f"{a + 1 if a is not None else '–'}  /  {b + 1 if b is not None else '–'}  ·  {state}")
+            self.pages.addItem(f"{a + 1 if a is not None else '–'}  /  {b + 1 if b is not None else '–'}" + ("" if save_review else f"  ·  {state}"))
         layout.addWidget(self.pages)
         self.result = QLabel()
         layout.addWidget(self.result)
@@ -379,8 +384,13 @@ class CompareDialog(QDialog):
             panels.addWidget(panel)
         layout.addWidget(panels, 1)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        next_change = buttons.addButton("Nächste Änderung", QDialogButtonBox.ButtonRole.ActionRole)
+        if save_review:
+            buttons.button(QDialogButtonBox.StandardButton.Close).setText(parent.ui("Schließen"))
+            save_button = buttons.addButton(parent.ui("Kopie speichern"), QDialogButtonBox.ButtonRole.AcceptRole)
+            save_button.clicked.connect(self.accept)
+        next_change = buttons.addButton(self.ui("Weiter") if save_review else "Nächste Änderung", QDialogButtonBox.ButtonRole.ActionRole)
         report = buttons.addButton("Änderungsbericht speichern", QDialogButtonBox.ButtonRole.ActionRole)
+        report.setVisible(not save_review)
         next_change.clicked.connect(self.next_change)
         report.clicked.connect(self.save_report)
         buttons.rejected.connect(self.reject)
@@ -454,10 +464,11 @@ class CompareDialog(QDialog):
             status = "Unterschied in der Textebene"
         else:
             status = "Keine sichtbaren Unterschiede in der Vorschau"
-        self.result.setText(f"{status} · {len(changes)} geänderte Textstellen")
+        self.result.setText(self.ui("Unterschiede gefunden" if changed or changes or left is None or right is None else "Keine sichtbaren Unterschiede")
+                           if self.save_review else f"{status} · {len(changes)} geänderte Textstellen")
         for label, area, image in zip(self.images, self.areas, images):
             if image is None:
-                label.setText("Keine entsprechende Seite")
+                label.setText("—" if self.save_review else "Keine entsprechende Seite")
                 label.adjustSize()
             else:
                 label.setPixmap(image)
@@ -774,6 +785,7 @@ class Session:
         self.measure_geometry = {}
         self.plan_saved_token = None
         self.plan_source_stamp = file_signature(self.path) if snapshot is None else None
+        self.original_stamp = file_signature(self.path) if self.path.is_file() else None
 
     def snapshot(self, label):
         content = self.doc.tobytes(encryption=pdf.PDF_ENCRYPT_KEEP)
@@ -995,6 +1007,7 @@ class Window(QMainWindow):
         self.tools.setExpanding(False)
         self.groups = [
             ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
+                       ("Vergleichen und speichern", self.compare_and_save),
                        ("Einstellungen übertragen", self.transfer_preferences), ("Arbeitsstand sichern", self.work_backup), ("Explorer-Befehle einrichten", self.configure_explorer),
                        ("Umzugsassistent", self.project_move_dialog),
                        ("USB-Stick vorbereiten", self.offline_tools_dialog),
@@ -1005,6 +1018,7 @@ class Window(QMainWindow):
                        ("Wiederholen", self.redo), ("Änderungsverlauf", self.edit_history),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
+                         ("Lesestellen", self.reading_places),
                          ("Zu Seite springen", self.jump_to_page),
                          ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid),
                          ("Dunkelmodus", self.choose_appearance), ("Sprache", self.choose_language)]),
@@ -1035,6 +1049,7 @@ class Window(QMainWindow):
                               ("Bild verschieben", lambda: self.set_mode("Bild verschieben")), ("Bild ersetzen", lambda: self.set_mode("Bild ersetzen")),
                               ("Bild positionieren", lambda: self.set_mode("Bild positionieren"))]),
             ("Dokument", [("Lesezeichen", self.bookmarks), ("Link einfügen", lambda: self.set_mode("Link")),
+                           ("Textbausteine", self.text_snippets),
                            ("Seitenzahlen", self.add_page_numbers), ("Kopf- und Fußzeilen", self.headers_and_footers),
                            ("Anlagen", self.manage_attachments), ("Stempel", lambda: self.set_mode("Stempel"))]),
             ("Export & Schutz", [("Word", self.export_office), ("Excel", lambda: self.export_office(True)),
@@ -3216,6 +3231,9 @@ class Window(QMainWindow):
                     return
             elif self.mode == "Stempel":
                 if not self.put_stamp(page, point):
+                    return
+            elif self.mode == "Textbausteine":
+                if not self.put_snippet(page, rect):
                     return
             elif self.mode == "Feld":
                 if not self.create_field(page, rect):
@@ -9450,6 +9468,231 @@ class Window(QMainWindow):
         refresh()
         dialog.resize(440, 330)
         dialog.exec()
+
+    def compare_and_save(self):
+        session = self.current
+        if session is None:
+            return False
+        try:
+            if not session.path.is_file():
+                raise ValueError(self.ui("Die Originaldatei fehlt. Die Bearbeitung bleibt geöffnet."))
+            if session.original_stamp != file_signature(session.path):
+                if QMessageBox.question(self, self.ui("Originalvergleich"), self.ui(
+                        "Die Datei wurde außerhalb des Programms geändert. Mit der jetzigen Datei vergleichen?")) != QMessageBox.StandardButton.Yes:
+                    return False
+            with pdf.open(session.path) as original:
+                if original.needs_pass and not original.authenticate(session.password or ""):
+                    raise ValueError(self.ui("Für diese PDF ist das richtige Passwort erforderlich."))
+                if not original.is_pdf or not len(original):
+                    raise ValueError(self.ui("Bitte eine lesbare PDF auswählen."))
+                pairs = align_pages(original, session.doc)
+                dialog = CompareDialog(self, original, session.doc,
+                                       (self.ui("Originaldatei"), self.ui("Aktuelle Bearbeitung")), pairs, save_review=True)
+                if dialog.exec() != QDialog.DialogCode.Accepted:
+                    return False
+            return self.save()
+        except Exception as exc:
+            self.error(exc)
+            return False
+
+    def personal_items(self, key):
+        value = json.loads(self.favorite_settings.value(key, "[]", str))
+        if not isinstance(value, list) or len(value) > 100 or not all(isinstance(x, dict) for x in value):
+            raise ValueError(self.ui("Ungültige gespeicherte Einträge."))
+        return value
+
+    def store_personal_items(self, key, items):
+        if len(items) > 100:
+            raise ValueError(self.ui("Höchstens 100 Einträge speichern."))
+        self.favorite_settings.setValue(key, json.dumps(items, ensure_ascii=False))
+        self.favorite_settings.sync()
+        if self.favorite_settings.status() != QSettings.Status.NoError:
+            raise OSError(self.ui("Die Einträge konnten nicht gespeichert werden."))
+
+    def text_snippets(self):
+        try:
+            items = self.personal_items("personal/snippets")
+            dialog = QDialog(self)
+            dialog.setWindowTitle(self.ui("Textbausteine"))
+            dialog.setLayoutDirection(self.layoutDirection())
+            form = QFormLayout(dialog)
+            choices = QComboBox()
+            choices.addItem(self.ui("Neuer Eintrag"))
+            choices.addItems([str(x["name"]) for x in items])
+            name, value = QLineEdit(), QPlainTextEdit()
+            value.setMaximumHeight(180)
+            size = QSpinBox(); size.setRange(5, 96); size.setValue(12)
+            font = QComboBox(); font.addItems(["Arial", "Times New Roman", "Courier New"])
+            color = QComboBox(); color.addItems([self.ui(x) for x in ("Schwarz", "Blau", "Rot")])
+            for label, widget in (("Textbausteine", choices), ("Name", name), ("Text", value), ("Schrift", font), ("Größe", size), ("Farbe", color)):
+                form.addRow(self.ui(label), widget)
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+            save = buttons.addButton(self.ui("Vorlage speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+            remove = buttons.addButton(self.ui("Vorlage entfernen"), QDialogButtonBox.ButtonRole.ActionRole)
+            use = buttons.addButton(self.ui("Einfügen"), QDialogButtonBox.ButtonRole.ActionRole)
+            use.setEnabled(self.current is not None)
+            buttons.rejected.connect(dialog.reject)
+            form.addRow(buttons)
+
+            def select(index):
+                item = items[index - 1] if index else {}
+                name.setText(str(item.get("name", ""))); value.setPlainText(str(item.get("text", "")))
+                size.setValue(int(item.get("size", 12))); font.setCurrentIndex(int(item.get("font", 0)))
+                color.setCurrentIndex(int(item.get("color", 0))); remove.setEnabled(index > 0)
+
+            def collect():
+                item = dict(name=name.text().strip(), text=value.toPlainText().strip(), size=size.value(), font=font.currentIndex(), color=color.currentIndex())
+                if not item["name"] or not item["text"] or len(item["name"]) > 100 or len(item["text"]) > 10000:
+                    raise ValueError(self.ui("Name und Text eingeben (höchstens 100 und 10000 Zeichen)."))
+                return item
+
+            def persist():
+                try:
+                    item = collect(); index = choices.currentIndex() - 1
+                    if any(x["name"] == item["name"] for i, x in enumerate(items) if i != index):
+                        raise ValueError(self.ui("Dieser Name ist bereits vergeben."))
+                    updated = list(items)
+                    if index < 0: updated.append(item); index = len(updated) - 1
+                    else: updated[index] = item
+                    self.store_personal_items("personal/snippets", updated)
+                    items[:] = updated
+                    choices.blockSignals(True)
+                    choices.clear(); choices.addItem(self.ui("Neuer Eintrag")); choices.addItems([x["name"] for x in items])
+                    choices.setCurrentIndex(index + 1); choices.blockSignals(False); select(index + 1)
+                except Exception as exc: self.error(exc)
+
+            def delete():
+                index = choices.currentIndex() - 1
+                if index < 0: return
+                if QMessageBox.question(self, self.ui("Vorlage entfernen"), self.ui("Eintrag wirklich entfernen?")) != QMessageBox.StandardButton.Yes: return
+                try:
+                    updated = items[:index] + items[index + 1:]
+                    self.store_personal_items("personal/snippets", updated); items[:] = updated
+                    choices.blockSignals(True); choices.removeItem(index + 1); choices.setCurrentIndex(0); choices.blockSignals(False); select(0)
+                except Exception as exc: self.error(exc)
+
+            def insert():
+                try:
+                    self.active_snippet = collect()
+                    self.set_mode("Textbausteine")
+                    self.statusBar().showMessage(self.ui("Zum Einfügen einen Rahmen aufziehen."), 12000)
+                    dialog.accept()
+                except Exception as exc: self.error(exc)
+            choices.currentIndexChanged.connect(select)
+            save.clicked.connect(persist); remove.clicked.connect(delete); use.clicked.connect(insert)
+            select(0); dialog.resize(520, 450); dialog.exec()
+        except Exception as exc: self.error(exc)
+
+    def put_snippet(self, page, rect):
+        item = getattr(self, "active_snippet", None)
+        if not item:
+            return False
+        area = page.rect * page.derotation_matrix
+        if rect.width < 10 or rect.height < 10 or not area.contains(rect):
+            raise ValueError(self.ui("Der Textrahmen muss vollständig auf der Seite liegen."))
+        font_file = ("arial.ttf", "times.ttf", "cour.ttf")[item["font"]]
+        font_folder = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+        if not (font_folder / font_file).is_file():
+            raise FileNotFoundError(str(font_folder / font_file))
+        archive = pdf.Archive(str(font_folder))
+        color = ("#000000", "#0f57a8", "#b21421")[item["color"]]
+        # Escape all user text: snippets cannot load files, links or HTML resources.
+        content = '<div dir="auto">' + html.escape(item["text"]).replace('\n', '<br>') + '</div>'
+        css = (f"@font-face {{font-family:snippet;src:url({font_file});}} "
+               f"* {{font-family:snippet,sans-serif;font-size:{item['size']}pt;color:{color};margin:0;padding:0;}}")
+        with pdf.open() as trial:
+            probe = trial.new_page(width=area.width, height=area.height)
+            if probe.insert_htmlbox(rect, content, css=css, archive=archive, scale_low=1)[0] < 0:
+                raise ValueError(self.ui("Der Text passt an dieser Stelle nicht auf die Seite."))
+        self.current.checkpoint("Textbausteine")
+        try:
+            if page.insert_htmlbox(rect, content, css=css, archive=archive, scale_low=1)[0] < 0:
+                raise ValueError(self.ui("Der Text passt an dieser Stelle nicht auf die Seite."))
+        except Exception:
+            self.current.undo()
+            raise
+        return True
+
+    def save_reading_place(self, note):
+        session = self.current
+        if session is None:
+            return False
+        if len(note) > 4000:
+            raise ValueError(self.ui("Die Notiz darf höchstens 4000 Zeichen enthalten."))
+        if session.changed:
+            if QMessageBox.question(self, self.ui("Lesestellen"), self.ui(
+                    "Die bearbeitete PDF zuerst als Kopie speichern?")) != QMessageBox.StandardButton.Yes or not self.save():
+                return False
+        path = session.recovery_path.resolve()
+        if not path.is_file():
+            raise ValueError(self.ui("Die gespeicherte PDF fehlt. Die Lesestelle bleibt erhalten."))
+        items = self.personal_items("personal/reading")
+        item = dict(path=str(path), page=session.page, note=note, digest=digest_file(path))
+        items = [x for x in items if not (x.get("path") == str(path) and x.get("page") == session.page)]
+        items.append(item)
+        self.store_personal_items("personal/reading", items)
+        return True
+
+    def open_reading_place(self, item):
+        path = Path(item["path"])
+        if not path.is_file():
+            raise ValueError(self.ui("Die gespeicherte PDF fehlt. Die Lesestelle bleibt erhalten."))
+        if digest_file(path) != item["digest"]:
+            if QMessageBox.question(self, self.ui("Lesestellen"), self.ui(
+                    "Diese PDF wurde geändert. Die gespeicherte Seite kann verschoben sein. Trotzdem öffnen?")) != QMessageBox.StandardButton.Yes:
+                return None
+        # Open a separate tab: never overwrite an existing unsaved session.
+        return self.open_path(str(path), page=max(0, int(item["page"])))
+
+    def reading_places(self):
+        try:
+            items = self.personal_items("personal/reading")
+            dialog = QDialog(self); dialog.setWindowTitle(self.ui("Lesestellen"))
+            dialog.setLayoutDirection(self.layoutDirection())
+            layout = QVBoxLayout(dialog); listing = QListWidget(); layout.addWidget(listing)
+            note = QPlainTextEdit(); note.setMaximumHeight(120)
+            layout.addWidget(QLabel(self.ui("Notiz"))); layout.addWidget(note)
+            layout.addWidget(QLabel(self.ui("Notizen werden lokal gespeichert, nicht in der PDF.")))
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+            save = buttons.addButton(self.ui("Lesestelle speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+            edit = buttons.addButton(self.ui("Notiz speichern"), QDialogButtonBox.ButtonRole.ActionRole)
+            use = buttons.addButton(self.ui("Öffnen"), QDialogButtonBox.ButtonRole.ActionRole)
+            remove = buttons.addButton(self.ui("Entfernen"), QDialogButtonBox.ButtonRole.ActionRole)
+            save.setEnabled(self.current is not None); buttons.rejected.connect(dialog.reject); layout.addWidget(buttons)
+            def refresh():
+                listing.clear()
+                for item in items:
+                    listing.addItem(self.ui_format("{0} · Seite {1}", Path(item["path"]).name, int(item["page"]) + 1))
+                    listing.item(listing.count() - 1).setToolTip(str(item["path"]))
+                select(-1)
+            def select(index):
+                note.setPlainText(str(items[index].get("note", "")) if index >= 0 else "")
+                for b in (edit, use, remove): b.setEnabled(index >= 0)
+            def action(kind):
+                try:
+                    index = listing.currentRow()
+                    if kind == "save":
+                        if self.save_reading_place(note.toPlainText()):
+                            items[:] = self.personal_items("personal/reading"); refresh()
+                    elif index >= 0:
+                        if kind == "open":
+                            if self.open_reading_place(items[index]): dialog.accept()
+                            return
+                        if kind == "remove":
+                            if QMessageBox.question(self, self.ui("Entfernen"), self.ui("Eintrag wirklich entfernen?")) != QMessageBox.StandardButton.Yes: return
+                            updated = items[:index] + items[index + 1:]
+                        else:
+                            if len(note.toPlainText()) > 4000: raise ValueError(self.ui("Die Notiz darf höchstens 4000 Zeichen enthalten."))
+                            updated = [dict(x) for x in items]; updated[index]["note"] = note.toPlainText()
+                        self.store_personal_items("personal/reading", updated); items[:] = updated; refresh()
+                except Exception as exc: self.error(exc)
+            listing.currentRowChanged.connect(select)
+            for button, kind in ((save, "save"), (edit, "edit"), (use, "open"), (remove, "remove")):
+                button.clicked.connect(lambda checked=False, kind=kind: action(kind))
+            refresh(); dialog.resize(580, 430); dialog.exec()
+        except Exception as exc: self.error(exc)
 
     def save(self):
         session = self.current
