@@ -95,7 +95,8 @@ def show_review(parent, page, language, data, correction_lines=None):
     from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
     from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QLabel, QSpinBox,
                                  QTableWidget, QTableWidgetItem, QProgressDialog,
-                                 QDialogButtonBox, QScrollArea, QSplitter, QHeaderView)
+                                 QDialogButtonBox, QScrollArea, QSplitter, QHeaderView,
+                                 QCheckBox, QPushButton, QHBoxLayout)
     tr = parent.ui
     progress = QProgressDialog(tr('Unsichere Wörter prüfen'), tr('Abbrechen'), 0, 0, parent)
     progress.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -130,6 +131,20 @@ def show_review(parent, page, language, data, correction_lines=None):
     layout.addWidget(threshold)
     state = QLabel()
     layout.addWidget(state)
+    review_count = QLabel()
+    review_count.setObjectName('reviewCount')
+    layout.addWidget(review_count)
+    review_notice = QLabel(tr('Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.'))
+    review_notice.setWordWrap(True)
+    layout.addWidget(review_notice)
+    navigation = QHBoxLayout()
+    reviewed_box = QCheckBox(tr('Als geprüft markieren'))
+    reviewed_box.setObjectName('reviewedWord')
+    next_word = QPushButton(tr('Nächstes Wort'))
+    next_word.setObjectName('nextWord')
+    navigation.addWidget(reviewed_box)
+    navigation.addWidget(next_word)
+    layout.addLayout(navigation)
     split = QSplitter()
     layout.addWidget(split, 1)
     area = QScrollArea()
@@ -146,9 +161,41 @@ def show_review(parent, page, language, data, correction_lines=None):
     base = base.scaledToWidth(470, Qt.TransformationMode.SmoothTransformation)
     factor = base.width() / pix.width
     visible = []
+    visible_ids = []
+    reviewed_ids = set()
     selected_line = None
     correct = None
+    def update_review():
+        index = table.currentRow()
+        valid = 0 <= index < len(visible_ids)
+        reviewed_box.blockSignals(True)
+        reviewed_box.setEnabled(valid)
+        reviewed_box.setChecked(valid and visible_ids[index] in reviewed_ids)
+        reviewed_box.blockSignals(False)
+        count = sum(word_id in reviewed_ids for word_id in visible_ids)
+        review_count.setText(tr('{0} von {1} geprüft').format(count, len(visible_ids)))
+        next_word.setEnabled(any(word_id not in reviewed_ids for word_id in visible_ids))
+    def mark_reviewed(checked):
+        index = table.currentRow()
+        if 0 <= index < len(visible_ids):
+            if checked:
+                reviewed_ids.add(visible_ids[index])
+            else:
+                reviewed_ids.discard(visible_ids[index])
+        update_review()
+    def go_next():
+        size = len(visible_ids)
+        current = table.currentRow()
+        for offset in range(1, size + 1):
+            index = (current + offset) % size
+            if visible_ids[index] not in reviewed_ids:
+                table.setCurrentCell(index, 0)
+                table.scrollToItem(table.item(index, 0))
+                return
+    reviewed_box.toggled.connect(mark_reviewed)
+    next_word.clicked.connect(go_next)
     def highlight(index, *_):
+        update_review()
         if correct is not None:
             match = correction_line(page, visible[index]['box'], correction_lines) if 0 <= index < len(visible) else None
             correct.setEnabled(match is not None)
@@ -162,17 +209,27 @@ def show_review(parent, page, language, data, correction_lines=None):
         image.resize(shown.size())
         if 0 <= index < len(visible):
             x0, y0, x1, y1 = visible[index]['box']
-            area.ensureVisible(round((x0+x1)*factor/2), round((y0+y1)*factor/2), 30, 30)
+            center_x = round((x0+x1)*factor/2)
+            area.ensureVisible(center_x, round((y0+y1)*factor/2), 30, 30)
+            # Scrollbar values run in the opposite direction in RTL interfaces.
+            bar = area.horizontalScrollBar()
+            offset = max(0, min(bar.maximum(), center_x - area.viewport().width() // 2))
+            bar.setValue(bar.maximum() - offset if area.layoutDirection() == Qt.LayoutDirection.RightToLeft else offset)
     def refresh():
-        visible[:] = [word for word in words if word['score'] < threshold.value()]
+        old_index = table.currentRow()
+        old_id = visible_ids[old_index] if 0 <= old_index < len(visible_ids) else None
+        visible_ids[:] = [i for i, word in enumerate(words) if word['score'] < threshold.value()]
+        visible[:] = [words[i] for i in visible_ids]
         table.blockSignals(True)
         table.setRowCount(len(visible))
         for i, word in enumerate(visible):
             table.setItem(i, 0, QTableWidgetItem(word['text']))
             table.setItem(i, 1, QTableWidgetItem(f"{word['score']:.1f}"))
+        index = visible_ids.index(old_id) if old_id in visible_ids else (0 if visible else -1)
+        table.setCurrentCell(index, 0)
         table.blockSignals(False)
         state.setText(tr('Markierte Wörter') + ': ' + str(len(visible)) if visible else tr('Keine Wörter unter diesem Prüfwert.' if words else 'Kein Text erkannt.'))
-        highlight(-1)
+        highlight(index)
     threshold.valueChanged.connect(refresh)
     table.currentCellChanged.connect(highlight)
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

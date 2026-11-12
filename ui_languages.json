@@ -1265,7 +1265,11 @@
     "Bereit zum Vorlesen": "Ready to read aloud",
     "Wird vorgelesen": "Reading aloud",
     "Vorlesen pausiert": "Reading paused",
-    "Möglicherweise leer": "Possibly blank"
+    "Möglicherweise leer": "Possibly blank",
+    "Nächstes Wort": "Next word",
+    "Als geprüft markieren": "Mark as reviewed",
+    "{0} von {1} geprüft": "{0} of {1} reviewed",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "The counter applies to the filtered words in this window. Marking a word as reviewed only confirms your review; it does not correct it automatically."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2533,7 +2537,11 @@
     "Bereit zum Vorlesen": "Prêt à lire",
     "Wird vorgelesen": "Lecture en cours",
     "Vorlesen pausiert": "Lecture en pause",
-    "Möglicherweise leer": "Possiblement vide"
+    "Möglicherweise leer": "Possiblement vide",
+    "Nächstes Wort": "Mot suivant",
+    "Als geprüft markieren": "Marquer comme vérifié",
+    "{0} von {1} geprüft": "{0} sur {1} vérifiés",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Le compteur concerne les mots filtrés dans cette fenêtre. Marquer un mot comme vérifié confirme seulement votre vérification et ne le corrige pas automatiquement."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3801,7 +3809,11 @@
     "Bereit zum Vorlesen": "Listo para leer",
     "Wird vorgelesen": "Leyendo",
     "Vorlesen pausiert": "Lectura en pausa",
-    "Möglicherweise leer": "Posiblemente en blanco"
+    "Möglicherweise leer": "Posiblemente en blanco",
+    "Nächstes Wort": "Siguiente palabra",
+    "Als geprüft markieren": "Marcar como revisada",
+    "{0} von {1} geprüft": "{0} de {1} revisadas",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "El contador se aplica a las palabras filtradas en esta ventana. Marcar una palabra como revisada solo confirma tu revisión; no la corrige automáticamente."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5069,7 +5081,11 @@
     "Bereit zum Vorlesen": "Klaar om voor te lezen",
     "Wird vorgelesen": "Bezig met voorlezen",
     "Vorlesen pausiert": "Voorlezen gepauzeerd",
-    "Möglicherweise leer": "Mogelijk leeg"
+    "Möglicherweise leer": "Mogelijk leeg",
+    "Nächstes Wort": "Volgend woord",
+    "Als geprüft markieren": "Markeren als gecontroleerd",
+    "{0} von {1} geprüft": "{0} van {1} gecontroleerd",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "De teller geldt voor de gefilterde woorden in dit venster. Markeren als gecontroleerd bevestigt alleen je controle en corrigeert het woord niet automatisch."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6337,7 +6353,11 @@
     "Bereit zum Vorlesen": "Pronto per la lettura",
     "Wird vorgelesen": "Lettura in corso",
     "Vorlesen pausiert": "Lettura in pausa",
-    "Möglicherweise leer": "Possibilmente vuota"
+    "Möglicherweise leer": "Possibilmente vuota",
+    "Nächstes Wort": "Parola successiva",
+    "Als geprüft markieren": "Segna come verificata",
+    "{0} von {1} geprüft": "{0} di {1} verificate",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Il contatore riguarda le parole filtrate in questa finestra. Segnare una parola come verificata conferma solo il tuo controllo e non la corregge automaticamente."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7605,7 +7625,11 @@
     "Bereit zum Vorlesen": "Pronto para ler",
     "Wird vorgelesen": "A ler",
     "Vorlesen pausiert": "Leitura em pausa",
-    "Möglicherweise leer": "Possivelmente em branco"
+    "Möglicherweise leer": "Possivelmente em branco",
+    "Nächstes Wort": "Palavra seguinte",
+    "Als geprüft markieren": "Marcar como revista",
+    "{0} von {1} geprüft": "{0} de {1} revistas",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "O contador aplica-se às palavras filtradas nesta janela. Marcar uma palavra como revista apenas confirma a tua revisão; não a corrige automaticamente."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8873,7 +8897,11 @@
     "Bereit zum Vorlesen": "Gotowe do odczytu",
     "Wird vorgelesen": "Odczytywanie",
     "Vorlesen pausiert": "Odczyt wstrzymany",
-    "Möglicherweise leer": "Prawdopodobnie pusta"
+    "Möglicherweise leer": "Prawdopodobnie pusta",
+    "Nächstes Wort": "Następne słowo",
+    "Als geprüft markieren": "Oznacz jako sprawdzone",
+    "{0} von {1} geprüft": "Sprawdzono {0} z {1}",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Licznik dotyczy przefiltrowanych słów w tym oknie. Oznaczenie słowa jako sprawdzonego potwierdza tylko jego sprawdzenie i nie poprawia go automatycznie."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10141,7 +10169,11 @@
     "Bereit zum Vorlesen": "Připraveno ke čtení",
     "Wird vorgelesen": "Probíhá čtení",
     "Vorlesen pausiert": "Čtení pozastaveno",
-    "Möglicherweise leer": "Možná prázdná"
+    "Möglicherweise leer": "Možná prázdná",
+    "Nächstes Wort": "Další slovo",
+    "Als geprüft markieren": "Označit jako zkontrolované",
+    "{0} von {1} geprüft": "Zkontrolováno {0} z {1}",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Počítadlo platí pro filtrovaná slova v tomto okně. Označení slova jako zkontrolovaného pouze potvrzuje vaši kontrolu a slovo automaticky neopravuje."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11409,7 +11441,11 @@
     "Bereit zum Vorlesen": "Klar til oplæsning",
     "Wird vorgelesen": "Læser højt",
     "Vorlesen pausiert": "Oplæsning sat på pause",
-    "Möglicherweise leer": "Muligvis tom"
+    "Möglicherweise leer": "Muligvis tom",
+    "Nächstes Wort": "Næste ord",
+    "Als geprüft markieren": "Markér som gennemgået",
+    "{0} von {1} geprüft": "{0} af {1} gennemgået",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Tælleren gælder de filtrerede ord i dette vindue. Markering som gennemgået bekræfter kun din gennemgang og retter ikke ordet automatisk."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12677,7 +12713,11 @@
     "Bereit zum Vorlesen": "Redo att läsa",
     "Wird vorgelesen": "Läser upp",
     "Vorlesen pausiert": "Uppläsning pausad",
-    "Möglicherweise leer": "Möjligen tom"
+    "Möglicherweise leer": "Möjligen tom",
+    "Nächstes Wort": "Nästa ord",
+    "Als geprüft markieren": "Markera som granskat",
+    "{0} von {1} geprüft": "{0} av {1} granskade",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Räknaren gäller de filtrerade orden i det här fönstret. Markering som granskat bekräftar bara din granskning och rättar inte ordet automatiskt."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -13945,7 +13985,11 @@
     "Bereit zum Vorlesen": "Klar til opplesing",
     "Wird vorgelesen": "Leser høyt",
     "Vorlesen pausiert": "Opplesing satt på pause",
-    "Möglicherweise leer": "Muligens tom"
+    "Möglicherweise leer": "Muligens tom",
+    "Nächstes Wort": "Neste ord",
+    "Als geprüft markieren": "Merk som gjennomgått",
+    "{0} von {1} geprüft": "{0} av {1} gjennomgått",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Telleren gjelder de filtrerte ordene i dette vinduet. Merking som gjennomgått bekrefter bare gjennomgangen din og retter ikke ordet automatisk."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15213,7 +15257,11 @@
     "Bereit zum Vorlesen": "Valmis lukemaan",
     "Wird vorgelesen": "Luetaan ääneen",
     "Vorlesen pausiert": "Luku keskeytetty",
-    "Möglicherweise leer": "Mahdollisesti tyhjä"
+    "Möglicherweise leer": "Mahdollisesti tyhjä",
+    "Nächstes Wort": "Seuraava sana",
+    "Als geprüft markieren": "Merkitse tarkistetuksi",
+    "{0} von {1} geprüft": "{0}/{1} tarkistettu",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Laskuri koskee tämän ikkunan suodatettuja sanoja. Tarkistetuksi merkitseminen vahvistaa vain oman tarkistuksesi eikä korjaa sanaa automaattisesti."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -16481,7 +16529,11 @@
     "Bereit zum Vorlesen": "Okumaya hazır",
     "Wird vorgelesen": "Sesli okunuyor",
     "Vorlesen pausiert": "Okuma duraklatıldı",
-    "Möglicherweise leer": "Boş olabilir"
+    "Möglicherweise leer": "Boş olabilir",
+    "Nächstes Wort": "Sonraki sözcük",
+    "Als geprüft markieren": "İncelendi olarak işaretle",
+    "{0} von {1} geprüft": "{1} sözcükten {0} tanesi incelendi",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Sayaç bu penceredeki filtrelenmiş sözcükler için geçerlidir. İncelendi olarak işaretlemek yalnızca incelemenizi onaylar; sözcüğü otomatik olarak düzeltmez."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -17749,7 +17801,11 @@
     "Bereit zum Vorlesen": "Готово до читання",
     "Wird vorgelesen": "Читання вголос",
     "Vorlesen pausiert": "Читання призупинено",
-    "Möglicherweise leer": "Можливо порожня"
+    "Möglicherweise leer": "Можливо порожня",
+    "Nächstes Wort": "Наступне слово",
+    "Als geprüft markieren": "Позначити як перевірене",
+    "{0} von {1} geprüft": "Перевірено {0} з {1}",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Лічильник стосується відфільтрованих слів у цьому вікні. Позначення слова як перевіреного лише підтверджує вашу перевірку й не виправляє слово автоматично."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19017,7 +19073,11 @@
     "Bereit zum Vorlesen": "Έτοιμο για ανάγνωση",
     "Wird vorgelesen": "Γίνεται ανάγνωση",
     "Vorlesen pausiert": "Ανάγνωση σε παύση",
-    "Möglicherweise leer": "Πιθανώς κενή"
+    "Möglicherweise leer": "Πιθανώς κενή",
+    "Nächstes Wort": "Επόμενη λέξη",
+    "Als geprüft markieren": "Σήμανση ως ελεγμένη",
+    "{0} von {1} geprüft": "Ελέγχθηκαν {0} από {1}",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "Ο μετρητής αφορά τις φιλτραρισμένες λέξεις σε αυτό το παράθυρο. Η σήμανση ως ελεγμένη επιβεβαιώνει μόνο τον έλεγχό σας και δεν διορθώνει τη λέξη αυτόματα."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -20285,7 +20345,11 @@
     "Bereit zum Vorlesen": "読み上げ準備完了",
     "Wird vorgelesen": "読み上げ中",
     "Vorlesen pausiert": "読み上げ一時停止中",
-    "Möglicherweise leer": "空白の可能性"
+    "Möglicherweise leer": "空白の可能性",
+    "Nächstes Wort": "次の単語",
+    "Als geprüft markieren": "確認済みにする",
+    "{0} von {1} geprüft": "{1} 件中 {0} 件を確認済み",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "カウンターはこのウィンドウで絞り込まれた単語が対象です。確認済みにしても確認したことを記録するだけで、単語は自動修正されません。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -21553,7 +21617,11 @@
     "Bereit zum Vorlesen": "읽기 준비됨",
     "Wird vorgelesen": "읽는 중",
     "Vorlesen pausiert": "읽기 일시 정지됨",
-    "Möglicherweise leer": "빈 페이지일 수 있음"
+    "Möglicherweise leer": "빈 페이지일 수 있음",
+    "Nächstes Wort": "다음 단어",
+    "Als geprüft markieren": "검토 완료로 표시",
+    "{0} von {1} geprüft": "{1}개 중 {0}개 검토 완료",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "카운터는 이 창에서 필터링된 단어에 적용됩니다. 검토 완료로 표시하면 검토 사실만 기록되며 단어가 자동으로 수정되지는 않습니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -22821,7 +22889,11 @@
     "Bereit zum Vorlesen": "جاهز للقراءة",
     "Wird vorgelesen": "جارٍ القراءة",
     "Vorlesen pausiert": "القراءة متوقفة مؤقتًا",
-    "Möglicherweise leer": "قد تكون فارغة"
+    "Möglicherweise leer": "قد تكون فارغة",
+    "Nächstes Wort": "الكلمة التالية",
+    "Als geprüft markieren": "وضع علامة تمت المراجعة",
+    "{0} von {1} geprüft": "تمت مراجعة {0} من {1}",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "ينطبق العداد على الكلمات المصفاة في هذه النافذة. وضع علامة تمت المراجعة يؤكد مراجعتك فقط ولا يصحح الكلمة تلقائيًا."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -24089,6 +24161,10 @@
     "Bereit zum Vorlesen": "מוכן להקראה",
     "Wird vorgelesen": "מקריא",
     "Vorlesen pausiert": "ההקראה מושהית",
-    "Möglicherweise leer": "ייתכן שריק"
+    "Möglicherweise leer": "ייתכן שריק",
+    "Nächstes Wort": "המילה הבאה",
+    "Als geprüft markieren": "סימון כבדוק",
+    "{0} von {1} geprüft": "נבדקו {0} מתוך {1}",
+    "Der Zähler gilt für die gefilterten Wörter in diesem Fenster. Als geprüft markieren bestätigt nur deine Durchsicht, keine automatische Korrektur.": "המונה מתייחס למילים המסוננות בחלון זה. סימון מילה כבדוקה רק מאשר שבדקת אותה ואינו מתקן אותה אוטומטית."
   }
 }
