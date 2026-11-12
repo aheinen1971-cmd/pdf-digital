@@ -1,6 +1,13 @@
-# PDF Digital 1.64.0 für Windows
+# PDF Digital 1.65.0 für Windows
 
 **Alles finden und bearbeiten**
+
+### Neu in 1.65.0: Offene Stelle, gespeicherte Prüfstände und Textvergleich
+
+- **Zur offenen Stelle** führt aus der Speicherübersicht zur ersten ungeprüften Wortposition auf der gewählten Seite. Der Speichervorgang wird dabei verlassen. Dokument und Erkennung müssen weiterhin genau zum Prüfstand passen.
+- **Gespeicherte Prüfstände** im OCR-Korrekturdialog zeigt Seite, Fortschritt, Sprache und Speicherdatum. Passende Prüfstände lassen sich öffnen, alte gezielt löschen. Dateinamen und erkannte Texte werden nicht gespeichert.
+- Vor **Korrekturen übernehmen** stehen Originaltext und geänderter Text nebeneinander. **Zurück zur Bearbeitung** erhält die Eingaben; erst die Bestätigung übernimmt die Korrektur.
+- Alle 20 Oberflächensprachen einschließlich Arabisch und Hebräisch. Keine automatische Textkorrektur.
 
 ### Neu in 1.64.0: Prüfung fortsetzen, Mitlesen und Prüfübersicht
 
@@ -77,7 +84,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.64.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.65.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -87,7 +94,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.64.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.65.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
