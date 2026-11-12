@@ -2,6 +2,25 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet, noch nicht veröffentlicht: unsichere OCR-Wörter
+
+In der **OCR-Korrektur → Unsichere Wörter prüfen** die Dokumentsprache(n)
+auswählen. Die Offline-Prüfung erkennt das aktuelle Scanbild neu und zeigt
+Wörter mit einem Tesseract-Prüfwert unter dem gewählten Grenzwert (anfangs 80).
+Ein Klick markiert die Fundstelle orange. Die Werte von 0 bis 100 sind keine
+Fehlerwahrscheinlichkeit: Auch hohe Werte können falsch sein. Bereits
+korrigierter Text wird nicht bewertet. Nach dem Schließen lassen sich die
+Zeilen wie bisher in der OCR-Korrektur bearbeiten.
+
+Die Prüfung verändert oder speichert keine PDF-Inhalte und sendet keine
+Dokumente ins Internet. Temporäre Seitenbilder werden nach Erfolg, Abbruch
+oder Fehler entfernt. Die Erkennung läuft getrennt vom Programm, ist
+abbrechbar und auf drei Minuten sowie 30 Millionen Bildpunkte pro Seite
+begrenzt. Alle 20 Oberflächen- und OCR-Sprachen werden unterstützt. Die
+zusätzliche Windows-Komponente benötigt beim Einrichten einmalig etwa 24 MB
+Download; danach arbeitet sie offline mit den vorhandenen Sprachmodellen.
+
+
 ### Sprache der Oberfläche
 
 Unter **Ansicht → Sprache** kannst du zwischen Deutsch, Englisch,

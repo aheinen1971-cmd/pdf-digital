@@ -9059,6 +9059,14 @@ class Window(QMainWindow):
         selector.setValue(initial + 1)
         selector.setPrefix(self.ui("Seite") + " ")
         layout.addWidget(selector)
+        confidence_button = QPushButton(self.ui("Unsichere Wörter prüfen"))
+        def check_confidence():
+            from ocr_confidence import show_review
+            language, accepted = self.ask_ocr_language()
+            if accepted:
+                show_review(self, doc[selector.value() - 1], language, Path(__file__).with_name("tessdata"))
+        confidence_button.clicked.connect(check_confidence)
+        layout.addWidget(confidence_button)
         split = QSplitter()
         layout.addWidget(split, 1)
         area = QScrollArea()

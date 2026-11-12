@@ -38,3 +38,11 @@ Die Pakete werden separat bezogen und folgen ihren jeweiligen Lizenzhinweisen.
 Tesseracts PDF-Ausgabe, für unsichtbare korrigierte Unicode-Textebenen.
 Quelle: https://github.com/tesseract-ocr/tesseract/blob/main/src/api/pdfrenderer.cpp
 Tesseract steht unter Apache-2.0; der Lizenztext liegt in `LICENSES/Tessdata.txt`.
+
+Die Offline-Wortprüfung verwendet tesserocr 2.12.0 (MIT) mit dem originalen
+Windows-Wheel von PyPI. Dieses enthält Tesseract (Apache-2.0), Leptonica
+und weitere Laufzeitbibliotheken. Die vollständigen jeweiligen Lizenzhinweise
+bleiben unter tesserocr-2.12.0.dist-info/licenses in der Installation erhalten.
+Quelle: https://pypi.org/project/tesserocr/2.12.0/
+Die feste SHA-256-Prüfsumme und Downloadadresse stehen in DEPENDENCIES.tsv.
+Die bereits vorhandenen 20 tessdata_fast-Sprachmodelle werden wiederverwendet.

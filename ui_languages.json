@@ -1232,7 +1232,16 @@
     "Nicht bearbeitet (Abbruch)": "Not processed (cancelled)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Select a line to highlight it. Double-click to edit only the invisible text layer.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "This page has no editable scan text layer. Run OCR first if needed.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Enter at most 10000 characters per line, without control characters."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Enter at most 10000 characters per line, without control characters.",
+    "Unsichere Wörter prüfen": "Review uncertain words",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Fresh scan recognition, not the corrected text. Low scores suggest review, not definite errors.",
+    "Prüfwert unter": "Score below",
+    "Wort": "Word",
+    "Prüfwert (0–100)": "Score (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "No words below this score.",
+    "Kein Text erkannt.": "No text recognized.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Offline review failed. Please check the installation and OCR languages.",
+    "Markierte Wörter": "Highlighted words"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2467,7 +2476,16 @@
     "Nicht bearbeitet (Abbruch)": "Non traité (annulation)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Sélectionnez une ligne pour la surligner. Un double-clic modifie uniquement le texte invisible.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Cette page ne contient pas de texte OCR modifiable. Lancez d’abord la reconnaissance si nécessaire.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Saisissez au maximum 10000 caractères par ligne, sans caractères de contrôle."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Saisissez au maximum 10000 caractères par ligne, sans caractères de contrôle.",
+    "Unsichere Wörter prüfen": "Vérifier les mots incertains",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Nouvelle reconnaissance du scan, pas du texte corrigé. Les faibles scores invitent à vérifier, sans certitude d’erreur.",
+    "Prüfwert unter": "Score inférieur à",
+    "Wort": "Mot",
+    "Prüfwert (0–100)": "Score (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Aucun mot sous ce score.",
+    "Kein Text erkannt.": "Aucun texte reconnu.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "La vérification hors ligne a échoué. Vérifiez l’installation et les langues OCR.",
+    "Markierte Wörter": "Mots surlignés"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3702,7 +3720,16 @@
     "Nicht bearbeitet (Abbruch)": "Sin procesar (cancelado)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Seleccione una línea para resaltarla. Un doble clic modifica solo el texto invisible.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Esta página no tiene texto OCR editable. Ejecute primero el reconocimiento si es necesario.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Introduzca como máximo 10000 caracteres por línea, sin caracteres de control."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Introduzca como máximo 10000 caracteres por línea, sin caracteres de control.",
+    "Unsichere Wörter prüfen": "Revisar palabras dudosas",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Nuevo reconocimiento del escaneo, no del texto corregido. Los valores bajos sugieren revisar, no errores seguros.",
+    "Prüfwert unter": "Valor inferior a",
+    "Wort": "Palabra",
+    "Prüfwert (0–100)": "Valor (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "No hay palabras por debajo de este valor.",
+    "Kein Text erkannt.": "No se ha reconocido texto.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "La revisión sin conexión ha fallado. Comprueba la instalación y los idiomas OCR.",
+    "Markierte Wörter": "Palabras resaltadas"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -4937,7 +4964,16 @@
     "Nicht bearbeitet (Abbruch)": "Niet verwerkt (geannuleerd)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Selecteer een regel om deze te markeren. Dubbelklik om alleen de onzichtbare tekst te wijzigen.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Deze pagina heeft geen bewerkbare OCR-tekst. Voer zo nodig eerst OCR uit.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Voer maximaal 10000 tekens per regel in, zonder besturingstekens."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Voer maximaal 10000 tekens per regel in, zonder besturingstekens.",
+    "Unsichere Wörter prüfen": "Onzekere woorden controleren",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Nieuwe herkenning van de scan, niet van de gecorrigeerde tekst. Lage scores vragen om controle, maar zijn geen zekere fouten.",
+    "Prüfwert unter": "Score lager dan",
+    "Wort": "Woord",
+    "Prüfwert (0–100)": "Score (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Geen woorden onder deze score.",
+    "Kein Text erkannt.": "Geen tekst herkend.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Offlinecontrole mislukt. Controleer de installatie en OCR-talen.",
+    "Markierte Wörter": "Gemarkeerde woorden"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6172,7 +6208,16 @@
     "Nicht bearbeitet (Abbruch)": "Non elaborato (annullato)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Seleziona una riga per evidenziarla. Il doppio clic modifica solo il testo invisibile.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Questa pagina non ha testo OCR modificabile. Esegui prima il riconoscimento se necessario.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Inserisci al massimo 10000 caratteri per riga, senza caratteri di controllo."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Inserisci al massimo 10000 caratteri per riga, senza caratteri di controllo.",
+    "Unsichere Wörter prüfen": "Controlla le parole incerte",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Nuovo riconoscimento della scansione, non del testo corretto. I valori bassi suggeriscono un controllo, non errori certi.",
+    "Prüfwert unter": "Valore inferiore a",
+    "Wort": "Parola",
+    "Prüfwert (0–100)": "Valore (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Nessuna parola sotto questo valore.",
+    "Kein Text erkannt.": "Nessun testo riconosciuto.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Controllo offline non riuscito. Verifica l’installazione e le lingue OCR.",
+    "Markierte Wörter": "Parole evidenziate"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7407,7 +7452,16 @@
     "Nicht bearbeitet (Abbruch)": "Não processado (cancelado)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Selecione uma linha para a realçar. Um duplo clique altera apenas o texto invisível.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Esta página não tem texto OCR editável. Execute primeiro o reconhecimento, se necessário.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Introduza no máximo 10000 caracteres por linha, sem caracteres de controlo."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Introduza no máximo 10000 caracteres por linha, sem caracteres de controlo.",
+    "Unsichere Wörter prüfen": "Rever palavras incertas",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Novo reconhecimento da digitalização, não do texto corrigido. Valores baixos sugerem revisão, não erros certos.",
+    "Prüfwert unter": "Valor inferior a",
+    "Wort": "Palavra",
+    "Prüfwert (0–100)": "Valor (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Nenhuma palavra abaixo deste valor.",
+    "Kein Text erkannt.": "Nenhum texto reconhecido.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "A revisão offline falhou. Verifique a instalação e os idiomas OCR.",
+    "Markierte Wörter": "Palavras realçadas"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8642,7 +8696,16 @@
     "Nicht bearbeitet (Abbruch)": "Nie przetworzono (anulowano)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Wybierz wiersz, aby go wyróżnić. Dwukrotne kliknięcie zmienia tylko niewidoczny tekst.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Ta strona nie ma edytowalnego tekstu OCR. W razie potrzeby najpierw uruchom rozpoznawanie.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Wpisz maksymalnie 10000 znaków w wierszu, bez znaków sterujących."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Wpisz maksymalnie 10000 znaków w wierszu, bez znaków sterujących.",
+    "Unsichere Wörter prüfen": "Sprawdź niepewne słowa",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Ponowne rozpoznanie skanu, nie poprawionego tekstu. Niskie wyniki wskazują potrzebę sprawdzenia, nie pewny błąd.",
+    "Prüfwert unter": "Wynik poniżej",
+    "Wort": "Słowo",
+    "Prüfwert (0–100)": "Wynik (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Brak słów poniżej tego wyniku.",
+    "Kein Text erkannt.": "Nie rozpoznano tekstu.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Sprawdzanie offline nie powiodło się. Sprawdź instalację i języki OCR.",
+    "Markierte Wörter": "Wyróżnione słowa"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -9877,7 +9940,16 @@
     "Nicht bearbeitet (Abbruch)": "Nezpracováno (zrušeno)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Vyberte řádek pro zvýraznění. Dvojklik mění pouze neviditelný text.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Tato stránka nemá upravitelný text OCR. V případě potřeby nejprve spusťte rozpoznávání.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Zadejte nejvýše 10000 znaků na řádek bez řídicích znaků."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Zadejte nejvýše 10000 znaků na řádek bez řídicích znaků.",
+    "Unsichere Wörter prüfen": "Zkontrolovat nejistá slova",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Nové rozpoznání skenu, nikoli opraveného textu. Nízké hodnoty vybízejí ke kontrole, neznamenají jistou chybu.",
+    "Prüfwert unter": "Hodnota pod",
+    "Wort": "Slovo",
+    "Prüfwert (0–100)": "Hodnota (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Žádná slova pod touto hodnotou.",
+    "Kein Text erkannt.": "Nebyl rozpoznán žádný text.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Kontrola offline selhala. Zkontrolujte instalaci a jazyky OCR.",
+    "Markierte Wörter": "Zvýrazněná slova"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11112,7 +11184,16 @@
     "Nicht bearbeitet (Abbruch)": "Ikke behandlet (annulleret)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Vælg en linje for at markere den. Dobbeltklik ændrer kun den usynlige tekst.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Denne side har ingen redigerbar OCR-tekst. Kør først tekstgenkendelse, hvis det er nødvendigt.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Indtast højst 10000 tegn pr. linje uden kontroltegn."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Indtast højst 10000 tegn pr. linje uden kontroltegn.",
+    "Unsichere Wörter prüfen": "Kontrollér usikre ord",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Ny genkendelse af scanningen, ikke den rettede tekst. Lave værdier foreslår kontrol, ikke sikre fejl.",
+    "Prüfwert unter": "Værdi under",
+    "Wort": "Ord",
+    "Prüfwert (0–100)": "Værdi (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Ingen ord under denne værdi.",
+    "Kein Text erkannt.": "Ingen tekst genkendt.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Offlinekontrol mislykkedes. Kontrollér installationen og OCR-sprogene.",
+    "Markierte Wörter": "Markerede ord"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12347,7 +12428,16 @@
     "Nicht bearbeitet (Abbruch)": "Inte bearbetad (avbruten)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Välj en rad för att markera den. Dubbelklick ändrar endast den osynliga texten.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Sidan saknar redigerbar OCR-text. Kör först textigenkänning om det behövs.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Ange högst 10000 tecken per rad, utan kontrolltecken."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Ange högst 10000 tecken per rad, utan kontrolltecken.",
+    "Unsichere Wörter prüfen": "Granska osäkra ord",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Ny igenkänning av skanningen, inte den rättade texten. Låga värden föreslår granskning, inte säkra fel.",
+    "Prüfwert unter": "Värde under",
+    "Wort": "Ord",
+    "Prüfwert (0–100)": "Värde (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Inga ord under detta värde.",
+    "Kein Text erkannt.": "Ingen text identifierades.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Offlinegranskningen misslyckades. Kontrollera installationen och OCR-språken.",
+    "Markierte Wörter": "Markerade ord"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -13582,7 +13672,16 @@
     "Nicht bearbeitet (Abbruch)": "Ikke behandlet (avbrutt)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Velg en linje for å markere den. Dobbeltklikk endrer bare den usynlige teksten.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Denne siden har ingen redigerbar OCR-tekst. Kjør tekstgjenkjenning først ved behov.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Skriv inn høyst 10000 tegn per linje uten kontrolltegn."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Skriv inn høyst 10000 tegn per linje uten kontrolltegn.",
+    "Unsichere Wörter prüfen": "Kontroller usikre ord",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Ny gjenkjenning av skanningen, ikke den rettede teksten. Lave verdier foreslår kontroll, ikke sikre feil.",
+    "Prüfwert unter": "Verdi under",
+    "Wort": "Ord",
+    "Prüfwert (0–100)": "Verdi (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Ingen ord under denne verdien.",
+    "Kein Text erkannt.": "Ingen tekst gjenkjent.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Frakoblet kontroll mislyktes. Kontroller installasjonen og OCR-språkene.",
+    "Markierte Wörter": "Markerte ord"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -14817,7 +14916,16 @@
     "Nicht bearbeitet (Abbruch)": "Ei käsitelty (peruutettu)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Korosta rivi valitsemalla se. Kaksoisnapsautus muuttaa vain näkymätöntä tekstiä.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Sivulla ei ole muokattavaa OCR-tekstiä. Suorita tarvittaessa ensin tekstintunnistus.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Kirjoita enintään 10000 merkkiä riville ilman ohjausmerkkejä."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Kirjoita enintään 10000 merkkiä riville ilman ohjausmerkkejä.",
+    "Unsichere Wörter prüfen": "Tarkista epävarmat sanat",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Skannauksen uusi tunnistus, ei korjatun tekstin arviointi. Pienet arvot kehottavat tarkistamaan, eivät tarkoita varmaa virhettä.",
+    "Prüfwert unter": "Arvo alle",
+    "Wort": "Sana",
+    "Prüfwert (0–100)": "Arvo (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Ei sanoja tämän arvon alapuolella.",
+    "Kein Text erkannt.": "Tekstiä ei tunnistettu.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Offline-tarkistus epäonnistui. Tarkista asennus ja OCR-kielet.",
+    "Markierte Wörter": "Korostetut sanat"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -16052,7 +16160,16 @@
     "Nicht bearbeitet (Abbruch)": "İşlenmedi (iptal edildi)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Vurgulamak için bir satır seçin. Çift tıklama yalnızca görünmez metni değiştirir.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Bu sayfada düzenlenebilir OCR metni yok. Gerekirse önce metin tanımayı çalıştırın.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Satır başına kontrol karakterleri olmadan en fazla 10000 karakter girin."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Satır başına kontrol karakterleri olmadan en fazla 10000 karakter girin.",
+    "Unsichere Wörter prüfen": "Belirsiz sözcükleri denetle",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Düzeltilmiş metin değil, tarama yeniden tanınır. Düşük değerler denetim önerir, kesin hata anlamına gelmez.",
+    "Prüfwert unter": "Değer şu sınırın altında",
+    "Wort": "Sözcük",
+    "Prüfwert (0–100)": "Değer (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Bu değerin altında sözcük yok.",
+    "Kein Text erkannt.": "Metin tanınamadı.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Çevrimdışı denetim başarısız oldu. Kurulumu ve OCR dillerini denetleyin.",
+    "Markierte Wörter": "Vurgulanan sözcükler"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -17287,7 +17404,16 @@
     "Nicht bearbeitet (Abbruch)": "Не оброблено (скасовано)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Виберіть рядок для виділення. Подвійне клацання змінює лише невидимий текст.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Ця сторінка не має редагованого тексту OCR. За потреби спочатку виконайте розпізнавання.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Введіть не більше 10000 символів у рядку без керівних символів."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Введіть не більше 10000 символів у рядку без керівних символів.",
+    "Unsichere Wörter prüfen": "Перевірити непевні слова",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Нове розпізнавання скану, а не виправленого тексту. Низькі оцінки радять перевірити, а не доводять помилку.",
+    "Prüfwert unter": "Оцінка нижче",
+    "Wort": "Слово",
+    "Prüfwert (0–100)": "Оцінка (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Немає слів нижче цієї оцінки.",
+    "Kein Text erkannt.": "Текст не розпізнано.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Перевірка офлайн не вдалася. Перевірте встановлення та мови OCR.",
+    "Markierte Wörter": "Виділені слова"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -18522,7 +18648,16 @@
     "Nicht bearbeitet (Abbruch)": "Δεν έγινε επεξεργασία (ακύρωση)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "Επιλέξτε μια γραμμή για επισήμανση. Το διπλό κλικ αλλάζει μόνο το αόρατο κείμενο.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "Η σελίδα δεν έχει επεξεργάσιμο κείμενο OCR. Εκτελέστε πρώτα αναγνώριση αν χρειάζεται.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Εισαγάγετε έως 10000 χαρακτήρες ανά γραμμή, χωρίς χαρακτήρες ελέγχου."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "Εισαγάγετε έως 10000 χαρακτήρες ανά γραμμή, χωρίς χαρακτήρες ελέγχου.",
+    "Unsichere Wörter prüfen": "Έλεγχος αβέβαιων λέξεων",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "Νέα αναγνώριση της σάρωσης, όχι του διορθωμένου κειμένου. Οι χαμηλές τιμές προτείνουν έλεγχο, όχι βέβαια λάθη.",
+    "Prüfwert unter": "Τιμή κάτω από",
+    "Wort": "Λέξη",
+    "Prüfwert (0–100)": "Τιμή (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "Δεν υπάρχουν λέξεις κάτω από αυτήν την τιμή.",
+    "Kein Text erkannt.": "Δεν αναγνωρίστηκε κείμενο.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "Ο έλεγχος εκτός σύνδεσης απέτυχε. Ελέγξτε την εγκατάσταση και τις γλώσσες OCR.",
+    "Markierte Wörter": "Επισημασμένες λέξεις"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -19757,7 +19892,16 @@
     "Nicht bearbeitet (Abbruch)": "未処理（キャンセル）",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "行を選択すると位置を強調表示します。ダブルクリックで見えないテキストだけを編集します。",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "このページには編集可能なOCRテキストがありません。必要に応じて先に文字認識を実行してください。",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "各行は制御文字を含めず10000文字以内で入力してください。"
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "各行は制御文字を含めず10000文字以内で入力してください。",
+    "Unsichere Wörter prüfen": "不確かな単語を確認",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "修正済みテキストではなく、スキャンを再認識します。低い値は確認の目安であり、誤りを断定するものではありません。",
+    "Prüfwert unter": "この値未満",
+    "Wort": "単語",
+    "Prüfwert (0–100)": "評価値（0–100）",
+    "Keine Wörter unter diesem Prüfwert.": "この値未満の単語はありません。",
+    "Kein Text erkannt.": "テキストが認識されませんでした。",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "オフライン確認に失敗しました。インストールとOCR言語を確認してください。",
+    "Markierte Wörter": "強調表示された単語"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -20992,7 +21136,16 @@
     "Nicht bearbeitet (Abbruch)": "처리되지 않음(취소됨)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "행을 선택하면 위치가 강조됩니다. 두 번 클릭하면 보이지 않는 텍스트만 수정됩니다.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "이 페이지에는 편집 가능한 OCR 텍스트가 없습니다. 필요하면 먼저 텍스트 인식을 실행하세요.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "제어 문자 없이 한 줄에 최대 10000자를 입력하세요."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "제어 문자 없이 한 줄에 최대 10000자를 입력하세요.",
+    "Unsichere Wörter prüfen": "불확실한 단어 검토",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "수정된 텍스트가 아닌 스캔을 새로 인식합니다. 낮은 값은 검토를 권장하며 오류를 확정하지 않습니다.",
+    "Prüfwert unter": "이 값 미만",
+    "Wort": "단어",
+    "Prüfwert (0–100)": "평가값 (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "이 값보다 낮은 단어가 없습니다.",
+    "Kein Text erkannt.": "인식된 텍스트가 없습니다.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "오프라인 검토에 실패했습니다. 설치와 OCR 언어를 확인하세요.",
+    "Markierte Wörter": "강조된 단어"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -22227,7 +22380,16 @@
     "Nicht bearbeitet (Abbruch)": "لم تُعالج (إلغاء)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "اختر سطرًا لتحديد موضعه. يغيّر النقر المزدوج النص غير المرئي فقط.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "لا تحتوي هذه الصفحة على نص OCR قابل للتحرير. شغّل التعرّف على النص أولًا عند الحاجة.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "أدخل حتى 10000 حرف في كل سطر دون محارف تحكّم."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "أدخل حتى 10000 حرف في كل سطر دون محارف تحكّم.",
+    "Unsichere Wörter prüfen": "مراجعة الكلمات غير المؤكدة",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "تعرّف جديد على المسح، وليس على النص المصحح. القيم المنخفضة تدعو للمراجعة ولا تؤكد وجود أخطاء.",
+    "Prüfwert unter": "القيمة أقل من",
+    "Wort": "الكلمة",
+    "Prüfwert (0–100)": "قيمة التقييم (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "لا توجد كلمات أقل من هذه القيمة.",
+    "Kein Text erkannt.": "لم يتم التعرف على نص.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "فشلت المراجعة دون اتصال. تحقق من التثبيت ولغات التعرف الضوئي.",
+    "Markierte Wörter": "الكلمات المميزة"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -23462,6 +23624,15 @@
     "Nicht bearbeitet (Abbruch)": "לא עובד (בוטל)",
     "Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene.": "בחרו שורה כדי להדגיש את מיקומה. לחיצה כפולה משנה רק את הטקסט הבלתי נראה.",
     "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.": "בעמוד זה אין טקסט OCR שניתן לעריכה. הפעילו תחילה זיהוי טקסט לפי הצורך.",
-    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "הזינו עד 10000 תווים בשורה, ללא תווי בקרה."
+    "Bitte pro Zeile höchstens 10000 Zeichen ohne Steuerzeichen eingeben.": "הזינו עד 10000 תווים בשורה, ללא תווי בקרה.",
+    "Unsichere Wörter prüfen": "בדיקת מילים לא ודאיות",
+    "Neue Scan-Erkennung, nicht der korrigierte Text. Niedrige Werte sind Prüfhinweise, keine sicheren Fehler.": "זיהוי חדש של הסריקה, לא של הטקסט המתוקן. ערכים נמוכים מציעים לבדוק, ואינם מעידים בוודאות על שגיאות.",
+    "Prüfwert unter": "ערך נמוך מ־",
+    "Wort": "מילה",
+    "Prüfwert (0–100)": "ערך הערכה (0–100)",
+    "Keine Wörter unter diesem Prüfwert.": "אין מילים מתחת לערך זה.",
+    "Kein Text erkannt.": "לא זוהה טקסט.",
+    "Die Offline-Prüfung ist fehlgeschlagen. Bitte Installation und OCR-Sprachen prüfen.": "הבדיקה הלא מקוונת נכשלה. יש לבדוק את ההתקנה ושפות הזיהוי.",
+    "Markierte Wörter": "מילים מסומנות"
   }
 }
