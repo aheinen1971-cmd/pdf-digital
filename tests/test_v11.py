@@ -85,10 +85,10 @@ with TemporaryDirectory() as folder:
     window.open_path(str(original))
     window.ask_ocr_language = lambda: ("Deutsch und Englisch", True)
     reports = []
-    QMessageBox.exec = lambda box: reports.append((box.text(), box.detailedText()))
+    window.show_ocr_report = lambda session, rows: reports.append(rows)
     window.ocr(True)
-    assert len(reports) == 1 and "2 Seiten mit neuer Textebene" in reports[0][0], reports
-    assert "1 Seiten hatten bereits Text" in reports[0][0] and "Seite 4" in reports[0][1], reports
+    assert len(reports) == 1 and [row[1] for row in reports[0]] == ['added','added','existing','failed'], reports
+    assert reports[0][3][0] == 3 and reports[0][3][2], reports
     for index in (0, 1):
         assert "Prüfung für die PDF Werkbank" in window.current.doc[index].get_text()
         assert window.current.doc[index].get_pixmap().samples == original_pixels

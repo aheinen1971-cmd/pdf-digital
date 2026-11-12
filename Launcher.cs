@@ -446,6 +446,8 @@ internal static class Launcher
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
                     CopyResource("ocr_languages.py", Path.Combine(app, "ocr_languages.py"));
+                    CopyResource("ocr_text.py", Path.Combine(app, "ocr_text.py"));
+                    CopyResource("ocr_glyphless.b64", Path.Combine(app, "ocr_glyphless.b64"));
                     CopyResource("ui_languages.json", Path.Combine(app, "ui_languages.json"));
                     CopyResource("local_ai.py", Path.Combine(app, "local_ai.py"));
                     CopyResource("online_updates.py", Path.Combine(app, "online_updates.py"));

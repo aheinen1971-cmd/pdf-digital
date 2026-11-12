@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-from ocr_languages import choices as ocr_choices, valid_language, require_data
+from ocr_languages import LANGUAGES as OCR_LANGUAGES, choices as ocr_choices, valid_language, require_data
 import hashlib
 import html
 import json
@@ -8765,7 +8765,7 @@ class Window(QMainWindow):
         pages.setToolTip(self.ui("Seiten und Reihenfolge, zum Beispiel 1, 3-5, 8"))
         form.addRow(self.ui("Seiten"), pages)
         ocr = QComboBox()
-        languages = ocr_choices(self.ui)
+        languages = ocr_choices(self.ui, self.ocr_language())
         ocr.addItems([*languages, self.ui("Ohne Texterkennung")])
         ocr.setCurrentIndex(list(languages.values()).index(self.ocr_language()))
         form.addRow(self.ui("Texterkennung"), ocr)
@@ -9046,6 +9046,7 @@ class Window(QMainWindow):
 
     def review_ocr(self, doc, initial):
         dialog = QDialog(self)
+        dialog.setLayoutDirection(self.layoutDirection())
         dialog.setWindowTitle(self.ui("OCR-Korrektur"))
         dialog.resize(1000, 690)
         layout = QVBoxLayout(dialog)
@@ -9056,7 +9057,7 @@ class Window(QMainWindow):
         selector = QSpinBox()
         selector.setRange(1, len(doc))
         selector.setValue(initial + 1)
-        selector.setPrefix("Seite ")
+        selector.setPrefix(self.ui("Seite") + " ")
         layout.addWidget(selector)
         split = QSplitter()
         layout.addWidget(split, 1)
@@ -9072,6 +9073,7 @@ class Window(QMainWindow):
         split.setSizes([490, 500])
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Korrekturen übernehmen"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -9117,8 +9119,8 @@ class Window(QMainWindow):
                 rows.setItem(index, 0, QTableWidgetItem(value))
             rows.setCurrentCell(0, 0)
             rows.blockSignals(False)
-            notice.setText("Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene."
-                           if lines else "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus.")
+            notice.setText(self.ui("Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene."
+                           if lines else "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus."))
             highlight(0)
 
         selector.valueChanged.connect(load)
@@ -9152,25 +9154,85 @@ class Window(QMainWindow):
         return valid_language(self.favorite_settings.value("ocr/language", "deu+eng"))
 
     def ask_ocr_language(self):
-        languages = ocr_choices(self.ui)
-        dialog = QInputDialog(self)
+        dialog = QDialog(self)
+        dialog.setLayoutDirection(self.layoutDirection())
         dialog.setWindowTitle(self.ui("OCR-Sprache"))
-        dialog.setLabelText(self.ui("Sprache des Dokuments"))
-        dialog.setComboBoxItems(list(languages))
-        dialog.setComboBoxEditable(False)
-        dialog.setTextValue(next(label for label, code in languages.items() if code == self.ocr_language()))
-        dialog.setOkButtonText(self.ui("OK"))
-        dialog.setCancelButtonText(self.ui("Abbrechen"))
+        dialog.resize(430, 540)
+        layout = QVBoxLayout(dialog)
+        notice = QLabel(self.ui("Eine oder mehrere Dokumentsprachen auswählen. Nur benötigte Sprachen wählen."))
+        notice.setWordWrap(True)
+        layout.addWidget(notice)
+        listing = QListWidget()
+        selected = self.ocr_language().split('+')
+        # Preserve priority: previously selected languages are listed first.
+        for code in selected + [code for code in OCR_LANGUAGES if code not in selected]:
+            item = QListWidgetItem(f"{OCR_LANGUAGES[code]} ({code})")
+            item.setData(Qt.ItemDataRole.UserRole, code)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if code in selected else Qt.CheckState.Unchecked)
+            listing.addItem(item)
+        layout.addWidget(listing)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("OK"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
+        def selection():
+            return '+'.join(listing.item(i).data(Qt.ItemDataRole.UserRole) for i in range(listing.count())
+                            if listing.item(i).checkState() == Qt.CheckState.Checked)
+        listing.itemChanged.connect(lambda _: buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(bool(selection())))
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
         accepted = dialog.exec() == QDialog.DialogCode.Accepted
-        value = dialog.textValue()
+        value = selection()
         dialog.deleteLater()
         return value, accepted
 
     def choose_ocr_language(self):
         languages = ocr_choices(self.ui)
         label, ok = self.ask_ocr_language()
-        if ok and label in languages:
-            self.favorite_settings.setValue("ocr/language", languages[label])
+        code = languages.get(label, label)
+        if ok and code == valid_language(code):
+            self.favorite_settings.setValue("ocr/language", code)
+
+    def show_ocr_report(self, session, results):
+        dialog = QDialog(self)
+        dialog.setLayoutDirection(self.layoutDirection())
+        dialog.setWindowTitle(self.ui("Texterkennung abgeschlossen"))
+        dialog.resize(800, 480)
+        layout = QVBoxLayout(dialog)
+        table = QTableWidget(len(results), 3)
+        table.setHorizontalHeaderLabels([self.ui("Seite"), self.ui("Status"), self.ui("Details")])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        labels = {'added': 'Text ergänzt', 'existing': 'Bereits durchsuchbar',
+                  'failed': 'Fehlgeschlagen', 'cancelled': 'Nicht bearbeitet (Abbruch)'}
+        for row, (index, state, reason) in enumerate(results):
+            for col, value in enumerate((str(index + 1), self.ui(labels[state]), self.ui(reason))):
+                table.setItem(row, col, QTableWidgetItem(value))
+        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
+        jump = buttons.addButton(self.ui("Zur Seite"), QDialogButtonBox.ButtonRole.ActionRole)
+        def go():
+            row = table.currentRow()
+            if session in self.sessions and 0 <= row < len(results) and results[row][0] < len(session.doc):
+                self.tabs.setCurrentIndex(self.sessions.index(session))
+                session.page = results[row][0]
+                self.refresh_thumbs()
+                self.render()
+                dialog.accept()
+        jump.clicked.connect(go)
+        table.cellDoubleClicked.connect(lambda *_: go())
+        jump.setEnabled(bool(results))
+        if results:
+            table.setCurrentCell(0, 0)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.exec()
 
     def ocr(self, whole_document=False):
         session = self.current
@@ -9180,7 +9242,10 @@ class Window(QMainWindow):
         choice, ok = self.ask_ocr_language()
         if not ok:
             return
-        self.favorite_settings.setValue("ocr/language", choices[choice])
+        language = choices.get(choice, choice)
+        if language != valid_language(language):
+            return
+        self.favorite_settings.setValue("ocr/language", language)
         root = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
         indices = range(len(session.doc)) if whole_document else [session.page]
         try:
@@ -9193,6 +9258,7 @@ class Window(QMainWindow):
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0 if whole_document else 600)
         added, skipped, failed, cancelled = 0, 0, [], False
+        results = []
         try:
             for offset, index in enumerate(indices):
                 progress.setLabelText(self.ui_format('Seite {0} von {1}', index + 1, len(session.doc)))
@@ -9200,35 +9266,27 @@ class Window(QMainWindow):
                 QApplication.processEvents()
                 if progress.wasCanceled():
                     cancelled = True
+                    results.extend((remaining, 'cancelled', '') for remaining in list(indices)[offset:])
                     break
                 try:
                     page = session.doc[index]
-                    if whole_document and page.get_text().strip():
+                    if page.get_text().strip():
                         skipped += 1
+                        results.append((index, 'existing', ''))
                         continue
-                    recognize_page(page, choices[choice], root / "tessdata")
+                    recognize_page(page, language, root / "tessdata")
                     added += 1
+                    results.append((index, 'added', ''))
                 except Exception as exc:
                     failed.append((index + 1, str(exc)))
+                    results.append((index, 'failed', str(exc)))
         finally:
             progress.close()
         if added:
             self.changed()
         else:
             session.history.pop()
-        summary = [self.ui_format("{0} Seiten mit neuer Textebene.", added)]
-        if skipped:
-            summary.append(self.ui_format("{0} Seiten hatten bereits Text.", skipped))
-        if failed:
-            summary.append(self.ui_format("{0} Seiten ohne neue Textebene.", len(failed)))
-        if cancelled:
-            summary.append(self.ui("Abgebrochen. Fertige Seiten bleiben bearbeitet."))
-        report = QMessageBox(self)
-        report.setWindowTitle(self.ui("Texterkennung abgeschlossen"))
-        report.setText("\n".join(summary))
-        if failed:
-            report.setDetailedText("\n".join(f"Seite {index}: {reason}" for index, reason in failed))
-        report.exec()
+        self.show_ocr_report(session, results)
 
 
     def text_at(self, page, point):

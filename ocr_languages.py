@@ -9,12 +9,18 @@ LANGUAGES = {
 }
 DEFAULT = 'deu+eng'
 
-def choices(translate):
-    return {translate('Deutsch und Englisch'): DEFAULT} | {
+def choices(translate, selected=DEFAULT):
+    result = {translate('Deutsch und Englisch'): DEFAULT} | {
         f'{name} ({code})': code for code, name in LANGUAGES.items()}
+    if valid_language(selected) == selected and selected not in result.values():
+        result[' + '.join(LANGUAGES[code] for code in selected.split('+'))] = selected
+    return result
 
 def valid_language(value):
-    return value if value == DEFAULT or value in LANGUAGES else DEFAULT
+    if not isinstance(value, str):
+        return DEFAULT
+    parts = value.split('+')
+    return value if 1 <= len(parts) <= len(LANGUAGES) and len(set(parts)) == len(parts) and all(code in LANGUAGES for code in parts) else DEFAULT
 
 def require_data(language, directory):
     if language != valid_language(language):

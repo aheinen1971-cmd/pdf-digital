@@ -33,3 +33,8 @@ Die optionale E-Rechnungsprüfung lädt beim ersten Aufruf den
 und die [KoSIT-Prüfkonfiguration XRechnung 3.0.2 vom 31.08.2026](https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/tag/v2026-08-31).
 Die Prüfsummen der Originalpakete stehen in `invoice_validation.py`.
 Die Pakete werden separat bezogen und folgen ihren jeweiligen Lizenzhinweisen.
+
+`ocr_glyphless.b64` enthält die unveränderte 572-Byte-GlyphLessFont aus
+Tesseracts PDF-Ausgabe, für unsichtbare korrigierte Unicode-Textebenen.
+Quelle: https://github.com/tesseract-ocr/tesseract/blob/main/src/api/pdfrenderer.cpp
+Tesseract steht unter Apache-2.0; der Lizenztext liegt in `LICENSES/Tessdata.txt`.

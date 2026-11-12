@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pymupdf as pdf
 from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import QFont, QFontDatabase
-from PySide6.QtWidgets import QApplication, QInputDialog, QMessageBox, QProgressDialog, QComboBox
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox, QProgressDialog, QListWidget
 import pdf_werkbank as m
 from ocr_languages import LANGUAGES, choices, require_data
 
@@ -77,9 +77,9 @@ with TemporaryDirectory() as folder:
   dialog_checks=[]
   def inspect_dialog():
    dialog=app.activeModalWidget()
-   if isinstance(dialog,QInputDialog):
-    combo=dialog.findChild(QComboBox)
-    dialog_checks.append(combo is not None and combo.count()==21)
+   if isinstance(dialog,QDialog):
+    combo=dialog.findChild(QListWidget)
+    dialog_checks.append(combo is not None and combo.count()==20)
     dialog.grab().save(str(output/('dialog-'+code+'.png')))
     dialog.reject()
    else:
@@ -110,7 +110,7 @@ with TemporaryDirectory() as folder:
  original=path.read_bytes();before=session.doc[0].get_pixmap().samples
  window.favorite_settings.setValue('ocr/language','fra')
  label=next(k for k,v in choices(window.ui).items() if v=='fra')
- with patch.object(window,'ask_ocr_language',return_value=(label,True)),patch.object(QMessageBox,'exec',return_value=0):
+ with patch.object(window,'ask_ocr_language',return_value=(label,True)),patch.object(window,'show_ocr_report'):
   window.ocr(True)
  assert session.doc[0].search_for('Bonjour')
  assert session.doc[1].get_text().strip()=='Already searchable'
@@ -118,10 +118,10 @@ with TemporaryDirectory() as folder:
  window.undo();assert not session.doc[0].get_text().strip()
  window.redo();assert session.doc[0].search_for('Bonjour')
  window.undo();history=len(session.history)
- with patch.object(window,'ask_ocr_language',return_value=(label,True)),patch.object(QMessageBox,'exec',return_value=0),patch.object(QProgressDialog,'wasCanceled',return_value=True):
+ with patch.object(window,'ask_ocr_language',return_value=(label,True)),patch.object(window,'show_ocr_report'),patch.object(QProgressDialog,'wasCanceled',return_value=True):
   window.ocr(True)
  assert not session.doc[0].get_text().strip() and len(session.history)==history
- with patch.object(window,'ask_ocr_language',return_value=(label,True)),patch.object(QMessageBox,'exec',return_value=0),patch.object(m,'require_data',side_effect=ValueError('Missing model')):
+ with patch.object(window,'ask_ocr_language',return_value=(label,True)),patch.object(window,'show_ocr_report'),patch.object(m,'require_data',side_effect=ValueError('Missing model')):
   window.ocr(True)
  assert not session.doc[0].get_text().strip() and len(session.history)==history
  assert path.read_bytes()==original

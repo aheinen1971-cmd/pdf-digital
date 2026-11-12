@@ -129,9 +129,28 @@ Alle Sprachmodelle werden bei der Einrichtung aus einer festgelegten
 Tesseract-Version geladen und mit SHA-256 geprüft. Danach arbeitet OCR
 ohne Netzwerk; Offline-Installationspakete müssen alle 20 Modelldateien
 enthalten. Das Originalbild bleibt erhalten, der erkannte Text wird als
-unsichtbare Unicode-Textebene ergänzt. Die bestehende manuelle OCR-Korrektur
-bleibt auf ihre bisher unterstützten Zeichen beschränkt. Schlechte Scans,
+unsichtbare Unicode-Textebene ergänzt. Schlechte Scans,
 Handschrift und schwierige Layouts können weiterhin Erkennungsfehler verursachen.
+
+### Weitere OCR-Ergänzungen (vorbereitet, noch nicht veröffentlicht)
+
+- Die Sprachauswahl bietet jetzt Kontrollkästchen für eine oder mehrere
+  der 20 Dokumentsprachen. Mindestens eine Sprache muss ausgewählt sein.
+  Nur tatsächlich benötigte Sprachen wählen: zusätzliche Modelle können
+  Erkennung und Laufzeit beeinflussen. Die Auswahl bleibt lokal gespeichert;
+  Versandkopien bieten auch die gespeicherte Kombination an.
+- **OCR-Korrektur** unterstützt die Zeichen aller 20 Sprachen, einschließlich
+  Arabisch, Hebräisch und asiatischer Schriften. Die unsichtbare Textebene
+  wird ersetzt; das Scanbild bleibt erhalten. Suche und Kopieren verwenden
+  den korrigierten Text. Auswahlrahmen sind angenähert an die ursprüngliche
+  Zeile; bei gemischten Schreibrichtungen können Kopierprogramme zusätzliche
+  Zeilenumbrüche einfügen. Zeilen sind auf 10000 Zeichen begrenzt.
+- Nach Seiten- oder Dokument-OCR zeigt der Bericht jede betroffene Seite:
+  Text ergänzt, bereits durchsuchbar, fehlgeschlagen mit Fehlergrund oder
+  nach Abbruch nicht bearbeitet. **Zur Seite** beziehungsweise Doppelklick
+  öffnet die ausgewählte Seite. Der Bericht ist eine Momentaufnahme dieses
+  Durchlaufs und wird nicht als dauerhafte Dokumenteigenschaft gespeichert.
+- Die neuen Dialoge sind in allen 20 Oberflächensprachen verfügbar.
 
 ## Arbeitsstand sichern
 
@@ -548,7 +567,7 @@ Suchindex, Arbeitsmappen und gespeicherte Ordnerpfade sind davon getrennt.
 - **OCR-Korrektur** im Bearbeiten-Menü und im Scan-Posteingang stellt
   Scanbild und erkannte Zeilen nebeneinander. Sie unterstützt Scan-Seiten
   mit unsichtbarer Textebene und lässt das Seitenbild unverändert.
-  Für die Korrektur stehen deutsche und westeuropäische Zeichen zur Verfügung.
+  Die vorbereitete Erweiterung unterstützt Zeichen aller 20 Dokumentsprachen.
 
 - **PDF/A-Archivkopie** erstellt eine PDF/A-2b-Kopie des Seitenbilds
   mit durchsuchbarer Textebene. Seiten ohne erkennbaren Text lassen sich
