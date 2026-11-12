@@ -90,7 +90,7 @@ def correction_line(page, box, lines):
     return matches[0] if len(matches) == 1 else None
 
 
-def show_review(parent, page, language, data, correction_lines=None):
+def show_review(parent, page, language, data, correction_lines=None, resume_record=None, first_open=False):
     from PySide6.QtCore import Qt, QRect
     from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
     from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QLabel, QSpinBox,
@@ -284,6 +284,19 @@ def show_review(parent, page, language, data, correction_lines=None):
     buttons.rejected.connect(dialog.reject)
     layout.addWidget(buttons)
     refresh()
+    if resume_record is not None:
+        saved = resume_record
+        if (saved['doc'], saved['page'], saved['language'], saved['words']) == (doc_key, page.number, language, recognition_key):
+            reviewed_ids.update(saved['reviewed'])
+            threshold.setValue(saved['threshold']); refresh()
+            target = next((i for i in visible_ids if i not in reviewed_ids), -1) if first_open else saved['position']
+            if target in visible_ids:
+                table.setCurrentCell(visible_ids.index(target), 0)
+                table.scrollToItem(table.item(table.currentRow(), 0))
+            remember()
+            checkpoint_status.setText(tr('Prüfstand geladen.'))
+        else:
+            checkpoint_status.setText(tr('Kein passender Prüfstand. Dokument oder Erkennung können verändert sein.'))
     if dialog.exec() == QDialog.DialogCode.Accepted:
         return selected_line
 

@@ -9090,6 +9090,13 @@ class Window(QMainWindow):
                     rows.editItem(rows.item(index, 0))
         confidence_button.clicked.connect(check_confidence)
         layout.addWidget(confidence_button)
+        saved_button=QPushButton(self.ui("Gespeicherte Prüfstände"))
+        def saved_reviews():
+            from ocr_review_state import checkpoints
+            try:checkpoints(self,doc)
+            except Exception as exc:self.error(exc)
+        saved_button.clicked.connect(saved_reviews)
+        layout.addWidget(saved_button)
         split = QSplitter()
         layout.addWidget(split, 1)
         area = QScrollArea()
@@ -9105,7 +9112,11 @@ class Window(QMainWindow):
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Korrekturen übernehmen"))
         buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
-        buttons.accepted.connect(dialog.accept)
+        def confirm_corrections():
+            remember()
+            from ocr_review_state import compare_corrections
+            if compare_corrections(self,doc,edits):dialog.accept()
+        buttons.accepted.connect(confirm_corrections)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
         edits, lines = {}, []

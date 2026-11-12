@@ -1282,7 +1282,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Only confirmed word reviews count. Changed documents must be reviewed again. You can still save.",
     "Geprüft": "Reviewed",
     "Offen": "Pending",
-    "Nicht geprüft": "Not reviewed"
+    "Nicht geprüft": "Not reviewed",
+    "Zur offenen Stelle": "Go to pending item",
+    "Gespeicherte Prüfstände": "Saved review progress",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Opening is only possible for the unchanged current document. Old review progress can be deleted. No file names or text are stored.",
+    "Gespeichert am": "Saved on",
+    "Aktuelles Dokument": "Current document",
+    "OCR-Korrekturen vergleichen": "Compare OCR corrections",
+    "Originaltext": "Original text",
+    "Korrigierter Text": "Corrected text",
+    "Zurück zur Bearbeitung": "Back to editing"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2567,7 +2576,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Seules les vérifications confirmées comptent. Les documents modifiés doivent être revérifiés. L’enregistrement reste possible.",
     "Geprüft": "Vérifié",
     "Offen": "À vérifier",
-    "Nicht geprüft": "Non vérifié"
+    "Nicht geprüft": "Non vérifié",
+    "Zur offenen Stelle": "Aller au point à vérifier",
+    "Gespeicherte Prüfstände": "Vérifications enregistrées",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "L’ouverture est possible uniquement pour le document actuel inchangé. Les anciennes vérifications peuvent être supprimées. Aucun nom de fichier ni texte n’est enregistré.",
+    "Gespeichert am": "Enregistré le",
+    "Aktuelles Dokument": "Document actuel",
+    "OCR-Korrekturen vergleichen": "Comparer les corrections OCR",
+    "Originaltext": "Texte original",
+    "Korrigierter Text": "Texte corrigé",
+    "Zurück zur Bearbeitung": "Revenir à la modification"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3852,7 +3870,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Solo cuentan las revisiones de palabras confirmadas. Los documentos modificados deben revisarse de nuevo. Puedes guardar de todos modos.",
     "Geprüft": "Revisado",
     "Offen": "Pendiente",
-    "Nicht geprüft": "Sin revisar"
+    "Nicht geprüft": "Sin revisar",
+    "Zur offenen Stelle": "Ir al elemento pendiente",
+    "Gespeicherte Prüfstände": "Revisiones guardadas",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Solo se puede abrir para el documento actual sin cambios. Puedes eliminar las revisiones antiguas. No se guardan nombres de archivo ni textos.",
+    "Gespeichert am": "Guardado el",
+    "Aktuelles Dokument": "Documento actual",
+    "OCR-Korrekturen vergleichen": "Comparar correcciones OCR",
+    "Originaltext": "Texto original",
+    "Korrigierter Text": "Texto corregido",
+    "Zurück zur Bearbeitung": "Volver a editar"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5137,7 +5164,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Alleen bevestigde woordcontroles tellen. Gewijzigde documenten moeten opnieuw worden gecontroleerd. Opslaan blijft mogelijk.",
     "Geprüft": "Gecontroleerd",
     "Offen": "Openstaand",
-    "Nicht geprüft": "Niet gecontroleerd"
+    "Nicht geprüft": "Niet gecontroleerd",
+    "Zur offenen Stelle": "Naar openstaand woord",
+    "Gespeicherte Prüfstände": "Opgeslagen controles",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Openen kan alleen voor het ongewijzigde huidige document. Oude controles kunnen worden verwijderd. Er worden geen bestandsnamen of teksten opgeslagen.",
+    "Gespeichert am": "Opgeslagen op",
+    "Aktuelles Dokument": "Huidig document",
+    "OCR-Korrekturen vergleichen": "OCR-correcties vergelijken",
+    "Originaltext": "Oorspronkelijke tekst",
+    "Korrigierter Text": "Gecorrigeerde tekst",
+    "Zurück zur Bearbeitung": "Terug naar bewerken"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6422,7 +6458,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Contano solo le verifiche delle parole confermate. I documenti modificati vanno verificati di nuovo. Puoi comunque salvare.",
     "Geprüft": "Verificato",
     "Offen": "Da verificare",
-    "Nicht geprüft": "Non verificato"
+    "Nicht geprüft": "Non verificato",
+    "Zur offenen Stelle": "Vai al punto da verificare",
+    "Gespeicherte Prüfstände": "Verifiche salvate",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "È possibile aprire solo per il documento attuale non modificato. Le vecchie verifiche possono essere eliminate. Non vengono salvati nomi di file o testi.",
+    "Gespeichert am": "Salvato il",
+    "Aktuelles Dokument": "Documento attuale",
+    "OCR-Korrekturen vergleichen": "Confronta correzioni OCR",
+    "Originaltext": "Testo originale",
+    "Korrigierter Text": "Testo corretto",
+    "Zurück zur Bearbeitung": "Torna alla modifica"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7707,7 +7752,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Só contam as revisões de palavras confirmadas. Os documentos alterados têm de ser revistos novamente. Continua a ser possível guardar.",
     "Geprüft": "Revisto",
     "Offen": "Pendente",
-    "Nicht geprüft": "Não revisto"
+    "Nicht geprüft": "Não revisto",
+    "Zur offenen Stelle": "Ir para o ponto pendente",
+    "Gespeicherte Prüfstände": "Revisões guardadas",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Só é possível abrir para o documento atual sem alterações. As revisões antigas podem ser eliminadas. Não são guardados nomes de ficheiros nem textos.",
+    "Gespeichert am": "Guardado em",
+    "Aktuelles Dokument": "Documento atual",
+    "OCR-Korrekturen vergleichen": "Comparar correções OCR",
+    "Originaltext": "Texto original",
+    "Korrigierter Text": "Texto corrigido",
+    "Zurück zur Bearbeitung": "Voltar à edição"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8992,7 +9046,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Liczą się tylko potwierdzone sprawdzenia słów. Zmienione dokumenty wymagają ponownego sprawdzenia. Zapis jest nadal możliwy.",
     "Geprüft": "Sprawdzone",
     "Offen": "Pozostałe",
-    "Nicht geprüft": "Niesprawdzone"
+    "Nicht geprüft": "Niesprawdzone",
+    "Zur offenen Stelle": "Przejdź do niesprawdzonego miejsca",
+    "Gespeicherte Prüfstände": "Zapisane kontrole",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Otwarcie jest możliwe tylko dla niezmienionego bieżącego dokumentu. Stare kontrole można usunąć. Nazwy plików ani teksty nie są zapisywane.",
+    "Gespeichert am": "Zapisano",
+    "Aktuelles Dokument": "Bieżący dokument",
+    "OCR-Korrekturen vergleichen": "Porównaj poprawki OCR",
+    "Originaltext": "Tekst oryginalny",
+    "Korrigierter Text": "Tekst poprawiony",
+    "Zurück zur Bearbeitung": "Wróć do edycji"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10277,7 +10340,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Počítají se pouze potvrzené kontroly slov. Změněné dokumenty je nutné znovu zkontrolovat. Uložení je stále možné.",
     "Geprüft": "Zkontrolováno",
     "Offen": "Zbývá",
-    "Nicht geprüft": "Nezkontrolováno"
+    "Nicht geprüft": "Nezkontrolováno",
+    "Zur offenen Stelle": "Přejít na nezkontrolované místo",
+    "Gespeicherte Prüfstände": "Uložené kontroly",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Otevření je možné pouze pro nezměněný aktuální dokument. Staré kontroly lze smazat. Názvy souborů ani texty se neukládají.",
+    "Gespeichert am": "Uloženo dne",
+    "Aktuelles Dokument": "Aktuální dokument",
+    "OCR-Korrekturen vergleichen": "Porovnat opravy OCR",
+    "Originaltext": "Původní text",
+    "Korrigierter Text": "Opravený text",
+    "Zurück zur Bearbeitung": "Zpět k úpravám"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11562,7 +11634,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Kun bekræftede ordgennemgange tæller. Ændrede dokumenter skal gennemgås igen. Du kan stadig gemme.",
     "Geprüft": "Gennemgået",
     "Offen": "Resterende",
-    "Nicht geprüft": "Ikke gennemgået"
+    "Nicht geprüft": "Ikke gennemgået",
+    "Zur offenen Stelle": "Gå til næste åbne punkt",
+    "Gespeicherte Prüfstände": "Gemte kontroller",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Åbning er kun mulig for det uændrede aktuelle dokument. Gamle kontroller kan slettes. Filnavne og tekster gemmes ikke.",
+    "Gespeichert am": "Gemt den",
+    "Aktuelles Dokument": "Aktuelt dokument",
+    "OCR-Korrekturen vergleichen": "Sammenlign OCR-rettelser",
+    "Originaltext": "Oprindelig tekst",
+    "Korrigierter Text": "Rettet tekst",
+    "Zurück zur Bearbeitung": "Tilbage til redigering"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12847,7 +12928,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Endast bekräftade ordgranskningar räknas. Ändrade dokument måste granskas igen. Det går fortfarande att spara.",
     "Geprüft": "Granskat",
     "Offen": "Återstår",
-    "Nicht geprüft": "Inte granskat"
+    "Nicht geprüft": "Inte granskat",
+    "Zur offenen Stelle": "Gå till okontrollerad punkt",
+    "Gespeicherte Prüfstände": "Sparade granskningar",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Öppning är endast möjlig för det oförändrade aktuella dokumentet. Gamla granskningar kan tas bort. Inga filnamn eller texter sparas.",
+    "Gespeichert am": "Sparad den",
+    "Aktuelles Dokument": "Aktuellt dokument",
+    "OCR-Korrekturen vergleichen": "Jämför OCR-korrigeringar",
+    "Originaltext": "Ursprunglig text",
+    "Korrigierter Text": "Korrigerad text",
+    "Zurück zur Bearbeitung": "Tillbaka till redigering"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14132,7 +14222,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Bare bekreftede ordgjennomganger teller. Endrede dokumenter må gjennomgås på nytt. Du kan fortsatt lagre.",
     "Geprüft": "Gjennomgått",
     "Offen": "Gjenstår",
-    "Nicht geprüft": "Ikke gjennomgått"
+    "Nicht geprüft": "Ikke gjennomgått",
+    "Zur offenen Stelle": "Gå til uavklart punkt",
+    "Gespeicherte Prüfstände": "Lagrede kontroller",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Åpning er bare mulig for det uendrede gjeldende dokumentet. Gamle kontroller kan slettes. Ingen filnavn eller tekster lagres.",
+    "Gespeichert am": "Lagret den",
+    "Aktuelles Dokument": "Gjeldende dokument",
+    "OCR-Korrekturen vergleichen": "Sammenlign OCR-rettelser",
+    "Originaltext": "Opprinnelig tekst",
+    "Korrigierter Text": "Rettet tekst",
+    "Zurück zur Bearbeitung": "Tilbake til redigering"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15417,7 +15516,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Vain vahvistetut sanojen tarkistukset lasketaan. Muutetut asiakirjat on tarkistettava uudelleen. Tallentaminen on silti mahdollista.",
     "Geprüft": "Tarkistettu",
     "Offen": "Jäljellä",
-    "Nicht geprüft": "Ei tarkistettu"
+    "Nicht geprüft": "Ei tarkistettu",
+    "Zur offenen Stelle": "Siirry tarkistamattomaan kohtaan",
+    "Gespeicherte Prüfstände": "Tallennetut tarkistukset",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Avaaminen on mahdollista vain nykyiselle muuttumattomalle asiakirjalle. Vanhat tarkistukset voi poistaa. Tiedostonimiä tai tekstejä ei tallenneta.",
+    "Gespeichert am": "Tallennettu",
+    "Aktuelles Dokument": "Nykyinen asiakirja",
+    "OCR-Korrekturen vergleichen": "Vertaa OCR-korjauksia",
+    "Originaltext": "Alkuperäinen teksti",
+    "Korrigierter Text": "Korjattu teksti",
+    "Zurück zur Bearbeitung": "Takaisin muokkaukseen"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -16702,7 +16810,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Yalnızca onaylanan sözcük incelemeleri sayılır. Değişen belgeler yeniden incelenmelidir. Kaydetmek yine de mümkündür.",
     "Geprüft": "İncelenen",
     "Offen": "Bekleyen",
-    "Nicht geprüft": "İncelenmedi"
+    "Nicht geprüft": "İncelenmedi",
+    "Zur offenen Stelle": "Bekleyen noktaya git",
+    "Gespeicherte Prüfstände": "Kaydedilen incelemeler",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Yalnızca değiştirilmemiş geçerli belge için açılabilir. Eski incelemeler silinebilir. Dosya adları veya metinler kaydedilmez.",
+    "Gespeichert am": "Kayıt tarihi",
+    "Aktuelles Dokument": "Geçerli belge",
+    "OCR-Korrekturen vergleichen": "OCR düzeltmelerini karşılaştır",
+    "Originaltext": "Özgün metin",
+    "Korrigierter Text": "Düzeltilmiş metin",
+    "Zurück zur Bearbeitung": "Düzenlemeye dön"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -17987,7 +18104,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Враховуються лише підтверджені перевірки слів. Змінені документи потрібно перевірити знову. Збереження залишається доступним.",
     "Geprüft": "Перевірено",
     "Offen": "Залишилося",
-    "Nicht geprüft": "Не перевірено"
+    "Nicht geprüft": "Не перевірено",
+    "Zur offenen Stelle": "Перейти до неперевіреного місця",
+    "Gespeicherte Prüfstände": "Збережені перевірки",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Відкрити можна лише для незміненого поточного документа. Старі перевірки можна видалити. Назви файлів і тексти не зберігаються.",
+    "Gespeichert am": "Збережено",
+    "Aktuelles Dokument": "Поточний документ",
+    "OCR-Korrekturen vergleichen": "Порівняти виправлення OCR",
+    "Originaltext": "Початковий текст",
+    "Korrigierter Text": "Виправлений текст",
+    "Zurück zur Bearbeitung": "Повернутися до редагування"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19272,7 +19398,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "Μετρούν μόνο οι επιβεβαιωμένοι έλεγχοι λέξεων. Τα τροποποιημένα έγγραφα πρέπει να ελεγχθούν ξανά. Η αποθήκευση παραμένει δυνατή.",
     "Geprüft": "Ελεγμένα",
     "Offen": "Εκκρεμή",
-    "Nicht geprüft": "Δεν ελέγχθηκε"
+    "Nicht geprüft": "Δεν ελέγχθηκε",
+    "Zur offenen Stelle": "Μετάβαση σε εκκρεμές σημείο",
+    "Gespeicherte Prüfstände": "Αποθηκευμένοι έλεγχοι",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "Το άνοιγμα είναι δυνατό μόνο για το τρέχον αμετάβλητο έγγραφο. Οι παλιοί έλεγχοι μπορούν να διαγραφούν. Δεν αποθηκεύονται ονόματα αρχείων ή κείμενα.",
+    "Gespeichert am": "Αποθηκεύτηκε στις",
+    "Aktuelles Dokument": "Τρέχον έγγραφο",
+    "OCR-Korrekturen vergleichen": "Σύγκριση διορθώσεων OCR",
+    "Originaltext": "Αρχικό κείμενο",
+    "Korrigierter Text": "Διορθωμένο κείμενο",
+    "Zurück zur Bearbeitung": "Επιστροφή στην επεξεργασία"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -20557,7 +20692,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "確認済みとして指定した単語のみを数えます。変更された文書は再確認が必要です。保存は引き続き可能です。",
     "Geprüft": "確認済み",
     "Offen": "未確認",
-    "Nicht geprüft": "未確認"
+    "Nicht geprüft": "未確認",
+    "Zur offenen Stelle": "未確認の箇所へ移動",
+    "Gespeicherte Prüfstände": "保存済みの確認状況",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "現在の文書が変更されていない場合のみ開けます。古い確認状況は削除できます。ファイル名やテキストは保存されません。",
+    "Gespeichert am": "保存日時",
+    "Aktuelles Dokument": "現在の文書",
+    "OCR-Korrekturen vergleichen": "OCR修正を比較",
+    "Originaltext": "元のテキスト",
+    "Korrigierter Text": "修正後のテキスト",
+    "Zurück zur Bearbeitung": "編集に戻る"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -21842,7 +21986,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "확인한 단어 검토만 계산합니다. 변경된 문서는 다시 검토해야 합니다. 저장은 계속 가능합니다.",
     "Geprüft": "검토 완료",
     "Offen": "남음",
-    "Nicht geprüft": "검토하지 않음"
+    "Nicht geprüft": "검토하지 않음",
+    "Zur offenen Stelle": "미확인 위치로 이동",
+    "Gespeicherte Prüfstände": "저장된 검토 상태",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "현재 문서가 변경되지 않은 경우에만 열 수 있습니다. 이전 검토 상태는 삭제할 수 있습니다. 파일 이름이나 텍스트는 저장되지 않습니다.",
+    "Gespeichert am": "저장 일시",
+    "Aktuelles Dokument": "현재 문서",
+    "OCR-Korrekturen vergleichen": "OCR 수정 비교",
+    "Originaltext": "원본 텍스트",
+    "Korrigierter Text": "수정된 텍스트",
+    "Zurück zur Bearbeitung": "편집으로 돌아가기"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23127,7 +23280,16 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "تُحتسب مراجعات الكلمات المؤكدة فقط. يجب مراجعة المستندات المعدلة مجددًا. يظل الحفظ ممكنًا.",
     "Geprüft": "تمت المراجعة",
     "Offen": "متبقٍ",
-    "Nicht geprüft": "لم تتم المراجعة"
+    "Nicht geprüft": "لم تتم المراجعة",
+    "Zur offenen Stelle": "الانتقال إلى الموضع غير المراجع",
+    "Gespeicherte Prüfstände": "المراجعات المحفوظة",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "لا يمكن الفتح إلا للمستند الحالي دون تغيير. يمكن حذف المراجعات القديمة. لا تُحفظ أسماء الملفات أو النصوص.",
+    "Gespeichert am": "تاريخ الحفظ",
+    "Aktuelles Dokument": "المستند الحالي",
+    "OCR-Korrekturen vergleichen": "مقارنة تصحيحات OCR",
+    "Originaltext": "النص الأصلي",
+    "Korrigierter Text": "النص المصحح",
+    "Zurück zur Bearbeitung": "العودة إلى التحرير"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -24412,6 +24574,15 @@
     "Nur bestätigte Wortprüfungen zählen. Geänderte Dokumente müssen erneut geprüft werden. Speichern bleibt möglich.": "רק בדיקות מילים שאושרו נספרות. יש לבדוק מחדש מסמכים שהשתנו. עדיין אפשר לשמור.",
     "Geprüft": "נבדקו",
     "Offen": "נותרו",
-    "Nicht geprüft": "לא נבדק"
+    "Nicht geprüft": "לא נבדק",
+    "Zur offenen Stelle": "מעבר למקום שלא נבדק",
+    "Gespeicherte Prüfstände": "בדיקות שמורות",
+    "Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.": "ניתן לפתוח רק עבור המסמך הנוכחי שלא השתנה. אפשר למחוק בדיקות ישנות. שמות קבצים וטקסטים אינם נשמרים.",
+    "Gespeichert am": "נשמר בתאריך",
+    "Aktuelles Dokument": "המסמך הנוכחי",
+    "OCR-Korrekturen vergleichen": "השוואת תיקוני OCR",
+    "Originaltext": "הטקסט המקורי",
+    "Korrigierter Text": "הטקסט המתוקן",
+    "Zurück zur Bearbeitung": "חזרה לעריכה"
   }
 }
