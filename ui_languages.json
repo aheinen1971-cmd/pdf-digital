@@ -1291,7 +1291,14 @@
     "OCR-Korrekturen vergleichen": "Compare OCR corrections",
     "Originaltext": "Original text",
     "Korrigierter Text": "Corrected text",
-    "Zurück zur Bearbeitung": "Back to editing"
+    "Zurück zur Bearbeitung": "Back to editing",
+    "Nur offene Wörter anzeigen": "Show pending words only",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Your review progress has changed. Save before closing?",
+    "Änderungen verwerfen": "Discard changes",
+    "Weiterprüfen": "Continue reviewing",
+    "Keine offenen Wörter unter diesem Prüfwert.": "No pending words below this confidence threshold.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Scan excerpt of the selected line",
+    "Scan-Ausschnitt nicht verfügbar.": "Scan excerpt unavailable."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2585,7 +2592,14 @@
     "OCR-Korrekturen vergleichen": "Comparer les corrections OCR",
     "Originaltext": "Texte original",
     "Korrigierter Text": "Texte corrigé",
-    "Zurück zur Bearbeitung": "Revenir à la modification"
+    "Zurück zur Bearbeitung": "Revenir à la modification",
+    "Nur offene Wörter anzeigen": "Afficher uniquement les mots à vérifier",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Votre progression a changé. Enregistrer avant de fermer ?",
+    "Änderungen verwerfen": "Abandonner les modifications",
+    "Weiterprüfen": "Continuer la vérification",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Aucun mot à vérifier sous ce seuil.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Extrait du scan de la ligne sélectionnée",
+    "Scan-Ausschnitt nicht verfügbar.": "Extrait du scan indisponible."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3879,7 +3893,14 @@
     "OCR-Korrekturen vergleichen": "Comparar correcciones OCR",
     "Originaltext": "Texto original",
     "Korrigierter Text": "Texto corregido",
-    "Zurück zur Bearbeitung": "Volver a editar"
+    "Zurück zur Bearbeitung": "Volver a editar",
+    "Nur offene Wörter anzeigen": "Mostrar solo palabras pendientes",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Tu progreso de revisión ha cambiado. ¿Guardar antes de cerrar?",
+    "Änderungen verwerfen": "Descartar cambios",
+    "Weiterprüfen": "Seguir revisando",
+    "Keine offenen Wörter unter diesem Prüfwert.": "No hay palabras pendientes por debajo de este umbral.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Fragmento escaneado de la línea seleccionada",
+    "Scan-Ausschnitt nicht verfügbar.": "Fragmento escaneado no disponible."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5173,7 +5194,14 @@
     "OCR-Korrekturen vergleichen": "OCR-correcties vergelijken",
     "Originaltext": "Oorspronkelijke tekst",
     "Korrigierter Text": "Gecorrigeerde tekst",
-    "Zurück zur Bearbeitung": "Terug naar bewerken"
+    "Zurück zur Bearbeitung": "Terug naar bewerken",
+    "Nur offene Wörter anzeigen": "Alleen openstaande woorden tonen",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Je controlevoortgang is gewijzigd. Opslaan vóór sluiten?",
+    "Änderungen verwerfen": "Wijzigingen verwerpen",
+    "Weiterprüfen": "Verder controleren",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Geen openstaande woorden onder deze drempel.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Scanuitsnede van de geselecteerde regel",
+    "Scan-Ausschnitt nicht verfügbar.": "Scanuitsnede niet beschikbaar."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6467,7 +6495,14 @@
     "OCR-Korrekturen vergleichen": "Confronta correzioni OCR",
     "Originaltext": "Testo originale",
     "Korrigierter Text": "Testo corretto",
-    "Zurück zur Bearbeitung": "Torna alla modifica"
+    "Zurück zur Bearbeitung": "Torna alla modifica",
+    "Nur offene Wörter anzeigen": "Mostra solo parole da verificare",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "L’avanzamento della verifica è cambiato. Salvare prima di chiudere?",
+    "Änderungen verwerfen": "Scarta modifiche",
+    "Weiterprüfen": "Continua verifica",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Nessuna parola da verificare sotto questa soglia.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Ritaglio della scansione della riga selezionata",
+    "Scan-Ausschnitt nicht verfügbar.": "Ritaglio della scansione non disponibile."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7761,7 +7796,14 @@
     "OCR-Korrekturen vergleichen": "Comparar correções OCR",
     "Originaltext": "Texto original",
     "Korrigierter Text": "Texto corrigido",
-    "Zurück zur Bearbeitung": "Voltar à edição"
+    "Zurück zur Bearbeitung": "Voltar à edição",
+    "Nur offene Wörter anzeigen": "Mostrar apenas palavras pendentes",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "O progresso da revisão mudou. Guardar antes de fechar?",
+    "Änderungen verwerfen": "Descartar alterações",
+    "Weiterprüfen": "Continuar a revisão",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Não há palavras pendentes abaixo deste limiar.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Recorte digitalizado da linha selecionada",
+    "Scan-Ausschnitt nicht verfügbar.": "Recorte digitalizado indisponível."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9055,7 +9097,14 @@
     "OCR-Korrekturen vergleichen": "Porównaj poprawki OCR",
     "Originaltext": "Tekst oryginalny",
     "Korrigierter Text": "Tekst poprawiony",
-    "Zurück zur Bearbeitung": "Wróć do edycji"
+    "Zurück zur Bearbeitung": "Wróć do edycji",
+    "Nur offene Wörter anzeigen": "Pokaż tylko niesprawdzone słowa",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Postęp sprawdzania zmienił się. Zapisać przed zamknięciem?",
+    "Änderungen verwerfen": "Odrzuć zmiany",
+    "Weiterprüfen": "Kontynuuj sprawdzanie",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Brak niesprawdzonych słów poniżej tego progu.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Fragment skanu wybranego wiersza",
+    "Scan-Ausschnitt nicht verfügbar.": "Fragment skanu niedostępny."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10349,7 +10398,14 @@
     "OCR-Korrekturen vergleichen": "Porovnat opravy OCR",
     "Originaltext": "Původní text",
     "Korrigierter Text": "Opravený text",
-    "Zurück zur Bearbeitung": "Zpět k úpravám"
+    "Zurück zur Bearbeitung": "Zpět k úpravám",
+    "Nur offene Wörter anzeigen": "Zobrazit jen nezkontrolovaná slova",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Průběh kontroly se změnil. Uložit před zavřením?",
+    "Änderungen verwerfen": "Zahodit změny",
+    "Weiterprüfen": "Pokračovat v kontrole",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Žádná nezkontrolovaná slova pod tímto prahem.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Výřez skenu vybraného řádku",
+    "Scan-Ausschnitt nicht verfügbar.": "Výřez skenu není dostupný."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11643,7 +11699,14 @@
     "OCR-Korrekturen vergleichen": "Sammenlign OCR-rettelser",
     "Originaltext": "Oprindelig tekst",
     "Korrigierter Text": "Rettet tekst",
-    "Zurück zur Bearbeitung": "Tilbage til redigering"
+    "Zurück zur Bearbeitung": "Tilbage til redigering",
+    "Nur offene Wörter anzeigen": "Vis kun ord, der mangler kontrol",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Din kontrol er ændret. Gem før lukning?",
+    "Änderungen verwerfen": "Kassér ændringer",
+    "Weiterprüfen": "Fortsæt kontrollen",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Ingen ord mangler kontrol under denne tærskel.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Scanningsudsnit af den valgte linje",
+    "Scan-Ausschnitt nicht verfügbar.": "Scanningsudsnit er ikke tilgængeligt."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12937,7 +13000,14 @@
     "OCR-Korrekturen vergleichen": "Jämför OCR-korrigeringar",
     "Originaltext": "Ursprunglig text",
     "Korrigierter Text": "Korrigerad text",
-    "Zurück zur Bearbeitung": "Tillbaka till redigering"
+    "Zurück zur Bearbeitung": "Tillbaka till redigering",
+    "Nur offene Wörter anzeigen": "Visa endast ogranskade ord",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Din granskningsstatus har ändrats. Spara innan du stänger?",
+    "Änderungen verwerfen": "Kasta ändringar",
+    "Weiterprüfen": "Fortsätt granska",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Inga ogranskade ord under denna tröskel.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Skannat utsnitt av vald rad",
+    "Scan-Ausschnitt nicht verfügbar.": "Skannat utsnitt är inte tillgängligt."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14231,7 +14301,14 @@
     "OCR-Korrekturen vergleichen": "Sammenlign OCR-rettelser",
     "Originaltext": "Opprinnelig tekst",
     "Korrigierter Text": "Rettet tekst",
-    "Zurück zur Bearbeitung": "Tilbake til redigering"
+    "Zurück zur Bearbeitung": "Tilbake til redigering",
+    "Nur offene Wörter anzeigen": "Vis bare ord som mangler kontroll",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Kontrollfremdriften er endret. Lagre før lukking?",
+    "Änderungen verwerfen": "Forkast endringer",
+    "Weiterprüfen": "Fortsett kontrollen",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Ingen ord mangler kontroll under denne terskelen.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Skannet utsnitt av valgt linje",
+    "Scan-Ausschnitt nicht verfügbar.": "Skannet utsnitt er ikke tilgjengelig."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15525,7 +15602,14 @@
     "OCR-Korrekturen vergleichen": "Vertaa OCR-korjauksia",
     "Originaltext": "Alkuperäinen teksti",
     "Korrigierter Text": "Korjattu teksti",
-    "Zurück zur Bearbeitung": "Takaisin muokkaukseen"
+    "Zurück zur Bearbeitung": "Takaisin muokkaukseen",
+    "Nur offene Wörter anzeigen": "Näytä vain tarkistamattomat sanat",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Tarkistuksen tila on muuttunut. Tallennetaanko ennen sulkemista?",
+    "Änderungen verwerfen": "Hylkää muutokset",
+    "Weiterprüfen": "Jatka tarkistusta",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Ei tarkistamattomia sanoja tämän rajan alapuolella.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Valitun rivin skannausote",
+    "Scan-Ausschnitt nicht verfügbar.": "Skannausote ei ole saatavilla."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -16819,7 +16903,14 @@
     "OCR-Korrekturen vergleichen": "OCR düzeltmelerini karşılaştır",
     "Originaltext": "Özgün metin",
     "Korrigierter Text": "Düzeltilmiş metin",
-    "Zurück zur Bearbeitung": "Düzenlemeye dön"
+    "Zurück zur Bearbeitung": "Düzenlemeye dön",
+    "Nur offene Wörter anzeigen": "Yalnızca bekleyen sözcükleri göster",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "İnceleme ilerlemeniz değişti. Kapatmadan önce kaydedilsin mi?",
+    "Änderungen verwerfen": "Değişiklikleri at",
+    "Weiterprüfen": "İncelemeye devam et",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Bu eşiğin altında bekleyen sözcük yok.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Seçili satırın tarama kesiti",
+    "Scan-Ausschnitt nicht verfügbar.": "Tarama kesiti kullanılamıyor."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18113,7 +18204,14 @@
     "OCR-Korrekturen vergleichen": "Порівняти виправлення OCR",
     "Originaltext": "Початковий текст",
     "Korrigierter Text": "Виправлений текст",
-    "Zurück zur Bearbeitung": "Повернутися до редагування"
+    "Zurück zur Bearbeitung": "Повернутися до редагування",
+    "Nur offene Wörter anzeigen": "Показати лише неперевірені слова",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Стан перевірки змінився. Зберегти перед закриттям?",
+    "Änderungen verwerfen": "Відкинути зміни",
+    "Weiterprüfen": "Продовжити перевірку",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Немає неперевірених слів нижче цього порога.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Фрагмент скану вибраного рядка",
+    "Scan-Ausschnitt nicht verfügbar.": "Фрагмент скану недоступний."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19407,7 +19505,14 @@
     "OCR-Korrekturen vergleichen": "Σύγκριση διορθώσεων OCR",
     "Originaltext": "Αρχικό κείμενο",
     "Korrigierter Text": "Διορθωμένο κείμενο",
-    "Zurück zur Bearbeitung": "Επιστροφή στην επεξεργασία"
+    "Zurück zur Bearbeitung": "Επιστροφή στην επεξεργασία",
+    "Nur offene Wörter anzeigen": "Εμφάνιση μόνο εκκρεμών λέξεων",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "Η πρόοδος ελέγχου άλλαξε. Αποθήκευση πριν το κλείσιμο;",
+    "Änderungen verwerfen": "Απόρριψη αλλαγών",
+    "Weiterprüfen": "Συνέχιση ελέγχου",
+    "Keine offenen Wörter unter diesem Prüfwert.": "Δεν υπάρχουν εκκρεμείς λέξεις κάτω από αυτό το όριο.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "Απόσπασμα σάρωσης της επιλεγμένης γραμμής",
+    "Scan-Ausschnitt nicht verfügbar.": "Το απόσπασμα σάρωσης δεν είναι διαθέσιμο."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -20701,7 +20806,14 @@
     "OCR-Korrekturen vergleichen": "OCR修正を比較",
     "Originaltext": "元のテキスト",
     "Korrigierter Text": "修正後のテキスト",
-    "Zurück zur Bearbeitung": "編集に戻る"
+    "Zurück zur Bearbeitung": "編集に戻る",
+    "Nur offene Wörter anzeigen": "未確認の単語のみ表示",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "確認状況が変更されています。閉じる前に保存しますか？",
+    "Änderungen verwerfen": "変更を破棄",
+    "Weiterprüfen": "確認を続ける",
+    "Keine offenen Wörter unter diesem Prüfwert.": "このしきい値未満の未確認単語はありません。",
+    "Scan-Ausschnitt der ausgewählten Zeile": "選択した行のスキャン画像",
+    "Scan-Ausschnitt nicht verfügbar.": "スキャン画像を表示できません。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -21995,7 +22107,14 @@
     "OCR-Korrekturen vergleichen": "OCR 수정 비교",
     "Originaltext": "원본 텍스트",
     "Korrigierter Text": "수정된 텍스트",
-    "Zurück zur Bearbeitung": "편집으로 돌아가기"
+    "Zurück zur Bearbeitung": "편집으로 돌아가기",
+    "Nur offene Wörter anzeigen": "미확인 단어만 표시",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "검토 진행 상황이 변경되었습니다. 닫기 전에 저장할까요?",
+    "Änderungen verwerfen": "변경 사항 버리기",
+    "Weiterprüfen": "계속 검토",
+    "Keine offenen Wörter unter diesem Prüfwert.": "이 기준값 미만의 미확인 단어가 없습니다.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "선택한 줄의 스캔 영역",
+    "Scan-Ausschnitt nicht verfügbar.": "스캔 영역을 표시할 수 없습니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23289,7 +23408,14 @@
     "OCR-Korrekturen vergleichen": "مقارنة تصحيحات OCR",
     "Originaltext": "النص الأصلي",
     "Korrigierter Text": "النص المصحح",
-    "Zurück zur Bearbeitung": "العودة إلى التحرير"
+    "Zurück zur Bearbeitung": "العودة إلى التحرير",
+    "Nur offene Wörter anzeigen": "عرض الكلمات غير المراجعة فقط",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "تغير تقدم المراجعة. هل تريد الحفظ قبل الإغلاق؟",
+    "Änderungen verwerfen": "تجاهل التغييرات",
+    "Weiterprüfen": "متابعة المراجعة",
+    "Keine offenen Wörter unter diesem Prüfwert.": "لا توجد كلمات غير مراجعة دون هذه العتبة.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "مقتطف المسح للسطر المحدد",
+    "Scan-Ausschnitt nicht verfügbar.": "مقتطف المسح غير متاح."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -24583,6 +24709,13 @@
     "OCR-Korrekturen vergleichen": "השוואת תיקוני OCR",
     "Originaltext": "הטקסט המקורי",
     "Korrigierter Text": "הטקסט המתוקן",
-    "Zurück zur Bearbeitung": "חזרה לעריכה"
+    "Zurück zur Bearbeitung": "חזרה לעריכה",
+    "Nur offene Wörter anzeigen": "הצגת מילים שלא נבדקו בלבד",
+    "Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?": "התקדמות הבדיקה השתנתה. לשמור לפני הסגירה?",
+    "Änderungen verwerfen": "ביטול השינויים",
+    "Weiterprüfen": "המשך הבדיקה",
+    "Keine offenen Wörter unter diesem Prüfwert.": "אין מילים שלא נבדקו מתחת לסף זה.",
+    "Scan-Ausschnitt der ausgewählten Zeile": "קטע הסריקה של השורה שנבחרה",
+    "Scan-Ausschnitt nicht verfügbar.": "קטע הסריקה אינו זמין."
   }
 }

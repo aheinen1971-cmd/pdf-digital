@@ -119,7 +119,10 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
     from ocr_review_state import document_key, word_key, read, write
     doc_key = document_key(page.parent)
     recognition_key = word_key(words, language)
-    dialog = QDialog(parent)
+    class ReviewDialog(QDialog):
+        def done(self, result):
+            if confirm_close():super().done(result)
+    dialog = ReviewDialog(parent)
     dialog.setLayoutDirection(parent.layoutDirection())
     dialog.setWindowTitle(tr('Unsichere Wörter prüfen'))
     dialog.resize(1000, 700)
@@ -148,6 +151,8 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
     navigation.addWidget(reviewed_box)
     navigation.addWidget(next_word)
     layout.addLayout(navigation)
+    only_open = QCheckBox(tr('Nur offene Wörter anzeigen'))
+    only_open.setObjectName('onlyOpenWords');layout.addWidget(only_open)
     checkpoint_row = QHBoxLayout()
     checkpoint_buttons = {}
     for label in ('Prüfstand speichern', 'Prüfung fortsetzen', 'Prüfstand löschen'):
@@ -182,7 +187,9 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
     def remember():
         if not hasattr(parent,'_ocr_review_memory'):parent._ocr_review_memory={}
         parent._ocr_review_memory[(doc_key,page.number,language)] = record()
+    baseline = None
     def checkpoint(action):
+        nonlocal baseline
         try:
             if action=='save':write(record());checkpoint_status.setText(tr('Prüfstand lokal gespeichert.'))
             elif action=='delete':
@@ -194,7 +201,27 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
                 threshold.setValue(saved['threshold']);refresh()
                 if saved['position'] in visible_ids:table.setCurrentCell(visible_ids.index(saved['position']),0)
                 remember();checkpoint_status.setText(tr('Prüfstand geladen.'))
-        except (ValueError,OSError,TypeError,KeyError):parent.error(tr('Prüfstand konnte nicht gelesen oder gespeichert werden.'))
+            baseline=record()
+            return True
+        except (ValueError,OSError,TypeError,KeyError):
+            parent.error(tr('Prüfstand konnte nicht gelesen oder gespeichert werden.'))
+            return False
+    def confirm_close():
+        from PySide6.QtWidgets import QMessageBox
+        current=record()
+        if baseline is None or all(current[k]==baseline[k] for k in ('reviewed','threshold')):return True
+        prompt=QMessageBox(dialog);prompt.setWindowTitle(tr('Prüfstand speichern'))
+        prompt.setText(tr('Dein Prüffortschritt wurde geändert. Vor dem Schließen speichern?'))
+        prompt.setLayoutDirection(dialog.layoutDirection())
+        save=prompt.addButton(tr('Prüfstand speichern'),QMessageBox.ButtonRole.AcceptRole)
+        discard=prompt.addButton(tr('Änderungen verwerfen'),QMessageBox.ButtonRole.DestructiveRole)
+        keep=prompt.addButton(tr('Weiterprüfen'),QMessageBox.ButtonRole.RejectRole)
+        prompt.setDefaultButton(keep);prompt.setEscapeButton(keep);prompt.exec()
+        if prompt.clickedButton() is save:return checkpoint('save')
+        if prompt.clickedButton() is discard:
+            parent._ocr_review_memory[(doc_key,page.number,language)]=dict(baseline)
+            return True
+        return False
     for label,action in [('Prüfstand speichern','save'),('Prüfung fortsetzen','load'),('Prüfstand löschen','delete')]:
         checkpoint_buttons[label].clicked.connect(lambda _=False,action=action:checkpoint(action))
     def update_review():
@@ -204,8 +231,9 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
         reviewed_box.setEnabled(valid)
         reviewed_box.setChecked(valid and visible_ids[index] in reviewed_ids)
         reviewed_box.blockSignals(False)
-        count = sum(word_id in reviewed_ids for word_id in visible_ids)
-        review_count.setText(tr('{0} von {1} geprüft').format(count, len(visible_ids)))
+        eligible=[i for i,w in enumerate(words) if w['score']<threshold.value()]
+        count = sum(word_id in reviewed_ids for word_id in eligible)
+        review_count.setText(tr('{0} von {1} geprüft').format(count, len(eligible)))
         next_word.setEnabled(any(word_id not in reviewed_ids for word_id in visible_ids))
     def mark_reviewed(checked):
         index = table.currentRow()
@@ -214,7 +242,7 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
                 reviewed_ids.add(visible_ids[index])
             else:
                 reviewed_ids.discard(visible_ids[index])
-        update_review()
+        refresh()
         remember()
     def go_next():
         size = len(visible_ids)
@@ -251,7 +279,7 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
     def refresh():
         old_index = table.currentRow()
         old_id = visible_ids[old_index] if 0 <= old_index < len(visible_ids) else None
-        visible_ids[:] = [i for i, word in enumerate(words) if word['score'] < threshold.value()]
+        visible_ids[:] = [i for i, word in enumerate(words) if word['score'] < threshold.value() and (not only_open.isChecked() or i not in reviewed_ids)]
         visible[:] = [words[i] for i in visible_ids]
         table.blockSignals(True)
         table.setRowCount(len(visible))
@@ -261,9 +289,10 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
         index = visible_ids.index(old_id) if old_id in visible_ids else (0 if visible else -1)
         table.setCurrentCell(index, 0)
         table.blockSignals(False)
-        state.setText(tr('Markierte Wörter') + ': ' + str(len(visible)) if visible else tr('Keine Wörter unter diesem Prüfwert.' if words else 'Kein Text erkannt.'))
+        state.setText(tr('Markierte Wörter') + ': ' + str(len(visible)) if visible else tr('Keine offenen Wörter unter diesem Prüfwert.' if only_open.isChecked() and words else ('Keine Wörter unter diesem Prüfwert.' if words else 'Kein Text erkannt.')))
         highlight(index)
         remember()
+    only_open.toggled.connect(refresh)
     threshold.valueChanged.connect(refresh)
     table.currentCellChanged.connect(highlight)
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
@@ -297,6 +326,7 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
             checkpoint_status.setText(tr('Prüfstand geladen.'))
         else:
             checkpoint_status.setText(tr('Kein passender Prüfstand. Dokument oder Erkennung können verändert sein.'))
+    baseline=record()
     if dialog.exec() == QDialog.DialogCode.Accepted:
         return selected_line
 

@@ -139,18 +139,37 @@ def checkpoints(parent,doc):
 
 
 def compare_corrections(parent,doc,edits):
-    from PySide6.QtWidgets import QDialog,QVBoxLayout,QTableWidget,QTableWidgetItem,QDialogButtonBox,QHeaderView
+    from PySide6.QtWidgets import QDialog,QVBoxLayout,QTableWidget,QTableWidgetItem,QDialogButtonBox,QHeaderView,QLabel,QScrollArea
+    from PySide6.QtGui import QPixmap,QImage
+    from PySide6.QtCore import Qt
+    import pymupdf as pdf
     from page_tools import ocr_lines
     changes=[]
     for page,values in sorted(edits.items()):
         original=ocr_lines(doc[page])
         for index,value in enumerate(values):
-            if value!=original[index][3]:changes.append((page+1,original[index][3],value))
+            if value!=original[index][3]:changes.append((page+1,original[index][3],value,original[index][0]))
     if not changes:return True
     tr=parent.ui;dialog=QDialog(parent);dialog.setWindowTitle(tr('OCR-Korrekturen vergleichen'));dialog.setLayoutDirection(parent.layoutDirection());dialog.resize(1000,600)
     layout=QVBoxLayout(dialog);table=QTableWidget(len(changes),3);table.setObjectName('correctionComparison');table.setHorizontalHeaderLabels([tr('Seite'),tr('Originaltext'),tr('Korrigierter Text')]);table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     for row,values in enumerate(changes):
-        for col,value in enumerate(values):table.setItem(row,col,QTableWidgetItem(str(value)))
+        for col,value in enumerate(values[:3]):table.setItem(row,col,QTableWidgetItem(str(value)))
     table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch);table.resizeRowsToContents();layout.addWidget(table)
+    label=QLabel(tr('Scan-Ausschnitt der ausgewählten Zeile'));layout.addWidget(label)
+    area=QScrollArea();area.setMinimumHeight(160);area.setMaximumHeight(260)
+    preview=QLabel();preview.setObjectName('scanExcerpt');preview.setAlignment(Qt.AlignmentFlag.AlignCenter);area.setWidget(preview);layout.addWidget(area)
+    def show_excerpt(row,*_):
+        if not 0<=row<len(changes):return
+        page_no,_,_,box=changes[row];page=doc[page_no-1]
+        clip=(pdf.Rect(box)*page.rotation_matrix)+(-8,-8,8,8)
+        clip=clip & page.rect
+        try:
+            scale=min(2.0,1400/max(1,clip.width),220/max(1,clip.height))
+            pix=page.get_pixmap(matrix=pdf.Matrix(scale,scale),clip=clip,colorspace=pdf.csRGB,alpha=False)
+            shown=QPixmap.fromImage(QImage(pix.samples,pix.width,pix.height,pix.stride,QImage.Format.Format_RGB888).copy())
+            preview.setPixmap(shown);preview.resize(shown.size())
+        except Exception:
+            preview.clear();preview.setText(tr('Scan-Ausschnitt nicht verfügbar.'));preview.adjustSize()
+    table.currentCellChanged.connect(show_excerpt);table.setCurrentCell(0,0)
     buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel);buttons.button(QDialogButtonBox.StandardButton.Ok).setText(tr('Korrekturen übernehmen'));buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(tr('Zurück zur Bearbeitung'));buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);layout.addWidget(buttons)
     return dialog.exec()==QDialog.DialogCode.Accepted
