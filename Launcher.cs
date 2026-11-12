@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+﻿// SPDX-License-Identifier: AGPL-3.0-only
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -74,7 +74,7 @@ internal static class Launcher
                 }
                 var answer = MessageBox.Show(
                     (offline ? "PDF Digital wird aus dem Ordner „Pakete“ eingerichtet. Dazu ist kein Internet nötig.\n\n"
-                    : "PDF Digital lädt beim ersten Start rund 140 MB direkt von Python.org, PyPI und GitHub. " +
+                    : "PDF Digital lädt beim ersten Start rund 200 MB direkt von Python.org, PyPI und GitHub. " +
                     "Die Dateien werden lokal für dieses Windows-Konto gespeichert. Danach funktioniert die PDF-App offline.\n\n")
                     + "Jetzt einrichten?", Title, MessageBoxButtons.YesNo, MessageBoxIcon.Information,
                     MessageBoxDefaultButton.Button2);
@@ -445,6 +445,7 @@ internal static class Launcher
                     cancellation.ThrowIfCancellationRequested();
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
+                    CopyResource("ocr_languages.py", Path.Combine(app, "ocr_languages.py"));
                     CopyResource("ui_languages.json", Path.Combine(app, "ui_languages.json"));
                     CopyResource("local_ai.py", Path.Combine(app, "local_ai.py"));
                     CopyResource("online_updates.py", Path.Combine(app, "online_updates.py"));

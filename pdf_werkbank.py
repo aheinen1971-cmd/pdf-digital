@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
+from ocr_languages import choices as ocr_choices, valid_language, require_data
 import hashlib
 import html
 import json
@@ -654,24 +655,18 @@ def recognize_page(page, language, tessdata):
         raise ValueError("Diese Seite enthält bereits auswählbaren Text.")
     if page.rotation:
         raise ValueError("Bitte die Seite für OCR zuerst in ihre ursprüngliche Ausrichtung drehen.")
-    recognized = page.get_textpage_ocr(language=language, dpi=200, full=True, tessdata=str(tessdata))
-    spans = [span for _, span in text_spans(page, recognized) if span["text"].strip()]
-    if not spans:
-        raise ValueError("Auf dieser Seite wurde kein Text erkannt.")
-    font = pdf.Font("helv")
-    shape = page.new_shape()
-    for span in spans:
-        origin = pdf.Point(span["origin"])
-        text = span["text"].replace(chr(160), " ").encode("cp1252", errors="replace").decode("cp1252")
-        fontsize = span["size"]
-        actual = font.text_length(text, fontsize=fontsize)
-        width = pdf.Rect(span["bbox"]).width
-        if actual > 0 and width > 0:
-            shape.insert_text(origin, text, fontsize=fontsize, fontname="helv", render_mode=3,
-                              morph=(origin, pdf.Matrix(width / actual, 1)))
-    if not shape.text_cont:
-        raise ValueError("Die erkannten Zeichen konnten nicht platziert werden.")
-    shape.commit()
+    require_data(language, Path(tessdata))
+    pixmap = page.get_pixmap(dpi=200, colorspace=pdf.csRGB, alpha=False, annots=False)
+    with pdf.open(stream=pixmap.pdfocr_tobytes(language=language, tessdata=str(tessdata)), filetype="pdf") as recognized:
+        layer = recognized[0]
+        if not layer.get_text().strip():
+            raise ValueError("Auf dieser Seite wurde kein Text erkannt.")
+        # Keep Tesseract's Unicode character map and invisible text. The original
+        # scan stays untouched; discard the temporary raster from the OCR layer.
+        for xref in {image[0] for image in layer.get_images()}:
+            layer.delete_image(xref)
+        page.show_pdf_page(page.rect, recognized, 0, overlay=True)
+
 
 
 def check_pending_redactions(page):
@@ -1077,7 +1072,7 @@ class Window(QMainWindow):
                         ("Nach vorn", lambda: self.edit_page("move", -1)), ("Nach hinten", lambda: self.edit_page("move", 1)),
                         ("Löschen", lambda: self.edit_page("delete")), ("PDF anhängen", self.append),
                         ("Seiten zwischen PDFs", self.page_transfer_dialog)]),
-            ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Text einfügen", lambda: self.set_mode("Text einfügen")), ("Text formatieren", lambda: self.set_mode("Textformat")), ("Absatz bearbeiten", lambda: self.set_mode("Absatz")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True)), ("OCR-Korrektur", self.correct_ocr)]),
+            ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Text einfügen", lambda: self.set_mode("Text einfügen")), ("Text formatieren", lambda: self.set_mode("Textformat")), ("Absatz bearbeiten", lambda: self.set_mode("Absatz")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True)), ("OCR-Korrektur", self.correct_ocr), ("OCR-Sprache", self.choose_ocr_language)]),
             ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
                            ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send),
                            ("Versandcheck", self.dispatch_check), ("Schwärzung prüfen", self.verify_redaction)]),
@@ -3761,7 +3756,7 @@ class Window(QMainWindow):
                         angle = item.data(Qt.ItemDataRole.UserRole + 1) if item.checkState() == Qt.CheckState.Checked else 0
                         append_scan(result, document[item.data(Qt.ItemDataRole.UserRole)], a4.isChecked(), angle)
                     if ocr.isChecked():
-                        count, failures = self.send_ocr(result, range(len(result)), "deu+eng")
+                        count, failures = self.send_ocr(result, range(len(result)), self.ocr_language())
                         if count is None:
                             if not quick:
                                 return
@@ -8204,7 +8199,7 @@ class Window(QMainWindow):
                 for page in copy:
                     if page.rotation and not page.get_text().strip():
                         page.remove_rotation()
-                count, _ = self.send_ocr(copy, range(len(copy)), "deu+eng")
+                count, _ = self.send_ocr(copy, range(len(copy)), self.ocr_language())
                 if count is None:
                     return
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
@@ -8568,7 +8563,7 @@ class Window(QMainWindow):
                                 try:
                                     if page.rotation:
                                         page.remove_rotation()
-                                    recognize_page(page, "deu+eng", Path(__file__).with_name("tessdata"))
+                                    recognize_page(page, self.ocr_language(), Path(__file__).with_name("tessdata"))
                                 except (ValueError, RuntimeError) as exc:
                                     failures.append(f"{path.name}, Seite {page.number + 1}: {exc}")
                             if "rotate" in steps:
@@ -8770,8 +8765,9 @@ class Window(QMainWindow):
         pages.setToolTip(self.ui("Seiten und Reihenfolge, zum Beispiel 1, 3-5, 8"))
         form.addRow(self.ui("Seiten"), pages)
         ocr = QComboBox()
-        languages = {"Deutsch und Englisch": "deu+eng", "Deutsch": "deu", "Englisch": "eng"}
-        ocr.addItems([*languages, "Ohne Texterkennung"])
+        languages = ocr_choices(self.ui)
+        ocr.addItems([*languages, self.ui("Ohne Texterkennung")])
+        ocr.setCurrentIndex(list(languages.values()).index(self.ocr_language()))
         form.addRow(self.ui("Texterkennung"), ocr)
         compression = QComboBox()
         compression.addItems([*COMPRESSION, "Ohne Bildkomprimierung"])
@@ -9152,15 +9148,39 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    def ocr_language(self):
+        return valid_language(self.favorite_settings.value("ocr/language", "deu+eng"))
+
+    def ask_ocr_language(self):
+        languages = ocr_choices(self.ui)
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(self.ui("OCR-Sprache"))
+        dialog.setLabelText(self.ui("Sprache des Dokuments"))
+        dialog.setComboBoxItems(list(languages))
+        dialog.setComboBoxEditable(False)
+        dialog.setTextValue(next(label for label, code in languages.items() if code == self.ocr_language()))
+        dialog.setOkButtonText(self.ui("OK"))
+        dialog.setCancelButtonText(self.ui("Abbrechen"))
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        value = dialog.textValue()
+        dialog.deleteLater()
+        return value, accepted
+
+    def choose_ocr_language(self):
+        languages = ocr_choices(self.ui)
+        label, ok = self.ask_ocr_language()
+        if ok and label in languages:
+            self.favorite_settings.setValue("ocr/language", languages[label])
+
     def ocr(self, whole_document=False):
         session = self.current
         if not session:
             return
-        choices = {"Deutsch und Englisch": "deu+eng", "Deutsch": "deu", "Englisch": "eng"}
-        title = "Sprache für das ganze Dokument" if whole_document else "Sprache der aktuellen Scan-Seite"
-        choice, ok = QInputDialog.getItem(self, self.ui("Texterkennung"), title, list(choices), editable=False)
+        choices = ocr_choices(self.ui)
+        choice, ok = self.ask_ocr_language()
         if not ok:
             return
+        self.favorite_settings.setValue("ocr/language", choices[choice])
         root = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
         indices = range(len(session.doc)) if whole_document else [session.page]
         try:
@@ -9196,13 +9216,13 @@ class Window(QMainWindow):
             self.changed()
         else:
             session.history.pop()
-        summary = [f"{added} Seiten mit neuer Textebene."]
+        summary = [self.ui_format("{0} Seiten mit neuer Textebene.", added)]
         if skipped:
-            summary.append(f"{skipped} Seiten hatten bereits Text.")
+            summary.append(self.ui_format("{0} Seiten hatten bereits Text.", skipped))
         if failed:
-            summary.append(f"{len(failed)} Seiten ohne neue Textebene.")
+            summary.append(self.ui_format("{0} Seiten ohne neue Textebene.", len(failed)))
         if cancelled:
-            summary.append("Abgebrochen. Fertige Seiten bleiben bearbeitet.")
+            summary.append(self.ui("Abgebrochen. Fertige Seiten bleiben bearbeitet."))
         report = QMessageBox(self)
         report.setWindowTitle(self.ui("Texterkennung abgeschlossen"))
         report.setText("\n".join(summary))

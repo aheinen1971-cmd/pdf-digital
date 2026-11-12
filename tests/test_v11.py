@@ -83,7 +83,7 @@ with TemporaryDirectory() as folder:
 
     window = Window()
     window.open_path(str(original))
-    QInputDialog.getItem = lambda *a, **kw: ("Deutsch und Englisch", True)
+    window.ask_ocr_language = lambda: ("Deutsch und Englisch", True)
     reports = []
     QMessageBox.exec = lambda box: reports.append((box.text(), box.detailedText()))
     window.ocr(True)
@@ -100,5 +100,3 @@ with TemporaryDirectory() as folder:
     window.undo()
     assert not window.current.doc[0].get_text().strip()
     print(f"Auszug, Vergleich, Komprimierung ({size_before} → {size_after} Byte), Dokument-OCR und Rückgängig geprüft.")
-
-

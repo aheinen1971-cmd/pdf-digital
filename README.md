@@ -21,7 +21,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.58.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
-   Starter lädt rund 140 MB aus den in `DEPENDENCIES.tsv` dokumentierten
+   Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
    zeigt den Fortschritt pro Paket. Nach einem Abbruch verwendet sie
    vollständig heruntergeladene und geprüfte Pakete erneut.
@@ -102,12 +102,36 @@ der Ordner eingelesen ist.
 - Seiten drehen, verschieben, anhängen oder als neue PDF extrahieren.
 - Textfelder und Kontrollkästchen ausfüllen, Textabschnitte korrigieren
   und Seitenbereiche dauerhaft schwärzen.
-- Scan-PDFs komprimieren, Scanbilder aufbereiten und Dokumente auf Deutsch
-  und Englisch per OCR durchsuchbar machen.
+- Scan-PDFs komprimieren, Scanbilder aufbereiten und Dokumente in 20 Sprachen per OCR durchsuchbar machen.
 - PDF-Fassungen nebeneinander vergleichen.
 - Druckvorschau und Duplexdruck nach den Fähigkeiten des Druckertreibers.
 - Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
   zum jeweiligen Dokument.
+
+## Erweiterte Texterkennung (vorbereitet, noch nicht veröffentlicht)
+
+**Bearbeiten → OCR-Sprache** wählt die Sprache des Dokuments unabhängig von
+der Oberflächensprache. Verfügbar sind Deutsch, Englisch, Französisch,
+Spanisch, Niederländisch, Italienisch, Portugiesisch, Polnisch, Tschechisch,
+Dänisch, Schwedisch, Norwegisch (Bokmål), Finnisch, Türkisch, Ukrainisch,
+Griechisch, Japanisch, Koreanisch, Arabisch und Hebräisch. Die bisherige
+Kombination Deutsch und Englisch bleibt als Voreinstellung erhalten.
+Die Sprachnamen stehen in ihrer eigenen Schreibweise mit Sprachkennung.
+
+Die Auswahl wird lokal gespeichert und für Seiten-/Dokument-OCR,
+Scanverarbeitung, Archivkopien und gespeicherte OCR-Abläufe verwendet.
+Die Versandkopie erlaubt eine abweichende Auswahl nur für diesen Versand.
+Rechnungserkennung und Excel-Scan-Zuordnung behalten ihre bisherige
+spezialisierte Deutsch-/Englisch-Erkennung; die neue Auswahl übersetzt
+keine Dokumente und ändert keine Rechnungsregeln.
+
+Alle Sprachmodelle werden bei der Einrichtung aus einer festgelegten
+Tesseract-Version geladen und mit SHA-256 geprüft. Danach arbeitet OCR
+ohne Netzwerk; Offline-Installationspakete müssen alle 20 Modelldateien
+enthalten. Das Originalbild bleibt erhalten, der erkannte Text wird als
+unsichtbare Unicode-Textebene ergänzt. Die bestehende manuelle OCR-Korrektur
+bleibt auf ihre bisher unterstützten Zeichen beschränkt. Schlechte Scans,
+Handschrift und schwierige Layouts können weiterhin Erkennungsfehler verursachen.
 
 ## Arbeitsstand sichern
 

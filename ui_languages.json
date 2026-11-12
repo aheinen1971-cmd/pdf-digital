@@ -1216,7 +1216,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Select no more than 100 tools.",
     "Nach oben": "Move up",
     "Nach unten": "Move down",
-    "Standardauswahl": "Default selection"
+    "Standardauswahl": "Default selection",
+    "OCR-Sprache": "OCR language",
+    "Sprache des Dokuments": "Document language",
+    "Deutsch und Englisch": "German and English",
+    "Ohne Texterkennung": "No text recognition",
+    "{0} Seiten mit neuer Textebene.": "{0} pages with a new text layer.",
+    "{0} Seiten hatten bereits Text.": "{0} pages already contained text.",
+    "{0} Seiten ohne neue Textebene.": "{0} pages without a new text layer.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Cancelled. Completed pages remain edited."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2435,7 +2443,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Sélectionnez au maximum 100 outils.",
     "Nach oben": "Monter",
     "Nach unten": "Descendre",
-    "Standardauswahl": "Sélection par défaut"
+    "Standardauswahl": "Sélection par défaut",
+    "OCR-Sprache": "Langue OCR",
+    "Sprache des Dokuments": "Langue du document",
+    "Deutsch und Englisch": "Allemand et anglais",
+    "Ohne Texterkennung": "Sans reconnaissance de texte",
+    "{0} Seiten mit neuer Textebene.": "{0} pages avec une nouvelle couche de texte.",
+    "{0} Seiten hatten bereits Text.": "{0} pages contenaient déjà du texte.",
+    "{0} Seiten ohne neue Textebene.": "{0} pages sans nouvelle couche de texte.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Annulé. Les pages terminées restent modifiées."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3654,7 +3670,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Seleccione como máximo 100 herramientas.",
     "Nach oben": "Subir",
     "Nach unten": "Bajar",
-    "Standardauswahl": "Selección predeterminada"
+    "Standardauswahl": "Selección predeterminada",
+    "OCR-Sprache": "Idioma de OCR",
+    "Sprache des Dokuments": "Idioma del documento",
+    "Deutsch und Englisch": "Alemán e inglés",
+    "Ohne Texterkennung": "Sin reconocimiento de texto",
+    "{0} Seiten mit neuer Textebene.": "{0} páginas con una nueva capa de texto.",
+    "{0} Seiten hatten bereits Text.": "{0} páginas ya contenían texto.",
+    "{0} Seiten ohne neue Textebene.": "{0} páginas sin una nueva capa de texto.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Cancelado. Las páginas terminadas conservan los cambios."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -4873,7 +4897,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Selecteer maximaal 100 gereedschappen.",
     "Nach oben": "Omhoog",
     "Nach unten": "Omlaag",
-    "Standardauswahl": "Standaardselectie"
+    "Standardauswahl": "Standaardselectie",
+    "OCR-Sprache": "OCR-taal",
+    "Sprache des Dokuments": "Taal van het document",
+    "Deutsch und Englisch": "Duits en Engels",
+    "Ohne Texterkennung": "Geen tekstherkenning",
+    "{0} Seiten mit neuer Textebene.": "{0} pagina’s met een nieuwe tekstlaag.",
+    "{0} Seiten hatten bereits Text.": "{0} pagina’s bevatten al tekst.",
+    "{0} Seiten ohne neue Textebene.": "{0} pagina’s zonder nieuwe tekstlaag.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Geannuleerd. Voltooide pagina’s behouden de wijzigingen."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6092,7 +6124,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Seleziona al massimo 100 strumenti.",
     "Nach oben": "Sposta su",
     "Nach unten": "Sposta giù",
-    "Standardauswahl": "Selezione predefinita"
+    "Standardauswahl": "Selezione predefinita",
+    "OCR-Sprache": "Lingua OCR",
+    "Sprache des Dokuments": "Lingua del documento",
+    "Deutsch und Englisch": "Tedesco e inglese",
+    "Ohne Texterkennung": "Senza riconoscimento del testo",
+    "{0} Seiten mit neuer Textebene.": "{0} pagine con un nuovo livello di testo.",
+    "{0} Seiten hatten bereits Text.": "{0} pagine contenevano già testo.",
+    "{0} Seiten ohne neue Textebene.": "{0} pagine senza un nuovo livello di testo.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Annullato. Le pagine completate mantengono le modifiche."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7311,7 +7351,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Selecione no máximo 100 ferramentas.",
     "Nach oben": "Subir",
     "Nach unten": "Descer",
-    "Standardauswahl": "Seleção predefinida"
+    "Standardauswahl": "Seleção predefinida",
+    "OCR-Sprache": "Idioma de OCR",
+    "Sprache des Dokuments": "Idioma do documento",
+    "Deutsch und Englisch": "Alemão e inglês",
+    "Ohne Texterkennung": "Sem reconhecimento de texto",
+    "{0} Seiten mit neuer Textebene.": "{0} páginas com uma nova camada de texto.",
+    "{0} Seiten hatten bereits Text.": "{0} páginas já continham texto.",
+    "{0} Seiten ohne neue Textebene.": "{0} páginas sem uma nova camada de texto.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Cancelado. As páginas concluídas mantêm as alterações."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8530,7 +8578,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Wybierz najwyżej 100 narzędzi.",
     "Nach oben": "W górę",
     "Nach unten": "W dół",
-    "Standardauswahl": "Wybór domyślny"
+    "Standardauswahl": "Wybór domyślny",
+    "OCR-Sprache": "Język OCR",
+    "Sprache des Dokuments": "Język dokumentu",
+    "Deutsch und Englisch": "Niemiecki i angielski",
+    "Ohne Texterkennung": "Bez rozpoznawania tekstu",
+    "{0} Seiten mit neuer Textebene.": "{0} stron z nową warstwą tekstową.",
+    "{0} Seiten hatten bereits Text.": "{0} stron zawierało już tekst.",
+    "{0} Seiten ohne neue Textebene.": "{0} stron bez nowej warstwy tekstowej.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Anulowano. Ukończone strony zachowują zmiany."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -9749,7 +9805,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Vyberte nejvýše 100 nástrojů.",
     "Nach oben": "Nahoru",
     "Nach unten": "Dolů",
-    "Standardauswahl": "Výchozí výběr"
+    "Standardauswahl": "Výchozí výběr",
+    "OCR-Sprache": "Jazyk OCR",
+    "Sprache des Dokuments": "Jazyk dokumentu",
+    "Deutsch und Englisch": "Němčina a angličtina",
+    "Ohne Texterkennung": "Bez rozpoznávání textu",
+    "{0} Seiten mit neuer Textebene.": "{0} stran s novou textovou vrstvou.",
+    "{0} Seiten hatten bereits Text.": "{0} stran již obsahovalo text.",
+    "{0} Seiten ohne neue Textebene.": "{0} stran bez nové textové vrstvy.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Zrušeno. Dokončené stránky zůstávají upravené."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -10968,7 +11032,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Vælg højst 100 værktøjer.",
     "Nach oben": "Flyt op",
     "Nach unten": "Flyt ned",
-    "Standardauswahl": "Standardvalg"
+    "Standardauswahl": "Standardvalg",
+    "OCR-Sprache": "OCR-sprog",
+    "Sprache des Dokuments": "Dokumentets sprog",
+    "Deutsch und Englisch": "Tysk og engelsk",
+    "Ohne Texterkennung": "Ingen tekstgenkendelse",
+    "{0} Seiten mit neuer Textebene.": "{0} sider med et nyt tekstlag.",
+    "{0} Seiten hatten bereits Text.": "{0} sider indeholdt allerede tekst.",
+    "{0} Seiten ohne neue Textebene.": "{0} sider uden et nyt tekstlag.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Annulleret. Færdige sider beholder ændringerne."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12187,7 +12259,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Välj högst 100 verktyg.",
     "Nach oben": "Flytta upp",
     "Nach unten": "Flytta ned",
-    "Standardauswahl": "Standardval"
+    "Standardauswahl": "Standardval",
+    "OCR-Sprache": "OCR-språk",
+    "Sprache des Dokuments": "Dokumentets språk",
+    "Deutsch und Englisch": "Tyska och engelska",
+    "Ohne Texterkennung": "Ingen textigenkänning",
+    "{0} Seiten mit neuer Textebene.": "{0} sidor med ett nytt textlager.",
+    "{0} Seiten hatten bereits Text.": "{0} sidor innehöll redan text.",
+    "{0} Seiten ohne neue Textebene.": "{0} sidor utan ett nytt textlager.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Avbrutet. Färdiga sidor behåller ändringarna."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -13406,7 +13486,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Velg høyst 100 verktøy.",
     "Nach oben": "Flytt opp",
     "Nach unten": "Flytt ned",
-    "Standardauswahl": "Standardvalg"
+    "Standardauswahl": "Standardvalg",
+    "OCR-Sprache": "OCR-språk",
+    "Sprache des Dokuments": "Dokumentets språk",
+    "Deutsch und Englisch": "Tysk og engelsk",
+    "Ohne Texterkennung": "Ingen tekstgjenkjenning",
+    "{0} Seiten mit neuer Textebene.": "{0} sider med et nytt tekstlag.",
+    "{0} Seiten hatten bereits Text.": "{0} sider inneholdt allerede tekst.",
+    "{0} Seiten ohne neue Textebene.": "{0} sider uten et nytt tekstlag.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Avbrutt. Ferdige sider beholder endringene."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -14625,7 +14713,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Valitse enintään 100 työkalua.",
     "Nach oben": "Siirrä ylös",
     "Nach unten": "Siirrä alas",
-    "Standardauswahl": "Oletusvalinta"
+    "Standardauswahl": "Oletusvalinta",
+    "OCR-Sprache": "OCR-kieli",
+    "Sprache des Dokuments": "Asiakirjan kieli",
+    "Deutsch und Englisch": "Saksa ja englanti",
+    "Ohne Texterkennung": "Ei tekstintunnistusta",
+    "{0} Seiten mit neuer Textebene.": "{0} sivua uudella tekstikerroksella.",
+    "{0} Seiten hatten bereits Text.": "{0} sivua sisälsi jo tekstiä.",
+    "{0} Seiten ohne neue Textebene.": "{0} sivua ilman uutta tekstikerrosta.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Peruutettu. Valmiiden sivujen muutokset säilyvät."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -15844,7 +15940,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "En fazla 100 araç seçin.",
     "Nach oben": "Yukarı taşı",
     "Nach unten": "Aşağı taşı",
-    "Standardauswahl": "Varsayılan seçim"
+    "Standardauswahl": "Varsayılan seçim",
+    "OCR-Sprache": "OCR dili",
+    "Sprache des Dokuments": "Belgenin dili",
+    "Deutsch und Englisch": "Almanca ve İngilizce",
+    "Ohne Texterkennung": "Metin tanıma yok",
+    "{0} Seiten mit neuer Textebene.": "{0} sayfaya yeni metin katmanı eklendi.",
+    "{0} Seiten hatten bereits Text.": "{0} sayfa zaten metin içeriyordu.",
+    "{0} Seiten ohne neue Textebene.": "{0} sayfaya yeni metin katmanı eklenemedi.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "İptal edildi. Tamamlanan sayfalardaki değişiklikler korunur."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -17063,7 +17167,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Виберіть щонайбільше 100 інструментів.",
     "Nach oben": "Угору",
     "Nach unten": "Униз",
-    "Standardauswahl": "Типовий вибір"
+    "Standardauswahl": "Типовий вибір",
+    "OCR-Sprache": "Мова OCR",
+    "Sprache des Dokuments": "Мова документа",
+    "Deutsch und Englisch": "Німецька й англійська",
+    "Ohne Texterkennung": "Без розпізнавання тексту",
+    "{0} Seiten mit neuer Textebene.": "Сторінок із новим текстовим шаром: {0}.",
+    "{0} Seiten hatten bereits Text.": "Сторінок, які вже містили текст: {0}.",
+    "{0} Seiten ohne neue Textebene.": "Сторінок без нового текстового шару: {0}.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Скасовано. Зміни на завершених сторінках збережено."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -18282,7 +18394,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "Επιλέξτε έως 100 εργαλεία.",
     "Nach oben": "Προς τα πάνω",
     "Nach unten": "Προς τα κάτω",
-    "Standardauswahl": "Προεπιλεγμένη επιλογή"
+    "Standardauswahl": "Προεπιλεγμένη επιλογή",
+    "OCR-Sprache": "Γλώσσα OCR",
+    "Sprache des Dokuments": "Γλώσσα εγγράφου",
+    "Deutsch und Englisch": "Γερμανικά και αγγλικά",
+    "Ohne Texterkennung": "Χωρίς αναγνώριση κειμένου",
+    "{0} Seiten mit neuer Textebene.": "{0} σελίδες με νέο επίπεδο κειμένου.",
+    "{0} Seiten hatten bereits Text.": "{0} σελίδες περιείχαν ήδη κείμενο.",
+    "{0} Seiten ohne neue Textebene.": "{0} σελίδες χωρίς νέο επίπεδο κειμένου.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "Ακυρώθηκε. Οι αλλαγές στις ολοκληρωμένες σελίδες διατηρούνται."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -19501,7 +19621,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "ツールは100個まで選択できます。",
     "Nach oben": "上へ",
     "Nach unten": "下へ",
-    "Standardauswahl": "標準の選択"
+    "Standardauswahl": "標準の選択",
+    "OCR-Sprache": "OCR言語",
+    "Sprache des Dokuments": "文書の言語",
+    "Deutsch und Englisch": "ドイツ語と英語",
+    "Ohne Texterkennung": "文字認識なし",
+    "{0} Seiten mit neuer Textebene.": "{0}ページに新しいテキスト層を追加しました。",
+    "{0} Seiten hatten bereits Text.": "{0}ページには既にテキストがありました。",
+    "{0} Seiten ohne neue Textebene.": "{0}ページに新しいテキスト層を追加できませんでした。",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "キャンセルしました。完了したページの変更は保持されます。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -20720,7 +20848,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "도구는 최대 100개까지 선택할 수 있습니다.",
     "Nach oben": "위로",
     "Nach unten": "아래로",
-    "Standardauswahl": "기본 선택"
+    "Standardauswahl": "기본 선택",
+    "OCR-Sprache": "OCR 언어",
+    "Sprache des Dokuments": "문서 언어",
+    "Deutsch und Englisch": "독일어 및 영어",
+    "Ohne Texterkennung": "문자 인식 안 함",
+    "{0} Seiten mit neuer Textebene.": "{0}개 페이지에 새 텍스트 레이어를 추가했습니다.",
+    "{0} Seiten hatten bereits Text.": "{0}개 페이지에 이미 텍스트가 있습니다.",
+    "{0} Seiten ohne neue Textebene.": "{0}개 페이지에 새 텍스트 레이어를 추가하지 못했습니다.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "취소했습니다. 완료한 페이지의 변경 사항은 유지됩니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -21939,7 +22075,15 @@
     "Höchstens 100 Werkzeuge auswählen.": "اختر 100 أداة كحد أقصى.",
     "Nach oben": "إلى أعلى",
     "Nach unten": "إلى أسفل",
-    "Standardauswahl": "الاختيار الافتراضي"
+    "Standardauswahl": "الاختيار الافتراضي",
+    "OCR-Sprache": "لغة التعرف على النص",
+    "Sprache des Dokuments": "لغة المستند",
+    "Deutsch und Englisch": "الألمانية والإنجليزية",
+    "Ohne Texterkennung": "بدون التعرف على النص",
+    "{0} Seiten mit neuer Textebene.": "عدد الصفحات ذات طبقة النص الجديدة: {0}.",
+    "{0} Seiten hatten bereits Text.": "عدد الصفحات التي تحتوي على نص مسبقًا: {0}.",
+    "{0} Seiten ohne neue Textebene.": "عدد الصفحات بدون طبقة نص جديدة: {0}.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "تم الإلغاء. تبقى التغييرات على الصفحات المكتملة."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -23158,6 +23302,14 @@
     "Höchstens 100 Werkzeuge auswählen.": "ניתן לבחור עד 100 כלים.",
     "Nach oben": "למעלה",
     "Nach unten": "למטה",
-    "Standardauswahl": "בחירת ברירת מחדל"
+    "Standardauswahl": "בחירת ברירת מחדל",
+    "OCR-Sprache": "שפת זיהוי הטקסט",
+    "Sprache des Dokuments": "שפת המסמך",
+    "Deutsch und Englisch": "גרמנית ואנגלית",
+    "Ohne Texterkennung": "ללא זיהוי טקסט",
+    "{0} Seiten mit neuer Textebene.": "מספר העמודים עם שכבת טקסט חדשה: {0}.",
+    "{0} Seiten hatten bereits Text.": "מספר העמודים שכבר הכילו טקסט: {0}.",
+    "{0} Seiten ohne neue Textebene.": "מספר העמודים ללא שכבת טקסט חדשה: {0}.",
+    "Abgebrochen. Fertige Seiten bleiben bearbeitet.": "בוטל. השינויים בעמודים שהושלמו נשמרים."
   }
 }
