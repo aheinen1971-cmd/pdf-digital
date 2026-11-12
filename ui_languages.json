@@ -1264,7 +1264,8 @@
     "Stoppen": "Stop",
     "Bereit zum Vorlesen": "Ready to read aloud",
     "Wird vorgelesen": "Reading aloud",
-    "Vorlesen pausiert": "Reading paused"
+    "Vorlesen pausiert": "Reading paused",
+    "Möglicherweise leer": "Possibly blank"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2531,7 +2532,8 @@
     "Stoppen": "Arrêter",
     "Bereit zum Vorlesen": "Prêt à lire",
     "Wird vorgelesen": "Lecture en cours",
-    "Vorlesen pausiert": "Lecture en pause"
+    "Vorlesen pausiert": "Lecture en pause",
+    "Möglicherweise leer": "Possiblement vide"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3798,7 +3800,8 @@
     "Stoppen": "Detener",
     "Bereit zum Vorlesen": "Listo para leer",
     "Wird vorgelesen": "Leyendo",
-    "Vorlesen pausiert": "Lectura en pausa"
+    "Vorlesen pausiert": "Lectura en pausa",
+    "Möglicherweise leer": "Posiblemente en blanco"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5065,7 +5068,8 @@
     "Stoppen": "Stoppen",
     "Bereit zum Vorlesen": "Klaar om voor te lezen",
     "Wird vorgelesen": "Bezig met voorlezen",
-    "Vorlesen pausiert": "Voorlezen gepauzeerd"
+    "Vorlesen pausiert": "Voorlezen gepauzeerd",
+    "Möglicherweise leer": "Mogelijk leeg"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6332,7 +6336,8 @@
     "Stoppen": "Interrompi",
     "Bereit zum Vorlesen": "Pronto per la lettura",
     "Wird vorgelesen": "Lettura in corso",
-    "Vorlesen pausiert": "Lettura in pausa"
+    "Vorlesen pausiert": "Lettura in pausa",
+    "Möglicherweise leer": "Possibilmente vuota"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7599,7 +7604,8 @@
     "Stoppen": "Parar",
     "Bereit zum Vorlesen": "Pronto para ler",
     "Wird vorgelesen": "A ler",
-    "Vorlesen pausiert": "Leitura em pausa"
+    "Vorlesen pausiert": "Leitura em pausa",
+    "Möglicherweise leer": "Possivelmente em branco"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8866,7 +8872,8 @@
     "Stoppen": "Zatrzymaj",
     "Bereit zum Vorlesen": "Gotowe do odczytu",
     "Wird vorgelesen": "Odczytywanie",
-    "Vorlesen pausiert": "Odczyt wstrzymany"
+    "Vorlesen pausiert": "Odczyt wstrzymany",
+    "Möglicherweise leer": "Prawdopodobnie pusta"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10133,7 +10140,8 @@
     "Stoppen": "Zastavit",
     "Bereit zum Vorlesen": "Připraveno ke čtení",
     "Wird vorgelesen": "Probíhá čtení",
-    "Vorlesen pausiert": "Čtení pozastaveno"
+    "Vorlesen pausiert": "Čtení pozastaveno",
+    "Möglicherweise leer": "Možná prázdná"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11400,7 +11408,8 @@
     "Stoppen": "Stop",
     "Bereit zum Vorlesen": "Klar til oplæsning",
     "Wird vorgelesen": "Læser højt",
-    "Vorlesen pausiert": "Oplæsning sat på pause"
+    "Vorlesen pausiert": "Oplæsning sat på pause",
+    "Möglicherweise leer": "Muligvis tom"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -12667,7 +12676,8 @@
     "Stoppen": "Stoppa",
     "Bereit zum Vorlesen": "Redo att läsa",
     "Wird vorgelesen": "Läser upp",
-    "Vorlesen pausiert": "Uppläsning pausad"
+    "Vorlesen pausiert": "Uppläsning pausad",
+    "Möglicherweise leer": "Möjligen tom"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -13934,7 +13944,8 @@
     "Stoppen": "Stopp",
     "Bereit zum Vorlesen": "Klar til opplesing",
     "Wird vorgelesen": "Leser høyt",
-    "Vorlesen pausiert": "Opplesing satt på pause"
+    "Vorlesen pausiert": "Opplesing satt på pause",
+    "Möglicherweise leer": "Muligens tom"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15201,7 +15212,8 @@
     "Stoppen": "Pysäytä",
     "Bereit zum Vorlesen": "Valmis lukemaan",
     "Wird vorgelesen": "Luetaan ääneen",
-    "Vorlesen pausiert": "Luku keskeytetty"
+    "Vorlesen pausiert": "Luku keskeytetty",
+    "Möglicherweise leer": "Mahdollisesti tyhjä"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -16468,7 +16480,8 @@
     "Stoppen": "Durdur",
     "Bereit zum Vorlesen": "Okumaya hazır",
     "Wird vorgelesen": "Sesli okunuyor",
-    "Vorlesen pausiert": "Okuma duraklatıldı"
+    "Vorlesen pausiert": "Okuma duraklatıldı",
+    "Möglicherweise leer": "Boş olabilir"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -17735,7 +17748,8 @@
     "Stoppen": "Зупинити",
     "Bereit zum Vorlesen": "Готово до читання",
     "Wird vorgelesen": "Читання вголос",
-    "Vorlesen pausiert": "Читання призупинено"
+    "Vorlesen pausiert": "Читання призупинено",
+    "Möglicherweise leer": "Можливо порожня"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19002,7 +19016,8 @@
     "Stoppen": "Διακοπή",
     "Bereit zum Vorlesen": "Έτοιμο για ανάγνωση",
     "Wird vorgelesen": "Γίνεται ανάγνωση",
-    "Vorlesen pausiert": "Ανάγνωση σε παύση"
+    "Vorlesen pausiert": "Ανάγνωση σε παύση",
+    "Möglicherweise leer": "Πιθανώς κενή"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -20269,7 +20284,8 @@
     "Stoppen": "停止",
     "Bereit zum Vorlesen": "読み上げ準備完了",
     "Wird vorgelesen": "読み上げ中",
-    "Vorlesen pausiert": "読み上げ一時停止中"
+    "Vorlesen pausiert": "読み上げ一時停止中",
+    "Möglicherweise leer": "空白の可能性"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -21536,7 +21552,8 @@
     "Stoppen": "중지",
     "Bereit zum Vorlesen": "읽기 준비됨",
     "Wird vorgelesen": "읽는 중",
-    "Vorlesen pausiert": "읽기 일시 정지됨"
+    "Vorlesen pausiert": "읽기 일시 정지됨",
+    "Möglicherweise leer": "빈 페이지일 수 있음"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -22803,7 +22820,8 @@
     "Stoppen": "إيقاف",
     "Bereit zum Vorlesen": "جاهز للقراءة",
     "Wird vorgelesen": "جارٍ القراءة",
-    "Vorlesen pausiert": "القراءة متوقفة مؤقتًا"
+    "Vorlesen pausiert": "القراءة متوقفة مؤقتًا",
+    "Möglicherweise leer": "قد تكون فارغة"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -24070,6 +24088,7 @@
     "Stoppen": "עצירה",
     "Bereit zum Vorlesen": "מוכן להקראה",
     "Wird vorgelesen": "מקריא",
-    "Vorlesen pausiert": "ההקראה מושהית"
+    "Vorlesen pausiert": "ההקראה מושהית",
+    "Möglicherweise leer": "ייתכן שריק"
   }
 }

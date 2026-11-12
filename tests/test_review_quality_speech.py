@@ -24,6 +24,15 @@ for name in ('segoeui.ttf','arial.ttf','YuGothR.ttc','msgothic.ttc','malgun.ttf'
     if path.exists():QFontDatabase.addApplicationFont(str(path))
 app.setFont(QFont('Segoe UI',10))
 root=Path(m.__file__).parent
+catalog=json.loads((root/'ui_languages.json').read_text(encoding='utf-8'))
+required=[quality.BLUR,quality.CONTRAST,quality.DARK,quality.NOTICE,speech.NOTICE,speech.UNAVAILABLE,
+          'Möglicherweise leer','Möglicherweise schief: Seitenausrichtung prüfen.',
+          'Keine zusätzlichen Auffälligkeiten erkannt. Bitte den Scan trotzdem ansehen.',
+          'Zur Korrekturzeile','Nur eindeutig zugeordnete Textzeilen lassen sich direkt öffnen.',
+          'Vorlesen','Scanqualität prüfen','Stimme','Tempo','Stimmen werden geladen …',
+          'Pause','Fortsetzen','Stoppen','Bereit zum Vorlesen','Wird vorgelesen','Vorlesen pausiert',
+          'Kein Text zum Vorlesen. Bei Scans zuerst OCR ausführen.','Zu viel Text auf dieser Seite zum Vorlesen.']
+for code,values in catalog.items():assert all(key in values and values[key] for key in required),code
 output=root/'tests/review-quality-speech-results';output.mkdir(exist_ok=True)
 
 # Deterministic raster fixtures distinguish sharp, softened, faint and dark pages.
