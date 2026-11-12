@@ -1,4 +1,4 @@
-﻿# PDF Digital 1.59.0 für Windows
+﻿# PDF Digital 1.60.0 für Windows
 
 **Alles finden und bearbeiten**
 
@@ -19,7 +19,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.59.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.60.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -29,7 +29,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.59.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.60.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
@@ -108,7 +108,7 @@ der Ordner eingelesen ist.
 - Bearbeitete PDFs als Kopie speichern. Vorhandene Wasserzeichen gehören
   zum jeweiligen Dokument.
 
-## Erweiterte Texterkennung (neu in 1.59.0)
+## Erweiterte Texterkennung (neu in 1.60.0)
 
 **Bearbeiten → OCR-Sprache** wählt die Sprache des Dokuments unabhängig von
 der Oberflächensprache. Verfügbar sind Deutsch, Englisch, Französisch,
@@ -132,7 +132,7 @@ enthalten. Das Originalbild bleibt erhalten, der erkannte Text wird als
 unsichtbare Unicode-Textebene ergänzt. Schlechte Scans,
 Handschrift und schwierige Layouts können weiterhin Erkennungsfehler verursachen.
 
-### Weitere OCR-Ergänzungen (vorbereitet, noch nicht veröffentlicht)
+### Weitere OCR-Ergänzungen (neu in 1.60.0)
 
 - Die Sprachauswahl bietet jetzt Kontrollkästchen für eine oder mehrere
   der 20 Dokumentsprachen. Mindestens eine Sprache muss ausgewählt sein.
@@ -567,7 +567,7 @@ Suchindex, Arbeitsmappen und gespeicherte Ordnerpfade sind davon getrennt.
 - **OCR-Korrektur** im Bearbeiten-Menü und im Scan-Posteingang stellt
   Scanbild und erkannte Zeilen nebeneinander. Sie unterstützt Scan-Seiten
   mit unsichtbarer Textebene und lässt das Seitenbild unverändert.
-  Die vorbereitete Erweiterung unterstützt Zeichen aller 20 Dokumentsprachen.
+  Die Erweiterung unterstützt Zeichen aller 20 Dokumentsprachen.
 
 - **PDF/A-Archivkopie** erstellt eine PDF/A-2b-Kopie des Seitenbilds
   mit durchsuchbarer Textebene. Seiten ohne erkennbaren Text lassen sich
