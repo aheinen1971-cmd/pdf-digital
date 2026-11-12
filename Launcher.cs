@@ -445,6 +445,9 @@ internal static class Launcher
                     cancellation.ThrowIfCancellationRequested();
                     string app = Path.Combine(staging, "app");
                     CopyResource("pdf_werkbank.py", Path.Combine(app, "pdf_werkbank.py"));
+                    CopyResource("scan_review.py", Path.Combine(app, "scan_review.py"));
+                    CopyResource("read_aloud.py", Path.Combine(app, "read_aloud.py"));
+                    CopyResource("read_aloud.exe", Path.Combine(app, "read_aloud.exe"));
                     CopyResource("ocr_confidence.py", Path.Combine(app, "ocr_confidence.py"));
                     CopyResource("ocr_languages.py", Path.Combine(app, "ocr_languages.py"));
                     CopyResource("ocr_text.py", Path.Combine(app, "ocr_text.py"));

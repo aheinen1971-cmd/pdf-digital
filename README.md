@@ -2,6 +2,31 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet, noch nicht veröffentlicht: Korrekturhilfe, Scanprüfung und Vorlesen
+
+- In der Offline-Wortprüfung öffnet **Zur Korrekturzeile** die passende Zeile
+  direkt im vorhandenen OCR-Korrekturdialog. Der Knopf wird nur bei eindeutiger
+  räumlicher Zuordnung aktiviert. Dort kann der Text wie bisher bearbeitet
+  und erst mit **Korrekturen übernehmen** angewendet werden.
+- **Werkzeuge → Scanqualität prüfen** ergänzt Hinweise auf mögliche Unschärfe,
+  schwachen Kontrast und sehr dunkle Seiten. Dieselben Hinweise erscheinen
+  bei neuen Seiten im Scanassistenten. Sie verändern das Bild nicht und sind
+  keine Qualitätsgarantie; Fotos, kleine Schrift und besondere Vorlagen
+  benötigen weiterhin eine Sichtprüfung.
+- **Ansicht → Vorlesen** zeigt den Text der aktuellen Seite. In der Vorschau
+  Text markieren oder die ganze Seite lesen lassen; Stimme und Tempo vor
+  dem Start wählen. Pause, Fortsetzen, Stopp und Schließen steuern die
+  Wiedergabe. Scans benötigen zunächst OCR; die Lesereihenfolge hängt von
+  der PDF-Textebene ab. Bis zu 100.000 Zeichen pro Seite.
+
+Alle drei Bedienoberflächen unterstützen die 20 Sprachen einschließlich RTL.
+Vorlesen verwendet ausschließlich die verfügbaren installierten Windows-Stimmen
+über System.Speech; nicht jede Oberflächensprache besitzt automatisch eine Stimme.
+Es werden keine Stimmen heruntergeladen und keine Texte übertragen oder gespeichert.
+Ein kleiner mitgelieferter Windows-Helfer erledigt die Sprachausgabe; Skriptrichtlinien
+werden nicht geändert. Beim Schließen beendet sich der Helfer und die Wiedergabe.
+
+
 ### Neu in 1.61.0: unsichere OCR-Wörter
 
 In der **OCR-Korrektur → Unsichere Wörter prüfen** die Dokumentsprache(n)

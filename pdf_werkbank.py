@@ -1061,7 +1061,7 @@ class Window(QMainWindow):
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
             ("Ansicht", [("Verkleinern", lambda: self.change_zoom(-0.2)), ("Vergrößern", lambda: self.change_zoom(0.2)),
                          ("Sitzung fortsetzen", self.session_options),
-                         ("Lesestellen", self.reading_places),
+                         ("Lesestellen", self.reading_places), ("Vorlesen", self.read_aloud),
                          ("Zu Seite springen", self.jump_to_page),
                          ("Seitenbreite", self.fit_width), ("Miniaturen", self.toggle_thumbs), ("Hilfsraster", self.configure_grid),
                          ("Dunkelmodus", self.choose_appearance), ("Sprache", self.choose_language)]),
@@ -1073,7 +1073,7 @@ class Window(QMainWindow):
                         ("Löschen", lambda: self.edit_page("delete")), ("PDF anhängen", self.append),
                         ("Seiten zwischen PDFs", self.page_transfer_dialog)]),
             ("Bearbeiten", [("Text korrigieren", lambda: self.set_mode("Text")), ("Text einfügen", lambda: self.set_mode("Text einfügen")), ("Text formatieren", lambda: self.set_mode("Textformat")), ("Absatz bearbeiten", lambda: self.set_mode("Absatz")), ("Schwärzen", lambda: self.set_mode("Schwärzen")), ("OCR für diese Seite", self.ocr), ("OCR für das Dokument", lambda: self.ocr(True)), ("OCR-Korrektur", self.correct_ocr), ("OCR-Sprache", self.choose_ocr_language)]),
-            ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress),
+            ("Werkzeuge", [("Seiten extrahieren", self.extract), ("Scan-PDF verkleinern", self.compress), ("Scanqualität prüfen", self.review_scan_quality),
                            ("PDF-Versionen vergleichen", self.compare), ("Versandkopie", self.prepare_send),
                            ("Versandcheck", self.dispatch_check), ("Schwärzung prüfen", self.verify_redaction)]),
             ("Messen", [("Maßstab eingeben", self.set_plan_scale),
@@ -3703,6 +3703,8 @@ class Window(QMainWindow):
                                                "Mögliches Duplikat" if any(similar_scan(fingerprint, old)
                                                                             for old in fingerprints) else "",
                                                f"Schief ({angle:+d}°)" if angle else "") if note]
+                    from scan_review import quality_hints
+                    notes.extend(self.ui(hint) for hint in quality_hints(page))
                     fingerprints.append(fingerprint)
                     item = QListWidgetItem(QIcon(pixmap(page, min(95 / page.rect.width, 125 / page.rect.height))),
                                            " · ".join([f"Scan {index + 1}", *notes]))
@@ -9044,6 +9046,22 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
 
+    def read_aloud(self):
+        if self.current:
+            try:
+                from read_aloud import show_reader
+                show_reader(self, self.current.doc[self.current.page].get_text(sort=True))
+            except Exception as exc:
+                self.error(exc)
+
+    def review_scan_quality(self):
+        if self.current:
+            try:
+                from scan_review import show_quality
+                show_quality(self, self.current.doc[self.current.page])
+            except Exception as exc:
+                self.error(exc)
+
     def review_ocr(self, doc, initial):
         dialog = QDialog(self)
         dialog.setLayoutDirection(self.layoutDirection())
@@ -9064,7 +9082,12 @@ class Window(QMainWindow):
             from ocr_confidence import show_review
             language, accepted = self.ask_ocr_language()
             if accepted:
-                show_review(self, doc[selector.value() - 1], language, Path(__file__).with_name("tessdata"))
+                index = show_review(self, doc[selector.value() - 1], language, Path(__file__).with_name("tessdata"), lines)
+                if isinstance(index, int) and 0 <= index < len(lines):
+                    rows.setCurrentCell(index, 0)
+                    rows.scrollToItem(rows.item(index, 0))
+                    rows.setFocus()
+                    rows.editItem(rows.item(index, 0))
         confidence_button.clicked.connect(check_confidence)
         layout.addWidget(confidence_button)
         split = QSplitter()

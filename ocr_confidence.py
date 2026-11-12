@@ -80,7 +80,17 @@ def recognize(page, language, data, cancelled=lambda: False, timeout=180):
                 process.wait(timeout=10)
 
 
-def show_review(parent, page, language, data):
+def correction_line(page, box, lines):
+    import pymupdf as pdf
+    rect = pdf.Rect(box) * pdf.Matrix(72 / 200, 72 / 200) * page.derotation_matrix
+    if rect.is_empty:
+        return None
+    matches = [(i, (rect & line[0]).get_area() / rect.get_area()) for i, line in enumerate(lines)]
+    matches = [i for i, overlap in matches if overlap >= .5]
+    return matches[0] if len(matches) == 1 else None
+
+
+def show_review(parent, page, language, data, correction_lines=None):
     from PySide6.QtCore import Qt, QRect
     from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
     from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QLabel, QSpinBox,
@@ -136,7 +146,12 @@ def show_review(parent, page, language, data):
     base = base.scaledToWidth(470, Qt.TransformationMode.SmoothTransformation)
     factor = base.width() / pix.width
     visible = []
+    selected_line = None
+    correct = None
     def highlight(index, *_):
+        if correct is not None:
+            match = correction_line(page, visible[index]['box'], correction_lines) if 0 <= index < len(visible) else None
+            correct.setEnabled(match is not None)
         shown = QPixmap(base)
         painter = QPainter(shown)
         for n, word in enumerate(visible):
@@ -162,10 +177,24 @@ def show_review(parent, page, language, data):
     table.currentCellChanged.connect(highlight)
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
     buttons.button(QDialogButtonBox.StandardButton.Close).setText(tr('Schließen'))
+    if correction_lines is not None:
+        correct = buttons.addButton(tr('Zur Korrekturzeile'), QDialogButtonBox.ButtonRole.ActionRole)
+        correct.setToolTip(tr('Nur eindeutig zugeordnete Textzeilen lassen sich direkt öffnen.'))
+        correct.setEnabled(False)
+        def choose():
+            nonlocal selected_line
+            index = table.currentRow()
+            if 0 <= index < len(visible):
+                selected_line = correction_line(page, visible[index]['box'], correction_lines)
+                if selected_line is not None:
+                    dialog.accept()
+        correct.clicked.connect(choose)
+        table.cellDoubleClicked.connect(lambda *_: choose())
     buttons.rejected.connect(dialog.reject)
     layout.addWidget(buttons)
     refresh()
-    dialog.exec()
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return selected_line
 
 
 if __name__ == '__main__':
