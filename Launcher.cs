@@ -449,6 +449,7 @@ internal static class Launcher
                     CopyResource("read_aloud.py", Path.Combine(app, "read_aloud.py"));
                     CopyResource("read_aloud.exe", Path.Combine(app, "read_aloud.exe"));
                     CopyResource("ocr_confidence.py", Path.Combine(app, "ocr_confidence.py"));
+                    CopyResource("ocr_review_state.py", Path.Combine(app, "ocr_review_state.py"));
                     CopyResource("ocr_languages.py", Path.Combine(app, "ocr_languages.py"));
                     CopyResource("ocr_text.py", Path.Combine(app, "ocr_text.py"));
                     CopyResource("ocr_glyphless.b64", Path.Combine(app, "ocr_glyphless.b64"));
