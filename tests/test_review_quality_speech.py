@@ -179,23 +179,30 @@ def command(action,**values):
 try:
     hello=read();assert hello['voices'],'No installed Windows speech voice available for native test'
     voice=hello['voices'][0]['name']
-    command('start',voice=voice,rate=0,text='PDF Digital. This is a local speech test. '*1000)
+    command('start',voice=voice,rate=0,text='PDF Digital. This is a local speech test. '*1000,id=71)
     deadline=time.monotonic()+10
     while time.monotonic()<deadline:
         state=command('status')
         if state['state']=='Speaking':break
         time.sleep(.05)
     assert state['state']=='Speaking',state
+    deadline=time.monotonic()+10
+    while time.monotonic()<deadline:
+        state=command('status')
+        if state.get('position',-1)>=0:break
+        time.sleep(.02)
+    assert state['id']==71 and state['position']>=0 and state['length']>0,state
     assert command('pause')['state']=='Paused'
     assert command('resume')['state']=='Speaking'
     command('stop')
-    command('start',voice=voice,rate=2,text='PDF Digital offline test.')
+    command('start',voice=voice,rate=2,text='PDF Digital offline test.',id=72)
     deadline=time.monotonic()+15
     while time.monotonic()<deadline:
         state=command('status')
         if state['state']=='Ready' and state['bytes']>44:break
         time.sleep(.05)
     assert state['bytes']>44,state
+    assert state['id']==72,state
     audio_bytes=state['bytes']
     command('start',voice=voice,rate=0,text='Closing a paused reading test. '*1000)
     deadline=time.monotonic()+10

@@ -9969,6 +9969,13 @@ class Window(QMainWindow):
         session = self.current
         if not session:
             return False
+        try:
+            from ocr_review_state import summary
+            if not summary(self, session.doc):
+                return False
+        except Exception:
+            self.error(self.ui('Prüfstand konnte nicht gelesen oder gespeichert werden.'))
+            return False
         suggested = session.path.with_stem(session.path.stem + " - bearbeitet")
         target, _ = QFileDialog.getSaveFileName(self, self.ui("PDF-Kopie speichern"), str(suggested), "PDF-Dateien (*.pdf)")
         if not target:

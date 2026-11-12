@@ -25,6 +25,14 @@ internal static class SpeechHost
                 var voices = synth.GetInstalledVoices().Where(v => v.Enabled)
                     .Select(v => new { name = v.VoiceInfo.Name, culture = v.VoiceInfo.Culture.Name }).ToArray();
                 if (test) synth.SetOutputToWaveStream(audio);
+                object progressLock = new object();
+                Prompt currentPrompt = null;
+                int position = -1, length = 0, requestId = 0;
+                synth.SpeakProgress += (sender, e) => {
+                    lock (progressLock) {
+                        if (e.Prompt == currentPrompt) { position = e.CharacterPosition; length = e.CharacterCount; }
+                    }
+                };
                 Reply(new { voices, state = synth.State.ToString() });
                 string line;
                 while ((line = Console.ReadLine()) != null)
@@ -46,7 +54,12 @@ internal static class SpeechHost
                                 synth.SpeakAsyncCancelAll();
                                 synth.SelectVoice(voice);
                                 synth.Rate = rate;
-                                synth.SpeakAsync(text);
+                                lock (progressLock) {
+                                    position = -1; length = 0;
+                                    requestId = request.ContainsKey("id") ? Convert.ToInt32(request["id"]) : 0;
+                                    currentPrompt = new Prompt(text);
+                                    synth.SpeakAsync(currentPrompt);
+                                }
                                 break;
                             case "pause":
                                 if (synth.State == SynthesizerState.Speaking) synth.Pause();
@@ -57,11 +70,15 @@ internal static class SpeechHost
                             case "stop":
                                 if (synth.State == SynthesizerState.Paused) synth.Resume();
                                 synth.SpeakAsyncCancelAll();
+                                lock (progressLock) { currentPrompt = null; position = -1; length = 0; }
                                 break;
                             case "status": case "quit": break;
                             default: throw new ArgumentException();
                         }
-                        Reply(new { state = synth.State.ToString(), bytes = test ? audio.Length : 0 });
+                        lock (progressLock) {
+                            Reply(new { state = synth.State.ToString(), bytes = test ? audio.Length : 0,
+                                        position, length, id = requestId });
+                        }
                         if (action == "quit") break;
                     }
                     catch { Reply(new { error = true }); }

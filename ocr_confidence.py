@@ -116,6 +116,9 @@ def show_review(parent, page, language, data, correction_lines=None):
     if result is None:
         return
     words, pix = result
+    from ocr_review_state import document_key, word_key, read, write
+    doc_key = document_key(page.parent)
+    recognition_key = word_key(words, language)
     dialog = QDialog(parent)
     dialog.setLayoutDirection(parent.layoutDirection())
     dialog.setWindowTitle(tr('Unsichere Wörter prüfen'))
@@ -145,6 +148,12 @@ def show_review(parent, page, language, data, correction_lines=None):
     navigation.addWidget(reviewed_box)
     navigation.addWidget(next_word)
     layout.addLayout(navigation)
+    checkpoint_row = QHBoxLayout()
+    checkpoint_buttons = {}
+    for label in ('Prüfstand speichern', 'Prüfung fortsetzen', 'Prüfstand löschen'):
+        button = QPushButton(tr(label)); checkpoint_row.addWidget(button); checkpoint_buttons[label] = button
+    layout.addLayout(checkpoint_row)
+    checkpoint_status = QLabel(); checkpoint_status.setWordWrap(True); layout.addWidget(checkpoint_status)
     split = QSplitter()
     layout.addWidget(split, 1)
     area = QScrollArea()
@@ -165,6 +174,29 @@ def show_review(parent, page, language, data, correction_lines=None):
     reviewed_ids = set()
     selected_line = None
     correct = None
+    def record():
+        index = table.currentRow()
+        return dict(doc=doc_key,page=page.number,words=recognition_key,language=language,
+                    scores=[w['score'] for w in words],reviewed=sorted(reviewed_ids),
+                    threshold=threshold.value(),position=visible_ids[index] if 0<=index<len(visible_ids) else -1)
+    def remember():
+        if not hasattr(parent,'_ocr_review_memory'):parent._ocr_review_memory={}
+        parent._ocr_review_memory[(doc_key,page.number,language)] = record()
+    def checkpoint(action):
+        try:
+            if action=='save':write(record());checkpoint_status.setText(tr('Prüfstand lokal gespeichert.'))
+            elif action=='delete':
+                write(record(),remove=True);checkpoint_status.setText(tr('Prüfstand gelöscht.'))
+            else:
+                saved=next((r for r in reversed(read()) if r['doc']==doc_key and r['page']==page.number and r['language']==language and r['words']==recognition_key),None)
+                if saved is None:checkpoint_status.setText(tr('Kein passender Prüfstand. Dokument oder Erkennung können verändert sein.'));return
+                reviewed_ids.clear();reviewed_ids.update(saved['reviewed'])
+                threshold.setValue(saved['threshold']);refresh()
+                if saved['position'] in visible_ids:table.setCurrentCell(visible_ids.index(saved['position']),0)
+                remember();checkpoint_status.setText(tr('Prüfstand geladen.'))
+        except (ValueError,OSError,TypeError,KeyError):parent.error(tr('Prüfstand konnte nicht gelesen oder gespeichert werden.'))
+    for label,action in [('Prüfstand speichern','save'),('Prüfung fortsetzen','load'),('Prüfstand löschen','delete')]:
+        checkpoint_buttons[label].clicked.connect(lambda _=False,action=action:checkpoint(action))
     def update_review():
         index = table.currentRow()
         valid = 0 <= index < len(visible_ids)
@@ -183,6 +215,7 @@ def show_review(parent, page, language, data, correction_lines=None):
             else:
                 reviewed_ids.discard(visible_ids[index])
         update_review()
+        remember()
     def go_next():
         size = len(visible_ids)
         current = table.currentRow()
@@ -230,6 +263,7 @@ def show_review(parent, page, language, data, correction_lines=None):
         table.blockSignals(False)
         state.setText(tr('Markierte Wörter') + ': ' + str(len(visible)) if visible else tr('Keine Wörter unter diesem Prüfwert.' if words else 'Kein Text erkannt.'))
         highlight(index)
+        remember()
     threshold.valueChanged.connect(refresh)
     table.currentCellChanged.connect(highlight)
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

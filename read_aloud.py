@@ -9,8 +9,9 @@ UNAVAILABLE = 'Vorlesen nicht verfügbar. Prüfe die installierten Windows-Stimm
 
 def show_reader(parent, text):
     from PySide6.QtCore import QProcess, QTimer
+    from PySide6.QtGui import QTextCursor, QPalette
     from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPlainTextEdit,
-                                 QComboBox, QSpinBox, QPushButton, QHBoxLayout)
+                                 QComboBox, QSpinBox, QPushButton, QHBoxLayout, QTextEdit)
     tr = parent.ui
     if not text.strip():
         parent.error(tr('Kein Text zum Vorlesen. Bei Scans zuerst OCR ausführen.'))
@@ -36,10 +37,14 @@ def show_reader(parent, text):
     timer = QTimer(dialog);timer.setInterval(300)
     closing = False
     failed = False
+    generation = 0
+    selection_offset = 0
+    spoken_length = 0
     def fail():
         nonlocal failed
         if failed:return
         failed=True
+        preview.setExtraSelections([])
         process.kill()
         status.setText(tr(UNAVAILABLE));timer.stop()
         for key,button in buttons.items():button.setEnabled(key=='Schließen')
@@ -53,6 +58,7 @@ def show_reader(parent, text):
             try:
                 data=json.loads(bytes(process.readLine()).decode('utf-8'))
                 if data.get('error'):fail();continue
+                if 'id' in data and data['id'] != generation:continue
                 if 'voices' in data:
                     for voice in data['voices']:
                         voices.addItem(voice['name']+' · '+voice['culture'],voice['name'])
@@ -60,6 +66,19 @@ def show_reader(parent, text):
                     voices.setCurrentIndex(0)
                     timer.start()
                 state=data.get('state','Ready')
+                if state=='Ready':preview.setExtraSelections([])
+                elif data.get('id')==generation:
+                    position=data.get('position',-1);length=data.get('length',0)
+                    if type(position) is int and type(length) is int and 0<=position<spoken_length and 0<length<=spoken_length-position:
+                        cursor=QTextCursor(preview.document())
+                        cursor.setPosition(selection_offset+position)
+                        cursor.setPosition(selection_offset+position+length,QTextCursor.MoveMode.KeepAnchor)
+                        mark=QTextEdit.ExtraSelection();mark.cursor=cursor
+                        mark.format.setBackground(preview.palette().brush(QPalette.ColorRole.Highlight))
+                        mark.format.setForeground(preview.palette().brush(QPalette.ColorRole.HighlightedText))
+                        preview.setExtraSelections([mark])
+                        scroll_cursor=QTextCursor(cursor);scroll_cursor.clearSelection()
+                        preview.setTextCursor(scroll_cursor);preview.ensureCursorVisible()
                 status.setText(tr({'Ready':'Bereit zum Vorlesen','Speaking':'Wird vorgelesen','Paused':'Vorlesen pausiert'}.get(state,'Bereit zum Vorlesen')))
                 voices.setEnabled(state=='Ready')
                 speed.setEnabled(state=='Ready')
@@ -69,8 +88,13 @@ def show_reader(parent, text):
                 buttons['Stoppen'].setEnabled(state in ('Speaking','Paused'))
             except (ValueError,KeyError,TypeError):fail()
     def start():
+        nonlocal generation,selection_offset,spoken_length
         selected=preview.textCursor().selectedText().replace('\u2029','\n')
-        send('start',text=selected or text,voice=voices.currentData(),rate=speed.value())
+        selection_offset=preview.textCursor().selectionStart() if selected else 0
+        spoken=selected or text
+        spoken_length=len(spoken.encode('utf-16-le'))//2
+        generation+=1;preview.setExtraSelections([])
+        send('start',text=spoken,voice=voices.currentData(),rate=speed.value(),id=generation)
     buttons['Vorlesen'].clicked.connect(start)
     buttons['Pause'].clicked.connect(lambda:send('pause'))
     buttons['Fortsetzen'].clicked.connect(lambda:send('resume'))
