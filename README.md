@@ -1,13 +1,13 @@
-# PDF Digital 1.71.0 für Windows
+# PDF Digital 1.72.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Treffer im Zusammenhang, Rücksprung und Kopieren
+### Neu in 1.72.0: Treffer im Zusammenhang, Rücksprung und Kopieren
 
 - **Zeile davor und danach anzeigen** zeigt die Nachbarzeilen derselben Seite im lesbaren Textbereich. Ungespeicherte Korrekturen werden berücksichtigt; an Seitenrändern werden nur vorhandene Zeilen gezeigt. Das Dokument wird nicht verändert.
 - **Zur letzten Fundstelle zurück** kehrt zur vorherigen Position in der OCR-Korrektur zurück, auch nach einem Seitenwechsel. Der auf 100 Positionen begrenzte Verlauf bleibt nur im geöffneten Dialog. Ein Rücksprung beendet einen laufenden Suchdurchlauf; Suchtext und Korrekturentwürfe bleiben erhalten.
 - **Ausgewählte Treffer kopieren** kopiert die markierten Zeilen der aktuellen Treffergruppe mit Seitenzahlen als Klartext. Mehrfachauswahl mit Strg/Shift; höchstens 200 sichtbare Treffer pro Gruppe. Die Zwischenablage wird nur durch diesen ausdrücklichen Klick beschrieben.
-- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert.
+- Alle 20 Oberflächensprachen.
 
 ### Neu in 1.71.0: Vollständige Trefferzeile, Gruppensprung und Filterreset
 
@@ -134,7 +134,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.71.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.72.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -144,7 +144,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.71.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.72.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
