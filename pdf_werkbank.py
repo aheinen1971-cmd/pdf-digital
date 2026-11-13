@@ -9225,6 +9225,7 @@ class Window(QMainWindow):
         layout.insertWidget(8,full_text)
         def full_preview(*_):
             item=preview.currentItem()
+            full_text.setExtraSelections([])
             full_text.setPlainText(item.data(Qt.ItemDataRole.UserRole+1) if item else '')
             expand.setEnabled(item is not None)
             full_text.setVisible(expand.isChecked() and item is not None)
@@ -9241,12 +9242,31 @@ class Window(QMainWindow):
         copy_note=QLabel();copy_note.setObjectName('ocrCopyStatus');copy_note.setWordWrap(True);layout.insertWidget(10,copy_note)
         def context_preview(*_):
             item=preview.currentItem();context.setEnabled(item is not None)
+            line_start=0
             if item is not None and context.isChecked():
                 page,index=item.data(Qt.ItemDataRole.UserRole)
                 remember();values=normalized_lines(page)
                 full_text.setPlainText('\n'.join(values[max(0,index-1):index+2]))
+                if index:line_start=len(values[index-1])+1
                 full_text.setVisible(True)
             else:full_preview()
+            full_text.setExtraSelections([])
+            if item is not None:
+                from PySide6.QtWidgets import QTextEdit
+                from PySide6.QtGui import QTextCursor,QTextFormat
+                value=item.data(Qt.ItemDataRole.UserRole+1)
+                text=full_text.toPlainText()
+                utf16=lambda index:len(text[:index].encode('utf-16-le'))//2
+                selected=[]
+                line=QTextEdit.ExtraSelection();line.cursor=QTextCursor(full_text.document())
+                line.cursor.setPosition(utf16(line_start));line.cursor.setPosition(utf16(line_start+len(value)),QTextCursor.MoveMode.KeepAnchor)
+                color=full_text.palette().highlight().color();color.setAlpha(55)
+                line.format.setBackground(color);line.format.setProperty(QTextFormat.Property.FullWidthSelection,True);selected.append(line)
+                for left,right in match_spans(value):
+                    word=QTextEdit.ExtraSelection();word.cursor=QTextCursor(full_text.document())
+                    word.cursor.setPosition(utf16(line_start+left));word.cursor.setPosition(utf16(line_start+right),QTextCursor.MoveMode.KeepAnchor)
+                    word.format.setBackground(QColor('#ffd166'));word.format.setForeground(QColor('#111111'));word.format.setFontWeight(700);selected.append(word)
+                full_text.setExtraSelections(selected)
         context.toggled.connect(context_preview);preview.currentItemChanged.connect(context_preview)
         expand.toggled.connect(context_preview)
         def copy_selected():
@@ -9276,12 +9296,15 @@ class Window(QMainWindow):
         group.setEnabled(False);jump_group.setEnabled(False)
         layout.insertLayout(10,group_row)
         previews=[];pages=[];matcher=None
-        def excerpt(value):
+        def match_spans(value):
+            if matcher is None:return []
             folded='';mapping=[]
             for index,char in enumerate(value):
                 part=char if sensitive.isChecked() else char.casefold()
                 folded+=part;mapping.extend([index]*len(part))
-            spans=[(mapping[m.start()],mapping[m.end()-1]+1) for m in matcher.finditer(folded) if m.end()>m.start()]
+            return [(mapping[m.start()],mapping[m.end()-1]+1) for m in matcher.finditer(folded) if m.end()>m.start()]
+        def excerpt(value):
+            spans=match_spans(value)
             start=max(0,spans[0][0]-45) if spans else 0;end=min(len(value),start+180)
             chunks=[];cursor=start
             for left,right in spans:
@@ -9464,6 +9487,31 @@ class Window(QMainWindow):
                 selector.setValue(r['page']+1);open_record(self,doc,r,first_open=True)
             except Exception as exc:self.error(exc)
         next_pending.clicked.connect(open_next_pending)
+        # One local disclosure frees document space without resetting search state.
+        tool_panel=QWidget();tool_panel.setObjectName('ocrSearchTools')
+        tool_layout=QVBoxLayout(tool_panel);tool_layout.setContentsMargins(0,0,0,0)
+        for element in (options,filters,preview_note,preview,full_text,preview_navigation,group_row,result_tools,copy_note,confidence_button,saved_button,next_pending,pending_note):
+            if isinstance(element,QWidget):layout.removeWidget(element);tool_layout.addWidget(element)
+            else:layout.removeItem(element);tool_layout.addLayout(element)
+        disclosure=QPushButton(self.ui('Suchwerkzeuge einklappen'));disclosure.setObjectName('ocrToolsToggle')
+        disclosure.setCheckable(True);disclosure.setChecked(True);disclosure.setAutoDefault(False)
+        help_button=QPushButton(self.ui('Kurzhilfe'));help_button.setObjectName('ocrToolsHelp');help_button.setCheckable(True);help_button.setAutoDefault(False)
+        tool_header=QHBoxLayout();tool_header.addWidget(disclosure);tool_header.addWidget(help_button)
+        tool_scroll=QScrollArea();tool_scroll.setObjectName('ocrSearchToolsScroll');tool_scroll.setWidgetResizable(True)
+        tool_scroll.setWidget(tool_panel);tool_scroll.setMaximumHeight(420)
+        tool_index=layout.indexOf(search_status)+1;layout.insertLayout(tool_index,tool_header);layout.insertWidget(tool_index+1,tool_scroll)
+        help_selection=self.ui('Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.')
+        help_return=self.ui('Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.')
+        help_context=self.ui('Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.')
+        help_note=QLabel('\n\n'.join((help_selection,help_return,help_context)));help_note.setObjectName('ocrToolsHelpText');help_note.setWordWrap(True);help_note.hide();tool_layout.insertWidget(0,help_note)
+        preview.setToolTip(help_selection);copy_results.setToolTip(help_selection);back_location.setToolTip(help_return);context.setToolTip(help_context);full_text.setToolTip(help_context)
+        disclosure.toggled.connect(tool_scroll.setVisible)
+        disclosure.toggled.connect(lambda checked:disclosure.setText(self.ui('Suchwerkzeuge einklappen' if checked else 'Suchwerkzeuge anzeigen')))
+        def show_tool_help(checked):
+            if checked:disclosure.setChecked(True)
+            help_note.setVisible(checked)
+            if checked:QTimer.singleShot(0,lambda:tool_scroll.ensureWidgetVisible(help_note))
+        help_button.toggled.connect(show_tool_help)
         selector.valueChanged.connect(load)
         rows.currentCellChanged.connect(highlight)
         load(initial + 1)

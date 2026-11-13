@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Mehr Dokumentfläche, markierter Zusammenhang und Kurzhilfe
+
+- **Suchwerkzeuge einklappen/anzeigen** blendet Filter und Zusatzwerkzeuge gemeinsam aus und wieder ein. Suchfeld, Navigation, Suchstatus und Abbruch bleiben erreichbar. Suchtext, Optionen, Auswahl und Korrekturentwürfe bleiben erhalten. Der ausgeklappte Werkzeugbereich kann gescrollt werden und lässt Platz für Scan und Text.
+- Die vollständige Textvorschau markiert die Trefferzeile und passende Suchwörter, auch bei Unicode und Groß-/Kleinschreibungsfaltung. Nachbarzeilen bleiben als Zusammenhang lesbar. Die Hervorhebung ändert keinen PDF-Text und keinen kopierten Text.
+- **Kurzhilfe** erklärt Mehrfachauswahl, Kopieren, Rücksprung und Hervorhebung direkt im Prüffenster. Die betreffenden Werkzeuge haben außerdem kurze Hinweise beim Darüberfahren. Alle sechs neuen Bedientexte sind in allen 20 Oberflächensprachen verfügbar.
+- Lokal vorbereitet; noch nicht veröffentlicht oder persönlich installiert.
+
 ### Neu in 1.72.0: Treffer im Zusammenhang, Rücksprung und Kopieren
 
 - **Zeile davor und danach anzeigen** zeigt die Nachbarzeilen derselben Seite im lesbaren Textbereich. Ungespeicherte Korrekturen werden berücksichtigt; an Seitenrändern werden nur vorhandene Zeilen gezeigt. Das Dokument wird nicht verändert.

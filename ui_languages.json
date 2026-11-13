@@ -1333,7 +1333,13 @@
     "Zeile davor und danach anzeigen": "Show the preceding and following lines",
     "Zur letzten Fundstelle zurück": "Back to the previous location",
     "Ausgewählte Treffer kopieren": "Copy selected results",
-    "{0} Treffer kopiert": "{0} results copied"
+    "{0} Treffer kopiert": "{0} results copied",
+    "Suchwerkzeuge anzeigen": "Show search tools",
+    "Kurzhilfe": "Quick help",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Select individual results with Ctrl or a range with Shift. Only selected lines in the current result group are copied, with page numbers.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Return to the previous position. Your query and draft corrections are kept; a running search is stopped.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "The marked line is the result; highlighted words match the query. Adjacent lines provide context only.",
+    "Suchwerkzeuge einklappen": "Collapse search tools"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2669,7 +2675,13 @@
     "Zeile davor und danach anzeigen": "Afficher les lignes précédente et suivante",
     "Zur letzten Fundstelle zurück": "Revenir à la position précédente",
     "Ausgewählte Treffer kopieren": "Copier les résultats sélectionnés",
-    "{0} Treffer kopiert": "{0} résultats copiés"
+    "{0} Treffer kopiert": "{0} résultats copiés",
+    "Suchwerkzeuge anzeigen": "Afficher les outils de recherche",
+    "Kurzhilfe": "Aide rapide",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl sélectionne des résultats individuels, Maj une plage. Seules les lignes sélectionnées du groupe actuel sont copiées, avec les numéros de page.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Revenir à la position précédente. La recherche et les corrections préparées sont conservées ; la recherche en cours est arrêtée.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "La ligne marquée est le résultat ; les mots surlignés correspondent à la recherche. Les lignes voisines donnent uniquement le contexte.",
+    "Suchwerkzeuge einklappen": "Replier les outils de recherche"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4005,7 +4017,13 @@
     "Zeile davor und danach anzeigen": "Mostrar las líneas anterior y siguiente",
     "Zur letzten Fundstelle zurück": "Volver a la ubicación anterior",
     "Ausgewählte Treffer kopieren": "Copiar resultados seleccionados",
-    "{0} Treffer kopiert": "{0} resultados copiados"
+    "{0} Treffer kopiert": "{0} resultados copiados",
+    "Suchwerkzeuge anzeigen": "Mostrar herramientas de búsqueda",
+    "Kurzhilfe": "Ayuda rápida",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl selecciona resultados individuales; Mayús, un intervalo. Solo se copian las líneas seleccionadas del grupo actual con sus números de página.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Volver a la posición anterior. Se conservan la búsqueda y las correcciones preparadas; se detiene la búsqueda en curso.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "La línea marcada es el resultado; las palabras resaltadas coinciden con la búsqueda. Las líneas contiguas solo dan contexto.",
+    "Suchwerkzeuge einklappen": "Plegar herramientas de búsqueda"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5341,7 +5359,13 @@
     "Zeile davor und danach anzeigen": "Vorige en volgende regel tonen",
     "Zur letzten Fundstelle zurück": "Terug naar de vorige locatie",
     "Ausgewählte Treffer kopieren": "Geselecteerde resultaten kopiëren",
-    "{0} Treffer kopiert": "{0} resultaten gekopieerd"
+    "{0} Treffer kopiert": "{0} resultaten gekopieerd",
+    "Suchwerkzeuge anzeigen": "Zoekhulpmiddelen tonen",
+    "Kurzhilfe": "Korte hulp",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Selecteer losse resultaten met Ctrl of een bereik met Shift. Alleen geselecteerde regels in de huidige groep worden met paginanummers gekopieerd.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Ga terug naar de vorige positie. Zoektekst en conceptcorrecties blijven behouden; een lopende zoekopdracht stopt.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "De gemarkeerde regel is het resultaat; benadrukte woorden passen bij de zoekopdracht. Omliggende regels geven alleen context.",
+    "Suchwerkzeuge einklappen": "Zoekhulpmiddelen inklappen"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6677,7 +6701,13 @@
     "Zeile davor und danach anzeigen": "Mostra le righe precedente e successiva",
     "Zur letzten Fundstelle zurück": "Torna alla posizione precedente",
     "Ausgewählte Treffer kopieren": "Copia i risultati selezionati",
-    "{0} Treffer kopiert": "{0} risultati copiati"
+    "{0} Treffer kopiert": "{0} risultati copiati",
+    "Suchwerkzeuge anzeigen": "Mostra strumenti di ricerca",
+    "Kurzhilfe": "Guida rapida",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl seleziona singoli risultati, Maiusc un intervallo. Vengono copiate solo le righe selezionate del gruppo corrente, con i numeri di pagina.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Torna alla posizione precedente. Ricerca e correzioni preparate vengono conservate; la ricerca in corso viene fermata.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "La riga contrassegnata è il risultato; le parole evidenziate corrispondono alla ricerca. Le righe vicine forniscono solo il contesto.",
+    "Suchwerkzeuge einklappen": "Comprimi strumenti di ricerca"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8013,7 +8043,13 @@
     "Zeile davor und danach anzeigen": "Mostrar as linhas anterior e seguinte",
     "Zur letzten Fundstelle zurück": "Voltar à posição anterior",
     "Ausgewählte Treffer kopieren": "Copiar resultados selecionados",
-    "{0} Treffer kopiert": "{0} resultados copiados"
+    "{0} Treffer kopiert": "{0} resultados copiados",
+    "Suchwerkzeuge anzeigen": "Mostrar ferramentas de pesquisa",
+    "Kurzhilfe": "Ajuda rápida",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl seleciona resultados individuais; Shift, um intervalo. Só são copiadas as linhas selecionadas do grupo atual, com números de página.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Voltar à posição anterior. A pesquisa e as correções preparadas são mantidas; uma pesquisa em curso é interrompida.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "A linha marcada é o resultado; as palavras destacadas correspondem à pesquisa. As linhas adjacentes apenas dão contexto.",
+    "Suchwerkzeuge einklappen": "Recolher ferramentas de pesquisa"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9349,7 +9385,13 @@
     "Zeile davor und danach anzeigen": "Pokaż poprzedni i następny wiersz",
     "Zur letzten Fundstelle zurück": "Wróć do poprzedniego miejsca",
     "Ausgewählte Treffer kopieren": "Kopiuj wybrane wyniki",
-    "{0} Treffer kopiert": "Skopiowano wyniki: {0}"
+    "{0} Treffer kopiert": "Skopiowano wyniki: {0}",
+    "Suchwerkzeuge anzeigen": "Pokaż narzędzia wyszukiwania",
+    "Kurzhilfe": "Krótka pomoc",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl wybiera pojedyncze wyniki, Shift zakres. Kopiowane są tylko wybrane wiersze bieżącej grupy z numerami stron.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Wróć do poprzedniej pozycji. Zapytanie i przygotowane poprawki pozostają; trwające wyszukiwanie zostaje zatrzymane.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Oznaczony wiersz to wynik; wyróżnione słowa pasują do zapytania. Sąsiednie wiersze służą tylko jako kontekst.",
+    "Suchwerkzeuge einklappen": "Zwiń narzędzia wyszukiwania"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10685,7 +10727,13 @@
     "Zeile davor und danach anzeigen": "Zobrazit předchozí a následující řádek",
     "Zur letzten Fundstelle zurück": "Zpět na předchozí místo",
     "Ausgewählte Treffer kopieren": "Kopírovat vybrané výsledky",
-    "{0} Treffer kopiert": "Zkopírované výsledky: {0}"
+    "{0} Treffer kopiert": "Zkopírované výsledky: {0}",
+    "Suchwerkzeuge anzeigen": "Zobrazit nástroje hledání",
+    "Kurzhilfe": "Stručná nápověda",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl vybírá jednotlivé výsledky, Shift rozsah. Kopírují se jen vybrané řádky aktuální skupiny s čísly stránek.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Vrátit se na předchozí pozici. Dotaz a připravené opravy zůstanou; probíhající hledání se zastaví.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Označený řádek je výsledek; zvýrazněná slova odpovídají dotazu. Okolní řádky slouží pouze jako kontext.",
+    "Suchwerkzeuge einklappen": "Sbalit nástroje hledání"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12021,7 +12069,13 @@
     "Zeile davor und danach anzeigen": "Vis linjen før og efter",
     "Zur letzten Fundstelle zurück": "Tilbage til forrige sted",
     "Ausgewählte Treffer kopieren": "Kopiér valgte resultater",
-    "{0} Treffer kopiert": "{0} resultater kopieret"
+    "{0} Treffer kopiert": "{0} resultater kopieret",
+    "Suchwerkzeuge anzeigen": "Vis søgeværktøjer",
+    "Kurzhilfe": "Kort hjælp",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Vælg enkelte resultater med Ctrl eller et område med Shift. Kun valgte linjer i den aktuelle gruppe kopieres med sidetal.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Gå tilbage til forrige position. Søgetekst og kladder til rettelser bevares; en igangværende søgning stoppes.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Den markerede linje er resultatet; fremhævede ord matcher søgningen. Nabolinjer giver kun sammenhæng.",
+    "Suchwerkzeuge einklappen": "Fold søgeværktøjer sammen"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13357,7 +13411,13 @@
     "Zeile davor und danach anzeigen": "Visa föregående och följande rad",
     "Zur letzten Fundstelle zurück": "Tillbaka till föregående plats",
     "Ausgewählte Treffer kopieren": "Kopiera valda resultat",
-    "{0} Treffer kopiert": "{0} resultat kopierade"
+    "{0} Treffer kopiert": "{0} resultat kopierade",
+    "Suchwerkzeuge anzeigen": "Visa sökverktyg",
+    "Kurzhilfe": "Snabbhjälp",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Välj enskilda resultat med Ctrl eller ett intervall med Skift. Endast valda rader i aktuell grupp kopieras med sidnummer.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Återgå till föregående position. Söktext och utkast till rättelser bevaras; en pågående sökning stoppas.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Den markerade raden är resultatet; framhävda ord matchar sökningen. Närliggande rader ger bara sammanhang.",
+    "Suchwerkzeuge einklappen": "Fäll ihop sökverktyg"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14693,7 +14753,13 @@
     "Zeile davor und danach anzeigen": "Vis linjen før og etter",
     "Zur letzten Fundstelle zurück": "Tilbake til forrige sted",
     "Ausgewählte Treffer kopieren": "Kopier valgte resultater",
-    "{0} Treffer kopiert": "{0} resultater kopiert"
+    "{0} Treffer kopiert": "{0} resultater kopiert",
+    "Suchwerkzeuge anzeigen": "Vis søkeverktøy",
+    "Kurzhilfe": "Kort hjelp",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Velg enkelte resultater med Ctrl eller et område med Shift. Bare valgte linjer i gjeldende gruppe kopieres med sidetall.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Gå tilbake til forrige posisjon. Søketekst og utkast til rettelser beholdes; et pågående søk stoppes.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Den merkede linjen er resultatet; uthevede ord samsvarer med søket. Nabolinjer gir bare sammenheng.",
+    "Suchwerkzeuge einklappen": "Skjul søkeverktøy"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16029,7 +16095,13 @@
     "Zeile davor und danach anzeigen": "Näytä edellinen ja seuraava rivi",
     "Zur letzten Fundstelle zurück": "Takaisin edelliseen kohtaan",
     "Ausgewählte Treffer kopieren": "Kopioi valitut tulokset",
-    "{0} Treffer kopiert": "Kopioituja tuloksia: {0}"
+    "{0} Treffer kopiert": "Kopioituja tuloksia: {0}",
+    "Suchwerkzeuge anzeigen": "Näytä hakutyökalut",
+    "Kurzhilfe": "Pikaohje",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Valitse yksittäisiä tuloksia Ctrl-näppäimellä tai alue Shift-näppäimellä. Vain nykyisen ryhmän valitut rivit kopioidaan sivunumeroineen.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Palaa edelliseen kohtaan. Hakuteksti ja korjausluonnokset säilyvät; käynnissä oleva haku pysäytetään.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Merkitty rivi on tulos; korostetut sanat vastaavat hakua. Viereiset rivit antavat vain asiayhteyden.",
+    "Suchwerkzeuge einklappen": "Piilota hakutyökalut"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17365,7 +17437,13 @@
     "Zeile davor und danach anzeigen": "Önceki ve sonraki satırı göster",
     "Zur letzten Fundstelle zurück": "Önceki konuma dön",
     "Ausgewählte Treffer kopieren": "Seçili sonuçları kopyala",
-    "{0} Treffer kopiert": "{0} sonuç kopyalandı"
+    "{0} Treffer kopiert": "{0} sonuç kopyalandı",
+    "Suchwerkzeuge anzeigen": "Arama araçlarını göster",
+    "Kurzhilfe": "Kısa yardım",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl ile tek tek sonuçları, Shift ile bir aralığı seçin. Yalnızca mevcut gruptaki seçili satırlar sayfa numaralarıyla kopyalanır.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Önceki konuma dönün. Arama metni ve düzeltme taslakları korunur; çalışan arama durdurulur.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "İşaretli satır sonuçtur; vurgulanan sözcükler aramayla eşleşir. Komşu satırlar yalnızca bağlam sağlar.",
+    "Suchwerkzeuge einklappen": "Arama araçlarını daralt"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18701,7 +18779,13 @@
     "Zeile davor und danach anzeigen": "Показати попередній і наступний рядки",
     "Zur letzten Fundstelle zurück": "Повернутися до попереднього місця",
     "Ausgewählte Treffer kopieren": "Копіювати вибрані результати",
-    "{0} Treffer kopiert": "Скопійовано результатів: {0}"
+    "{0} Treffer kopiert": "Скопійовано результатів: {0}",
+    "Suchwerkzeuge anzeigen": "Показати засоби пошуку",
+    "Kurzhilfe": "Коротка довідка",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl вибирає окремі результати, Shift — діапазон. Копіюються лише вибрані рядки поточної групи з номерами сторінок.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Повернутися до попередньої позиції. Запит і підготовлені виправлення залишаються; поточний пошук зупиняється.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Позначений рядок — результат; виділені слова відповідають запиту. Сусідні рядки лише надають контекст.",
+    "Suchwerkzeuge einklappen": "Згорнути засоби пошуку"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -20037,7 +20121,13 @@
     "Zeile davor und danach anzeigen": "Εμφάνιση προηγούμενης και επόμενης γραμμής",
     "Zur letzten Fundstelle zurück": "Επιστροφή στην προηγούμενη θέση",
     "Ausgewählte Treffer kopieren": "Αντιγραφή επιλεγμένων αποτελεσμάτων",
-    "{0} Treffer kopiert": "Αντιγράφηκαν {0} αποτελέσματα"
+    "{0} Treffer kopiert": "Αντιγράφηκαν {0} αποτελέσματα",
+    "Suchwerkzeuge anzeigen": "Εμφάνιση εργαλείων αναζήτησης",
+    "Kurzhilfe": "Σύντομη βοήθεια",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Το Ctrl επιλέγει μεμονωμένα αποτελέσματα, το Shift ένα εύρος. Αντιγράφονται μόνο οι επιλεγμένες γραμμές της τρέχουσας ομάδας με αριθμούς σελίδων.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "Επιστροφή στην προηγούμενη θέση. Ο όρος αναζήτησης και οι πρόχειρες διορθώσεις διατηρούνται· η ενεργή αναζήτηση σταματά.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "Η σημειωμένη γραμμή είναι το αποτέλεσμα· οι επισημασμένες λέξεις αντιστοιχούν στην αναζήτηση. Οι γειτονικές γραμμές παρέχουν μόνο συμφραζόμενα.",
+    "Suchwerkzeuge einklappen": "Σύμπτυξη εργαλείων αναζήτησης"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -21373,7 +21463,13 @@
     "Zeile davor und danach anzeigen": "前後の行を表示",
     "Zur letzten Fundstelle zurück": "前の位置に戻る",
     "Ausgewählte Treffer kopieren": "選択した検索結果をコピー",
-    "{0} Treffer kopiert": "{0} 件の結果をコピーしました"
+    "{0} Treffer kopiert": "{0} 件の結果をコピーしました",
+    "Suchwerkzeuge anzeigen": "検索ツールを表示",
+    "Kurzhilfe": "簡単なヘルプ",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrlで個別の結果、Shiftで範囲を選択します。現在の結果グループで選択した行だけをページ番号付きでコピーします。",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "前の位置に戻ります。検索語と修正の下書きは保持され、実行中の検索は停止します。",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "印の付いた行が検索結果で、強調された語が検索語に一致します。前後の行は文脈を示すためのものです。",
+    "Suchwerkzeuge einklappen": "検索ツールを折りたたむ"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -22709,7 +22805,13 @@
     "Zeile davor und danach anzeigen": "이전 및 다음 줄 표시",
     "Zur letzten Fundstelle zurück": "이전 위치로 돌아가기",
     "Ausgewählte Treffer kopieren": "선택한 결과 복사",
-    "{0} Treffer kopiert": "결과 {0}개 복사됨"
+    "{0} Treffer kopiert": "결과 {0}개 복사됨",
+    "Suchwerkzeuge anzeigen": "검색 도구 표시",
+    "Kurzhilfe": "빠른 도움말",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl로 개별 결과를, Shift로 범위를 선택합니다. 현재 결과 그룹에서 선택한 줄만 페이지 번호와 함께 복사합니다.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "이전 위치로 돌아갑니다. 검색어와 수정 초안은 유지되며 진행 중인 검색은 중지됩니다.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "표시된 줄이 검색 결과이고 강조된 단어가 검색어와 일치합니다. 인접한 줄은 문맥만 제공합니다.",
+    "Suchwerkzeuge einklappen": "검색 도구 접기"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -24045,7 +24147,13 @@
     "Zeile davor und danach anzeigen": "عرض السطر السابق والتالي",
     "Zur letzten Fundstelle zurück": "العودة إلى الموضع السابق",
     "Ausgewählte Treffer kopieren": "نسخ النتائج المحددة",
-    "{0} Treffer kopiert": "تم نسخ {0} نتيجة"
+    "{0} Treffer kopiert": "تم نسخ {0} نتيجة",
+    "Suchwerkzeuge anzeigen": "عرض أدوات البحث",
+    "Kurzhilfe": "مساعدة سريعة",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "اختر نتائج منفردة باستخدام Ctrl أو نطاقًا باستخدام Shift. تُنسخ الأسطر المحددة في المجموعة الحالية فقط مع أرقام الصفحات.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "العودة إلى الموضع السابق. يبقى نص البحث ومسودات التصحيح؛ ويتوقف البحث الجاري.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "السطر المحدد هو النتيجة؛ والكلمات المميزة تطابق البحث. الأسطر المجاورة للسياق فقط.",
+    "Suchwerkzeuge einklappen": "طي أدوات البحث"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -25381,6 +25489,12 @@
     "Zeile davor und danach anzeigen": "הצגת השורה הקודמת והבאה",
     "Zur letzten Fundstelle zurück": "חזרה למיקום הקודם",
     "Ausgewählte Treffer kopieren": "העתקת התוצאות שנבחרו",
-    "{0} Treffer kopiert": "הועתקו {0} תוצאות"
+    "{0} Treffer kopiert": "הועתקו {0} תוצאות",
+    "Suchwerkzeuge anzeigen": "הצגת כלי חיפוש",
+    "Kurzhilfe": "עזרה קצרה",
+    "Mit Strg einzelne Treffer auswählen, mit Umschalt einen Bereich markieren. Kopiert werden nur ausgewählte Zeilen der aktuellen Treffergruppe mit Seitenzahlen.": "Ctrl בוחר תוצאות בודדות, Shift טווח. רק שורות שנבחרו בקבוצה הנוכחית מועתקות עם מספרי עמודים.",
+    "Zur vorherigen Position zurückkehren. Suchtext und Korrekturentwürfe bleiben erhalten; eine laufende Suche wird beendet.": "חזרה למיקום הקודם. טקסט החיפוש וטיוטות התיקונים נשמרים; חיפוש פעיל נעצר.",
+    "Die markierte Zeile ist die Fundstelle; hervorgehobene Wörter passen zur Suche. Nachbarzeilen dienen nur der Orientierung.": "השורה המסומנת היא התוצאה; המילים המודגשות תואמות לחיפוש. השורות הסמוכות מספקות הקשר בלבד.",
+    "Suchwerkzeuge einklappen": "כיווץ כלי החיפוש"
   }
 }
