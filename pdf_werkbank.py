@@ -87,7 +87,7 @@ from plan_measure import (EPSILON, MAX_VERTICES, MEASURE_MODES, METRES_PER_POINT
                           alignment, decode_project, encode_project, measurement_group_totals, measurement_rows, snap_point, vector_geometry,
                           CountedSymbol, add_cutout, move_vertex, numbered_symbols, polygon_perimeter)
 
-VERSION = (1, 67, 0)
+VERSION = (1, 68, 0)
 APP_TITLE = "PDF Digital"
 APP_SLOGAN = "Alles finden und bearbeiten"
 UI_LANGUAGES = {

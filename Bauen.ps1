@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $csc = Join-Path $env:WINDIR "Microsoft.NET/Framework64/v4.0.30319/csc.exe"
 if (-not (Test-Path -LiteralPath $csc)) { throw "Der Windows-.NET-Framework-Compiler wurde nicht gefunden." }
-if (-not $Output) { $Output = Join-Path $root "dist/PDF-Werkbank-1.67.0.exe" }
+if (-not $Output) { $Output = Join-Path $root "dist/PDF-Werkbank-1.68.0.exe" }
 $Output = [IO.Path]::GetFullPath($Output)
 New-Item -ItemType Directory -Force (Split-Path -Parent $Output) | Out-Null
 $speechHost = Join-Path (Split-Path -Parent $Output) 'read_aloud.exe'
