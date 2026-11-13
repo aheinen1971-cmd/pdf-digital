@@ -255,6 +255,15 @@ def show_review(parent, page, language, data, correction_lines=None, resume_reco
                 return
     reviewed_box.toggled.connect(mark_reviewed)
     next_word.clicked.connect(go_next)
+    from PySide6.QtGui import QShortcut,QKeySequence
+    for sequence,action in (('Ctrl+J',go_next),('Ctrl+M',reviewed_box.click)):
+        shortcut=QShortcut(QKeySequence(sequence),dialog)
+        shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        shortcut.setAutoRepeat(False);shortcut.activated.connect(action)
+    hint=QLabel(tr('Nächstes Wort')+' (Ctrl+J) · '+tr('Als geprüft markieren')+' (Ctrl+M)')
+    hint.setObjectName('reviewShortcuts');hint.setWordWrap(True);layout.insertWidget(5,hint)
+    next_word.setToolTip(tr('Nächstes Wort')+' (Ctrl+J)')
+    reviewed_box.setToolTip(tr('Als geprüft markieren')+' (Ctrl+M)')
     def highlight(index, *_):
         update_review()
         if correct is not None:

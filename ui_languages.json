@@ -1322,7 +1322,10 @@
     "Suche abgebrochen": "Search cancelled",
     "Seite {0}": "Page {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Preview: {0} of {1} matching lines",
-    "Nach aktueller Seite abbrechen": "Cancel after current page"
+    "Nach aktueller Seite abbrechen": "Cancel after current page",
+    "Vorherige 200 Treffer": "Previous 200 matches",
+    "Weitere 200 Treffer": "Next 200 matches",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Preview: {0}–{1} of {2} matching lines"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2647,7 +2650,10 @@
     "Suche abgebrochen": "Recherche annulée",
     "Seite {0}": "Page {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Aperçu : {0} sur {1} lignes correspondantes",
-    "Nach aktueller Seite abbrechen": "Annuler après la page actuelle"
+    "Nach aktueller Seite abbrechen": "Annuler après la page actuelle",
+    "Vorherige 200 Treffer": "200 résultats précédents",
+    "Weitere 200 Treffer": "200 résultats suivants",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Aperçu : {0}–{1} sur {2} lignes correspondantes"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3972,7 +3978,10 @@
     "Suche abgebrochen": "Búsqueda cancelada",
     "Seite {0}": "Página {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Vista previa: {0} de {1} líneas coincidentes",
-    "Nach aktueller Seite abbrechen": "Cancelar después de la página actual"
+    "Nach aktueller Seite abbrechen": "Cancelar después de la página actual",
+    "Vorherige 200 Treffer": "200 resultados anteriores",
+    "Weitere 200 Treffer": "200 resultados siguientes",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Vista previa: {0}–{1} de {2} líneas coincidentes"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5297,7 +5306,10 @@
     "Suche abgebrochen": "Zoeken geannuleerd",
     "Seite {0}": "Pagina {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Voorbeeld: {0} van {1} overeenkomende regels",
-    "Nach aktueller Seite abbrechen": "Annuleren na huidige pagina"
+    "Nach aktueller Seite abbrechen": "Annuleren na huidige pagina",
+    "Vorherige 200 Treffer": "Vorige 200 treffers",
+    "Weitere 200 Treffer": "Volgende 200 treffers",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Voorbeeld: {0}–{1} van {2} overeenkomende regels"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6622,7 +6634,10 @@
     "Suche abgebrochen": "Ricerca annullata",
     "Seite {0}": "Pagina {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Anteprima: {0} di {1} righe corrispondenti",
-    "Nach aktueller Seite abbrechen": "Annulla dopo la pagina corrente"
+    "Nach aktueller Seite abbrechen": "Annulla dopo la pagina corrente",
+    "Vorherige 200 Treffer": "200 risultati precedenti",
+    "Weitere 200 Treffer": "200 risultati successivi",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Anteprima: {0}–{1} di {2} righe corrispondenti"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7947,7 +7962,10 @@
     "Suche abgebrochen": "Pesquisa cancelada",
     "Seite {0}": "Página {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Pré-visualização: {0} de {1} linhas correspondentes",
-    "Nach aktueller Seite abbrechen": "Cancelar após a página atual"
+    "Nach aktueller Seite abbrechen": "Cancelar após a página atual",
+    "Vorherige 200 Treffer": "200 resultados anteriores",
+    "Weitere 200 Treffer": "200 resultados seguintes",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Pré-visualização: {0}–{1} de {2} linhas correspondentes"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9272,7 +9290,10 @@
     "Suche abgebrochen": "Wyszukiwanie anulowane",
     "Seite {0}": "Strona {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Podgląd: {0} z {1} pasujących wierszy",
-    "Nach aktueller Seite abbrechen": "Anuluj po bieżącej stronie"
+    "Nach aktueller Seite abbrechen": "Anuluj po bieżącej stronie",
+    "Vorherige 200 Treffer": "Poprzednie 200 trafień",
+    "Weitere 200 Treffer": "Następne 200 trafień",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Podgląd: {0}–{1} z {2} pasujących wierszy"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10597,7 +10618,10 @@
     "Suche abgebrochen": "Hledání zrušeno",
     "Seite {0}": "Stránka {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Náhled: {0} z {1} odpovídajících řádků",
-    "Nach aktueller Seite abbrechen": "Zrušit po aktuální stránce"
+    "Nach aktueller Seite abbrechen": "Zrušit po aktuální stránce",
+    "Vorherige 200 Treffer": "Předchozích 200 výsledků",
+    "Weitere 200 Treffer": "Dalších 200 výsledků",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Náhled: {0}–{1} z {2} odpovídajících řádků"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11922,7 +11946,10 @@
     "Suche abgebrochen": "Søgning annulleret",
     "Seite {0}": "Side {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Forhåndsvisning: {0} af {1} matchende linjer",
-    "Nach aktueller Seite abbrechen": "Annuller efter aktuel side"
+    "Nach aktueller Seite abbrechen": "Annuller efter aktuel side",
+    "Vorherige 200 Treffer": "Forrige 200 fund",
+    "Weitere 200 Treffer": "Næste 200 fund",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Forhåndsvisning: {0}–{1} af {2} matchende linjer"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13247,7 +13274,10 @@
     "Suche abgebrochen": "Sökningen avbröts",
     "Seite {0}": "Sida {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Förhandsvisning: {0} av {1} matchande rader",
-    "Nach aktueller Seite abbrechen": "Avbryt efter aktuell sida"
+    "Nach aktueller Seite abbrechen": "Avbryt efter aktuell sida",
+    "Vorherige 200 Treffer": "Föregående 200 träffar",
+    "Weitere 200 Treffer": "Nästa 200 träffar",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Förhandsvisning: {0}–{1} av {2} matchande rader"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14572,7 +14602,10 @@
     "Suche abgebrochen": "Søk avbrutt",
     "Seite {0}": "Side {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Forhåndsvisning: {0} av {1} samsvarende linjer",
-    "Nach aktueller Seite abbrechen": "Avbryt etter gjeldende side"
+    "Nach aktueller Seite abbrechen": "Avbryt etter gjeldende side",
+    "Vorherige 200 Treffer": "Forrige 200 treff",
+    "Weitere 200 Treffer": "Neste 200 treff",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Forhåndsvisning: {0}–{1} av {2} samsvarende linjer"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15897,7 +15930,10 @@
     "Suche abgebrochen": "Haku peruutettu",
     "Seite {0}": "Sivu {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Esikatselu: {0}/{1} vastaavaa riviä",
-    "Nach aktueller Seite abbrechen": "Peruuta nykyisen sivun jälkeen"
+    "Nach aktueller Seite abbrechen": "Peruuta nykyisen sivun jälkeen",
+    "Vorherige 200 Treffer": "Edelliset 200 osumaa",
+    "Weitere 200 Treffer": "Seuraavat 200 osumaa",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Esikatselu: {0}–{1}/{2} vastaavaa riviä"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17222,7 +17258,10 @@
     "Suche abgebrochen": "Arama iptal edildi",
     "Seite {0}": "Sayfa {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Önizleme: {1} eşleşen satırdan {0}",
-    "Nach aktueller Seite abbrechen": "Geçerli sayfadan sonra iptal et"
+    "Nach aktueller Seite abbrechen": "Geçerli sayfadan sonra iptal et",
+    "Vorherige 200 Treffer": "Önceki 200 eşleşme",
+    "Weitere 200 Treffer": "Sonraki 200 eşleşme",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Önizleme: {2} eşleşen satırdan {0}–{1}"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18547,7 +18586,10 @@
     "Suche abgebrochen": "Пошук скасовано",
     "Seite {0}": "Сторінка {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Перегляд: {0} з {1} відповідних рядків",
-    "Nach aktueller Seite abbrechen": "Скасувати після поточної сторінки"
+    "Nach aktueller Seite abbrechen": "Скасувати після поточної сторінки",
+    "Vorherige 200 Treffer": "Попередні 200 збігів",
+    "Weitere 200 Treffer": "Наступні 200 збігів",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Перегляд: {0}–{1} з {2} відповідних рядків"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19872,7 +19914,10 @@
     "Suche abgebrochen": "Η αναζήτηση ακυρώθηκε",
     "Seite {0}": "Σελίδα {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "Προεπισκόπηση: {0} από {1} αντίστοιχες γραμμές",
-    "Nach aktueller Seite abbrechen": "Ακύρωση μετά την τρέχουσα σελίδα"
+    "Nach aktueller Seite abbrechen": "Ακύρωση μετά την τρέχουσα σελίδα",
+    "Vorherige 200 Treffer": "Προηγούμενα 200 ευρήματα",
+    "Weitere 200 Treffer": "Επόμενα 200 ευρήματα",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Προεπισκόπηση: {0}–{1} από {2} αντίστοιχες γραμμές"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -21197,7 +21242,10 @@
     "Suche abgebrochen": "検索を中止しました",
     "Seite {0}": "ページ {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "プレビュー：一致する {1} 行のうち {0} 行",
-    "Nach aktueller Seite abbrechen": "現在のページの後で中止"
+    "Nach aktueller Seite abbrechen": "現在のページの後で中止",
+    "Vorherige 200 Treffer": "前の200件",
+    "Weitere 200 Treffer": "次の200件",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "プレビュー：一致する{2}行のうち{0}～{1}行"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -22522,7 +22570,10 @@
     "Suche abgebrochen": "검색이 취소되었습니다",
     "Seite {0}": "페이지 {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "미리 보기: 일치하는 {1}개 줄 중 {0}개",
-    "Nach aktueller Seite abbrechen": "현재 페이지 후 취소"
+    "Nach aktueller Seite abbrechen": "현재 페이지 후 취소",
+    "Vorherige 200 Treffer": "이전 200개 결과",
+    "Weitere 200 Treffer": "다음 200개 결과",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "미리 보기: 일치하는 {2}개 줄 중 {0}–{1}"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23847,7 +23898,10 @@
     "Suche abgebrochen": "تم إلغاء البحث",
     "Seite {0}": "الصفحة {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "معاينة: {0} من {1} سطر مطابق",
-    "Nach aktueller Seite abbrechen": "الإلغاء بعد الصفحة الحالية"
+    "Nach aktueller Seite abbrechen": "الإلغاء بعد الصفحة الحالية",
+    "Vorherige 200 Treffer": "النتائج الـ200 السابقة",
+    "Weitere 200 Treffer": "النتائج الـ200 التالية",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "معاينة: {0}–{1} من {2} سطر مطابق"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -25172,6 +25226,9 @@
     "Suche abgebrochen": "החיפוש בוטל",
     "Seite {0}": "עמוד {0}",
     "Vorschau: {0} von {1} passenden Zeilen": "תצוגה מקדימה: {0} מתוך {1} שורות תואמות",
-    "Nach aktueller Seite abbrechen": "ביטול אחרי העמוד הנוכחי"
+    "Nach aktueller Seite abbrechen": "ביטול אחרי העמוד הנוכחי",
+    "Vorherige 200 Treffer": "200 ההתאמות הקודמות",
+    "Weitere 200 Treffer": "200 ההתאמות הבאות",
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "תצוגה מקדימה: {0}–{1} מתוך {2} שורות תואמות"
   }
 }

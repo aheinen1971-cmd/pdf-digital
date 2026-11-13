@@ -2,6 +2,14 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Trefferübersicht, gemerkte Suchoptionen und Tastenkürzel
+
+- Suchbegriffe werden in der Textvorschau hervorgehoben, einschließlich Unicode-Faltung wie Straße/STRASSE. Vorschautext wird als Text behandelt, nicht als aktiver HTML-Inhalt.
+- Die Trefferliste lässt sich in Gruppen von höchstens 200 Zeilen vor- und zurückblättern. Gesamtzähler und Suchnavigation berücksichtigen alle Treffer; ein neuer Suchlauf beginnt wieder bei der ersten Gruppe.
+- **Ganze Wörter** und **Groß-/Kleinschreibung beachten** werden lokal gemerkt. Suchbegriffe, Treffertexte und Seitenbereiche werden dafür nicht gespeichert.
+- In der OCR-Wortprüfung führt **Strg+J** zum nächsten offenen Wort. **Strg+M** schaltet die Prüfmarkierung des gewählten Wortes um. Die Kürzel sind im Prüffenster sichtbar, gelten nur dort und ändern keinen PDF-Text automatisch. Die bestehende Speichererinnerung bleibt erhalten.
+- Alle 20 Oberflächensprachen; keine neue Veröffentlichung durch diese Vorbereitung.
+
 ### Neu in 1.69.0: Suchbereich, Trefferliste und Abbruchsteuerung
 
 - In der OCR-Korrektur alle Seiten, die aktuelle Seite oder einen Bereich durchsuchen. Ganze Wörter und Groß-/Kleinschreibung sind optional; ohne Groß-/Kleinschreibung wird Unicode-Faltung verwendet. Ganze Wörter orientieren sich an Unicode-Wortzeichen, nicht an einer sprachspezifischen Wortzerlegung.

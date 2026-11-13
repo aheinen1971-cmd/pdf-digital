@@ -9192,6 +9192,10 @@ class Window(QMainWindow):
         filters=QHBoxLayout()
         whole=QCheckBox(self.ui('Ganze Wörter'));whole.setObjectName('ocrSearchWhole');filters.addWidget(whole)
         sensitive=QCheckBox(self.ui('Groß-/Kleinschreibung beachten'));sensitive.setObjectName('ocrSearchCase');filters.addWidget(sensitive)
+        for control,key in ((whole,'ocr/search-whole'),(sensitive,'ocr/search-case')):
+            value=self.favorite_settings.value(key,False)
+            control.setChecked(value is True or str(value).lower() in ('true','1'))
+            control.toggled.connect(lambda checked,key=key:self.favorite_settings.setValue(key,checked))
         filters.addStretch()
         layout.insertLayout(3,options)
         layout.insertLayout(4,filters)
@@ -9200,20 +9204,63 @@ class Window(QMainWindow):
         layout.insertLayout(5,activity)
         preview_note=QLabel();preview_note.setObjectName('ocrSearchPreviewNote');layout.insertWidget(6,preview_note)
         preview=QListWidget();preview.setObjectName('ocrSearchResults');preview.setMaximumHeight(125);layout.insertWidget(7,preview)
-        # Bounded preview avoids creating thousands of GUI rows for large documents.
+        # Keep at most 200 rendered rows, including when browsing very large results.
+        import html
+        preview_offset=0
+        preview_navigation=QHBoxLayout()
+        earlier=QPushButton(self.ui('Vorherige 200 Treffer'));earlier.setObjectName('ocrPreviewEarlier');preview_navigation.addWidget(earlier)
+        more=QPushButton(self.ui('Weitere 200 Treffer'));more.setObjectName('ocrPreviewMore');preview_navigation.addWidget(more)
+        layout.insertLayout(8,preview_navigation)
         previews=[];pages=[];matcher=None
+        def excerpt(value):
+            folded='';mapping=[]
+            for index,char in enumerate(value):
+                part=char if sensitive.isChecked() else char.casefold()
+                folded+=part;mapping.extend([index]*len(part))
+            spans=[(mapping[m.start()],mapping[m.end()-1]+1) for m in matcher.finditer(folded) if m.end()>m.start()]
+            start=max(0,spans[0][0]-45) if spans else 0;end=min(len(value),start+180)
+            chunks=[];cursor=start
+            for left,right in spans:
+                if left>=end:break
+                if right<=start:continue
+                left=max(start,left);right=min(end,right)
+                if left<cursor:continue
+                chunks.append(html.escape(value[cursor:left]));chunks.append('<b style="background-color:#ffd166;color:#111">'+html.escape(value[left:right])+'</b>');cursor=right
+            chunks.append(html.escape(value[cursor:end]))
+            return ('…' if start else '')+''.join(chunks)+('…' if end<len(value) else '')
         def show_previews():
             preview.clear()
-            for target,text in previews:
-                item=QListWidgetItem(self.ui('Seite {0}').format(target[0]+1)+' · '+text)
-                item.setData(Qt.ItemDataRole.UserRole,target);preview.addItem(item)
-            preview_note.setText(self.ui('Vorschau: {0} von {1} passenden Zeilen').format(len(previews),len(matches)))
+            selected=matches[preview_offset:preview_offset+200] if matcher is not None else []
+            for target in selected:
+                value=normalized_lines(target[0])[target[1]]
+                prefix=self.ui('Seite {0}').format(target[0]+1)+' · '
+                item=QListWidgetItem();item.setData(Qt.ItemDataRole.UserRole,target)
+                item.setData(Qt.ItemDataRole.AccessibleTextRole,prefix+value);preview.addItem(item)
+                label=QLabel(html.escape(prefix)+excerpt(value));label.setTextFormat(Qt.TextFormat.RichText)
+                label.setStyleSheet('color:#143652;background-color:#f2f6fc;padding:2px;')
+                label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+                label.setAccessibleName(prefix+value);label.ensurePolished()
+                size=label.sizeHint();size.setHeight(max(size.height(),label.fontMetrics().height())+6)
+                item.setSizeHint(size);preview.setItemWidget(item,label)
+            if preview_offset:
+                preview_note.setText(self.ui('Vorschau: {0}–{1} von {2} passenden Zeilen').format(preview_offset+1,preview_offset+len(selected),len(matches)))
+            else:preview_note.setText(self.ui('Vorschau: {0} von {1} passenden Zeilen').format(len(selected),len(matches)))
+            earlier.setEnabled(preview_offset>0);more.setEnabled(preview_offset+200<len(matches))
+        def preview_page(direction):
+            nonlocal preview_offset
+            if worker.isActive() or search_timer.isActive():return
+            preview_offset=max(0,min(max(0,((len(matches)-1)//200)*200),preview_offset+direction*200))
+            show_previews()
+        earlier.clicked.connect(lambda:preview_page(-1));more.clicked.connect(lambda:preview_page(1))
         def jump_preview(item):
             target=item.data(Qt.ItemDataRole.UserRole)
             if target is not None:
                 selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0));position_status()
         preview.itemClicked.connect(jump_preview)
+        preview.itemActivated.connect(jump_preview)
         def cancel_search():
+            nonlocal preview_offset
+            preview_offset=0
             search_timer.stop();worker.stop();stop.setEnabled(False)
             matches.clear();previews.clear();show_previews()
             previous.setEnabled(False);following.setEnabled(False)
@@ -9252,8 +9299,7 @@ class Window(QMainWindow):
                         found=matcher.search(value if sensitive.isChecked() else value.casefold())
                         if found:
                             target=(number,index);matches.append(target)
-                            if len(previews)<200:
-                                offset=max(0,found.start()-45);previews.append((target,value[offset:offset+180]))
+
                     scan_page+=1;processed+=1
                     if time.monotonic()>=deadline:break
             except Exception as exc:
@@ -9271,8 +9317,9 @@ class Window(QMainWindow):
                 selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0))
             position_status()
         def find_line(direction=1,first=False):
-            nonlocal scan_page,query,destination,origin,pages,matcher
+            nonlocal scan_page,query,destination,origin,pages,matcher,preview_offset
             search_timer.stop();worker.stop();remember()
+            preview_offset=0
             query=normalize(search.text().strip());matches.clear();previews.clear();show_previews();scan_page=0
             if not sensitive.isChecked():query=query.casefold()
             pattern=re.escape(query)
@@ -9284,6 +9331,8 @@ class Window(QMainWindow):
             if not query:stop.setEnabled(False);position_status();return
             stop.setEnabled(True);search_status.setText(self.ui('Suche läuft …'));scan_step()
         def schedule_search(*_):
+            nonlocal preview_offset
+            preview_offset=0
             worker.stop();matches.clear();previews.clear();show_previews();previous.setEnabled(False);following.setEnabled(False);stop.setEnabled(False);progress_note.clear()
             if not search.text().strip():search_timer.stop();position_status();return
             stop.setEnabled(True);search_status.setText(self.ui('Suche läuft …'));search_timer.start()
