@@ -9178,9 +9178,47 @@ class Window(QMainWindow):
         following=QPushButton(self.ui("Nächste Fundstelle"));following.setObjectName("ocrSearchNext");search_row.addWidget(following)
         layout.insertLayout(2,search_row)
         search_status=QLabel();search_status.setObjectName("ocrSearchStatus");layout.insertWidget(3,search_status)
-        import unicodedata,time
+        import unicodedata,time,re
         from collections import OrderedDict
-        normalize=lambda value:unicodedata.normalize('NFC',value).casefold()
+        normalize=lambda value:unicodedata.normalize('NFC',value)
+        options=QHBoxLayout()
+        scope=QComboBox();scope.setObjectName('ocrSearchScope')
+        scope.addItems([self.ui('Alle Seiten'),self.ui('Aktuelle Seite'),self.ui('Seitenbereich')]);options.addWidget(scope)
+        first_page=QSpinBox();first_page.setObjectName('ocrSearchFrom');first_page.setRange(1,len(doc));first_page.setValue(1)
+        last_page=QSpinBox();last_page.setObjectName('ocrSearchTo');last_page.setRange(1,len(doc));last_page.setValue(len(doc))
+        first_page.setAccessibleName(self.ui('Von Seite'));last_page.setAccessibleName(self.ui('Bis Seite'))
+        options.addWidget(QLabel(self.ui('Von Seite')));options.addWidget(first_page)
+        options.addWidget(QLabel(self.ui('Bis Seite')));options.addWidget(last_page)
+        filters=QHBoxLayout()
+        whole=QCheckBox(self.ui('Ganze Wörter'));whole.setObjectName('ocrSearchWhole');filters.addWidget(whole)
+        sensitive=QCheckBox(self.ui('Groß-/Kleinschreibung beachten'));sensitive.setObjectName('ocrSearchCase');filters.addWidget(sensitive)
+        filters.addStretch()
+        layout.insertLayout(3,options)
+        layout.insertLayout(4,filters)
+        activity=QHBoxLayout();progress_note=QLabel();progress_note.setObjectName('ocrSearchProgress');activity.addWidget(progress_note)
+        stop=QPushButton(self.ui('Suche abbrechen'));stop.setObjectName('ocrSearchStop');stop.setEnabled(False);activity.addWidget(stop)
+        layout.insertLayout(5,activity)
+        preview_note=QLabel();preview_note.setObjectName('ocrSearchPreviewNote');layout.insertWidget(6,preview_note)
+        preview=QListWidget();preview.setObjectName('ocrSearchResults');preview.setMaximumHeight(125);layout.insertWidget(7,preview)
+        # Bounded preview avoids creating thousands of GUI rows for large documents.
+        previews=[];pages=[];matcher=None
+        def show_previews():
+            preview.clear()
+            for target,text in previews:
+                item=QListWidgetItem(self.ui('Seite {0}').format(target[0]+1)+' · '+text)
+                item.setData(Qt.ItemDataRole.UserRole,target);preview.addItem(item)
+            preview_note.setText(self.ui('Vorschau: {0} von {1} passenden Zeilen').format(len(previews),len(matches)))
+        def jump_preview(item):
+            target=item.data(Qt.ItemDataRole.UserRole)
+            if target is not None:
+                selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0));position_status()
+        preview.itemClicked.connect(jump_preview)
+        def cancel_search():
+            search_timer.stop();worker.stop();stop.setEnabled(False)
+            matches.clear();previews.clear();show_previews()
+            previous.setEnabled(False);following.setEnabled(False)
+            search_status.setText(self.ui('Suche abgebrochen'))
+        stop.clicked.connect(cancel_search)
         cache=OrderedDict();cache_chars=0
         matches=[];scan_page=0;query='';destination=(1,True);origin=(0,0)
         search_timer=QTimer(dialog);search_timer.setSingleShot(True);search_timer.setInterval(220)
@@ -9208,16 +9246,23 @@ class Window(QMainWindow):
             nonlocal scan_page
             deadline=time.monotonic()+0.012;processed=0
             try:
-                while scan_page<len(doc) and processed<8:
-                    matches.extend((scan_page,index) for index,value in enumerate(normalized_lines(scan_page)) if query in value)
+                while scan_page<len(pages) and processed<8:
+                    number=pages[scan_page]
+                    for index,value in enumerate(normalized_lines(number)):
+                        found=matcher.search(value if sensitive.isChecked() else value.casefold())
+                        if found:
+                            target=(number,index);matches.append(target)
+                            if len(previews)<200:
+                                offset=max(0,found.start()-45);previews.append((target,value[offset:offset+180]))
                     scan_page+=1;processed+=1
                     if time.monotonic()>=deadline:break
             except Exception as exc:
-                worker.stop();matches.clear();position_status();self.error(exc);return
-            if scan_page<len(doc):
+                cancel_search();self.error(exc);return
+            progress_note.setText(self.ui('Seite {0} von {1}').format(scan_page,len(pages)))
+            if scan_page<len(pages):
                 if not worker.isActive():worker.start()
                 return
-            worker.stop();previous.setEnabled(bool(matches));following.setEnabled(bool(matches))
+            worker.stop();stop.setEnabled(False);show_previews();previous.setEnabled(bool(matches));following.setEnabled(bool(matches))
             if matches:
                 direction,first=destination
                 if first:target=matches[0]
@@ -9226,23 +9271,40 @@ class Window(QMainWindow):
                 selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0))
             position_status()
         def find_line(direction=1,first=False):
-            nonlocal scan_page,query,destination,origin
+            nonlocal scan_page,query,destination,origin,pages,matcher
             search_timer.stop();worker.stop();remember()
-            query=normalize(search.text().strip());matches.clear();scan_page=0
+            query=normalize(search.text().strip());matches.clear();previews.clear();show_previews();scan_page=0
+            if not sensitive.isChecked():query=query.casefold()
+            pattern=re.escape(query)
+            if whole.isChecked():pattern=r'(?<!\w)'+pattern+r'(?!\w)'
+            matcher=re.compile(pattern)
+            pages=list(range(len(doc))) if scope.currentIndex()==0 else ([current] if scope.currentIndex()==1 else list(range(first_page.value()-1,last_page.value())))
             destination=(direction,first);origin=(current,rows.currentRow())
             previous.setEnabled(False);following.setEnabled(False)
-            if not query:position_status();return
-            search_status.setText(self.ui('Suche läuft …'));scan_step()
+            if not query:stop.setEnabled(False);position_status();return
+            stop.setEnabled(True);search_status.setText(self.ui('Suche läuft …'));scan_step()
         def schedule_search(*_):
-            worker.stop();matches.clear();previous.setEnabled(False);following.setEnabled(False)
+            worker.stop();matches.clear();previews.clear();show_previews();previous.setEnabled(False);following.setEnabled(False);stop.setEnabled(False);progress_note.clear()
             if not search.text().strip():search_timer.stop();position_status();return
-            search_status.setText(self.ui('Suche läuft …'));search_timer.start()
+            stop.setEnabled(True);search_status.setText(self.ui('Suche läuft …'));search_timer.start()
+        def update_options(*_):
+            first_page.setEnabled(scope.currentIndex()==2);last_page.setEnabled(scope.currentIndex()==2)
+            schedule_search()
+        def range_start(value):
+            last_page.setMinimum(value);update_options()
+        def range_end(value):
+            first_page.setMaximum(value);update_options()
+        scope.currentIndexChanged.connect(update_options)
+        first_page.valueChanged.connect(range_start);last_page.valueChanged.connect(range_end)
+        whole.toggled.connect(schedule_search);sensitive.toggled.connect(schedule_search)
+        first_page.setEnabled(False);last_page.setEnabled(False)
         worker.timeout.connect(scan_step);search_timer.timeout.connect(lambda:find_line(first=True))
         search.returnPressed.connect(lambda:find_line())
         search.textChanged.connect(schedule_search)
         rows.itemChanged.connect(schedule_search)
         rows.currentCellChanged.connect(position_status)
         previous.clicked.connect(lambda:find_line(-1));following.clicked.connect(lambda:find_line())
+        selector.valueChanged.connect(lambda *_:schedule_search() if scope.currentIndex()==1 else None)
         dialog.finished.connect(lambda *_:(search_timer.stop(),worker.stop()))
         previous.setEnabled(False);following.setEnabled(False)
         next_pending=QPushButton(self.ui('Nächste Seite mit offenen Prüfungen'));next_pending.setObjectName('ocrNextPendingPage');layout.insertWidget(4,next_pending)
@@ -9387,7 +9449,7 @@ class Window(QMainWindow):
         except Exception as exc:
             self.error(exc)
             return
-        progress = QProgressDialog(self.ui("Scan-Seiten werden erkannt …"), self.ui("Abbrechen"), 0, len(indices), self)
+        progress = QProgressDialog(self.ui("Scan-Seiten werden erkannt …"), self.ui("Nach aktueller Seite abbrechen"), 0, len(indices), self)
         progress.setWindowTitle(self.ui("Texterkennung"))
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0 if whole_document else 600)

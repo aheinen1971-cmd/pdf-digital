@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Suchbereich, Trefferliste und Abbruchsteuerung
+
+- In der OCR-Korrektur alle Seiten, die aktuelle Seite oder einen Bereich durchsuchen. Ganze Wörter und Groß-/Kleinschreibung sind optional; ohne Groß-/Kleinschreibung wird Unicode-Faltung verwendet. Ganze Wörter orientieren sich an Unicode-Wortzeichen, nicht an einer sprachspezifischen Wortzerlegung.
+- Die anklickbare Vorschau zeigt bis zu 200 passende Textzeilen mit Seitenzahl. Gesamtzähler und Vor-/Zurück-Navigation berücksichtigen alle passenden Zeilen, auch jenseits der Vorschau. Noch nicht übernommene Korrekturen werden mit durchsucht.
+- Suche mit Seitenfortschritt und eigenem Abbruchknopf. Abbrechen beendet die Suche, ohne Korrekturentwürfe zu verwerfen. Texterkennung kann nach der aktuellen Seite abbrechen; fertig erkannte Seiten bleiben im Dokument und können rückgängig gemacht werden. Gespeicherte Originaldateien werden dadurch nicht überschrieben.
+- Die Suche verarbeitet Seiten in kurzen Abschnitten. Eine einzelne aufwendige Seitenextraktion bzw. OCR-Seite kann nicht mitten im Aufruf unterbrochen werden. Keine automatische Textkorrektur. Bedienung in allen 20 Oberflächensprachen.
+
 ### Neu in 1.68.0: Schnellere Suche, Fundstellenanzeige und Prüfstandsfilter
 
 - Die OCR-Korrektursuche wartet kurz nach der Eingabe und verwendet bereits gelesene Textzeilen erneut. Große Suchläufe laufen in kleinen Abschnitten; geänderte Entwürfe werden weiterhin berücksichtigt. Der Zwischenspeicher bleibt nur im geöffneten Dialog.
