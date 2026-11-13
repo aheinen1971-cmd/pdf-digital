@@ -1,13 +1,13 @@
-# PDF Digital 1.70.0 für Windows
+# PDF Digital 1.71.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Vollständige Trefferzeile, Gruppensprung und Filterreset
+### Neu in 1.71.0: Vollständige Trefferzeile, Gruppensprung und Filterreset
 
 - **Ganze Trefferzeile anzeigen** klappt einen lesbaren, kopierbaren Textbereich für die ausgewählte Zeile auf. Auch lange Zeilen und Sonderzeichen werden vollständig als Text angezeigt; die Vorschau verändert keine PDF-Inhalte. Erneutes Betätigen klappt sie zu.
 - **Treffergruppe** und **Zur Treffergruppe** springen direkt zu einer Gruppe mit höchstens 200 Zeilen. Gruppe 5 zeigt beispielsweise Treffer 801–1000. Enter im Gruppenfeld führt den Sprung aus und übernimmt keine Korrekturen.
 - **Suchoptionen zurücksetzen** stellt alle Seiten, den vollständigen Seitenbereich, Teilsuche und Suche ohne Groß-/Kleinschreibung wieder her. Die beiden gespeicherten Optionen werden ebenfalls zurückgesetzt. Suchbegriff und Korrekturentwürfe bleiben erhalten.
-- Alle 20 Oberflächensprachen; derzeit lokal vorbereitet, noch nicht veröffentlicht.
+- Alle 20 Oberflächensprachen.
 
 ### Neu in 1.70.0: Trefferübersicht, gemerkte Suchoptionen und Tastenkürzel
 
@@ -127,7 +127,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.70.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.71.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -137,7 +137,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.70.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.71.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
