@@ -9204,13 +9204,36 @@ class Window(QMainWindow):
         layout.insertLayout(5,activity)
         preview_note=QLabel();preview_note.setObjectName('ocrSearchPreviewNote');layout.insertWidget(6,preview_note)
         preview=QListWidget();preview.setObjectName('ocrSearchResults');preview.setMaximumHeight(125);layout.insertWidget(7,preview)
+        from PySide6.QtWidgets import QPlainTextEdit
+        expand=QPushButton(self.ui('Ganze Trefferzeile anzeigen'));expand.setObjectName('ocrPreviewExpand')
+        expand.setCheckable(True);expand.setAutoDefault(False);expand.setEnabled(False)
+        full_text=QPlainTextEdit();full_text.setObjectName('ocrPreviewFullText');full_text.setReadOnly(True)
+        full_text.setMaximumHeight(100);full_text.setAccessibleName(self.ui('Ganze Trefferzeile anzeigen'));full_text.hide()
+        layout.insertWidget(8,full_text)
+        def full_preview(*_):
+            item=preview.currentItem()
+            full_text.setPlainText(item.data(Qt.ItemDataRole.UserRole+1) if item else '')
+            expand.setEnabled(item is not None)
+            full_text.setVisible(expand.isChecked() and item is not None)
+        expand.toggled.connect(full_preview);preview.currentItemChanged.connect(full_preview)
         # Keep at most 200 rendered rows, including when browsing very large results.
         import html
         preview_offset=0
         preview_navigation=QHBoxLayout()
         earlier=QPushButton(self.ui('Vorherige 200 Treffer'));earlier.setObjectName('ocrPreviewEarlier');preview_navigation.addWidget(earlier)
         more=QPushButton(self.ui('Weitere 200 Treffer'));more.setObjectName('ocrPreviewMore');preview_navigation.addWidget(more)
-        layout.insertLayout(8,preview_navigation)
+        preview_navigation.addWidget(expand)
+        layout.insertLayout(9,preview_navigation)
+        group_row=QHBoxLayout();group_row.addWidget(QLabel(self.ui('Treffergruppe')))
+        class ResultGroupSpin(QSpinBox):
+            def keyPressEvent(self,event):
+                if event.key() in (Qt.Key.Key_Return,Qt.Key.Key_Enter):go_group();event.accept()
+                else:super().keyPressEvent(event)
+        group=ResultGroupSpin();group.setObjectName('ocrPreviewGroup');group.setRange(1,1);group.setKeyboardTracking(False);group.setAccessibleName(self.ui('Treffergruppe'));group_row.addWidget(group)
+        jump_group=QPushButton(self.ui('Zur Treffergruppe'));jump_group.setObjectName('ocrPreviewGroupGo');jump_group.setAutoDefault(False);group_row.addWidget(jump_group)
+        reset_search=QPushButton(self.ui('Suchoptionen zurücksetzen'));reset_search.setObjectName('ocrSearchReset');reset_search.setAutoDefault(False);group_row.addWidget(reset_search)
+        group.setEnabled(False);jump_group.setEnabled(False)
+        layout.insertLayout(10,group_row)
         previews=[];pages=[];matcher=None
         def excerpt(value):
             folded='';mapping=[]
@@ -9235,6 +9258,7 @@ class Window(QMainWindow):
                 value=normalized_lines(target[0])[target[1]]
                 prefix=self.ui('Seite {0}').format(target[0]+1)+' · '
                 item=QListWidgetItem();item.setData(Qt.ItemDataRole.UserRole,target)
+                item.setData(Qt.ItemDataRole.UserRole+1,value)
                 item.setData(Qt.ItemDataRole.AccessibleTextRole,prefix+value);preview.addItem(item)
                 label=QLabel(html.escape(prefix)+excerpt(value));label.setTextFormat(Qt.TextFormat.RichText)
                 label.setStyleSheet('color:#143652;background-color:#f2f6fc;padding:2px;')
@@ -9246,12 +9270,21 @@ class Window(QMainWindow):
                 preview_note.setText(self.ui('Vorschau: {0}–{1} von {2} passenden Zeilen').format(preview_offset+1,preview_offset+len(selected),len(matches)))
             else:preview_note.setText(self.ui('Vorschau: {0} von {1} passenden Zeilen').format(len(selected),len(matches)))
             earlier.setEnabled(preview_offset>0);more.setEnabled(preview_offset+200<len(matches))
+            group.setMaximum(max(1,(len(matches)+199)//200));group.setValue(preview_offset//200+1)
+            group.setEnabled(bool(matches));jump_group.setEnabled(bool(matches))
+            if selected:preview.setCurrentRow(0)
+            full_preview()
         def preview_page(direction):
             nonlocal preview_offset
             if worker.isActive() or search_timer.isActive():return
             preview_offset=max(0,min(max(0,((len(matches)-1)//200)*200),preview_offset+direction*200))
             show_previews()
         earlier.clicked.connect(lambda:preview_page(-1));more.clicked.connect(lambda:preview_page(1))
+        def go_group():
+            nonlocal preview_offset
+            if worker.isActive() or search_timer.isActive():return
+            group.interpretText();preview_offset=(group.value()-1)*200;show_previews()
+        jump_group.clicked.connect(go_group)
         def jump_preview(item):
             target=item.data(Qt.ItemDataRole.UserRole)
             if target is not None:
@@ -9346,6 +9379,17 @@ class Window(QMainWindow):
         scope.currentIndexChanged.connect(update_options)
         first_page.valueChanged.connect(range_start);last_page.valueChanged.connect(range_end)
         whole.toggled.connect(schedule_search);sensitive.toggled.connect(schedule_search)
+        def reset_options():
+            for control in (whole,sensitive,scope,first_page,last_page):control.blockSignals(True)
+            try:
+                whole.setChecked(False);sensitive.setChecked(False);scope.setCurrentIndex(0)
+                first_page.setMaximum(len(doc));last_page.setMinimum(1)
+                first_page.setValue(1);last_page.setValue(len(doc))
+                for key in ('ocr/search-whole','ocr/search-case'):self.favorite_settings.setValue(key,False)
+            finally:
+                for control in (whole,sensitive,scope,first_page,last_page):control.blockSignals(False)
+            update_options()
+        reset_search.clicked.connect(reset_options)
         first_page.setEnabled(False);last_page.setEnabled(False)
         worker.timeout.connect(scan_step);search_timer.timeout.connect(lambda:find_line(first=True))
         search.returnPressed.connect(lambda:find_line())

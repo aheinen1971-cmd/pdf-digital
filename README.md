@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Vollständige Trefferzeile, Gruppensprung und Filterreset
+
+- **Ganze Trefferzeile anzeigen** klappt einen lesbaren, kopierbaren Textbereich für die ausgewählte Zeile auf. Auch lange Zeilen und Sonderzeichen werden vollständig als Text angezeigt; die Vorschau verändert keine PDF-Inhalte. Erneutes Betätigen klappt sie zu.
+- **Treffergruppe** und **Zur Treffergruppe** springen direkt zu einer Gruppe mit höchstens 200 Zeilen. Gruppe 5 zeigt beispielsweise Treffer 801–1000. Enter im Gruppenfeld führt den Sprung aus und übernimmt keine Korrekturen.
+- **Suchoptionen zurücksetzen** stellt alle Seiten, den vollständigen Seitenbereich, Teilsuche und Suche ohne Groß-/Kleinschreibung wieder her. Die beiden gespeicherten Optionen werden ebenfalls zurückgesetzt. Suchbegriff und Korrekturentwürfe bleiben erhalten.
+- Alle 20 Oberflächensprachen; derzeit lokal vorbereitet, noch nicht veröffentlicht.
+
 ### Neu in 1.70.0: Trefferübersicht, gemerkte Suchoptionen und Tastenkürzel
 
 - Suchbegriffe werden in der Textvorschau hervorgehoben, einschließlich Unicode-Faltung wie Straße/STRASSE. Vorschautext wird als Text behandelt, nicht als aktiver HTML-Inhalt.

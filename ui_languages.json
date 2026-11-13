@@ -1325,7 +1325,11 @@
     "Nach aktueller Seite abbrechen": "Cancel after current page",
     "Vorherige 200 Treffer": "Previous 200 matches",
     "Weitere 200 Treffer": "Next 200 matches",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Preview: {0}–{1} of {2} matching lines"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Preview: {0}–{1} of {2} matching lines",
+    "Ganze Trefferzeile anzeigen": "Show full matching line",
+    "Treffergruppe": "Result group",
+    "Zur Treffergruppe": "Go to result group",
+    "Suchoptionen zurücksetzen": "Reset search options"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2653,7 +2657,11 @@
     "Nach aktueller Seite abbrechen": "Annuler après la page actuelle",
     "Vorherige 200 Treffer": "200 résultats précédents",
     "Weitere 200 Treffer": "200 résultats suivants",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Aperçu : {0}–{1} sur {2} lignes correspondantes"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Aperçu : {0}–{1} sur {2} lignes correspondantes",
+    "Ganze Trefferzeile anzeigen": "Afficher toute la ligne trouvée",
+    "Treffergruppe": "Groupe de résultats",
+    "Zur Treffergruppe": "Aller au groupe",
+    "Suchoptionen zurücksetzen": "Réinitialiser les options de recherche"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3981,7 +3989,11 @@
     "Nach aktueller Seite abbrechen": "Cancelar después de la página actual",
     "Vorherige 200 Treffer": "200 resultados anteriores",
     "Weitere 200 Treffer": "200 resultados siguientes",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Vista previa: {0}–{1} de {2} líneas coincidentes"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Vista previa: {0}–{1} de {2} líneas coincidentes",
+    "Ganze Trefferzeile anzeigen": "Mostrar la línea completa",
+    "Treffergruppe": "Grupo de resultados",
+    "Zur Treffergruppe": "Ir al grupo",
+    "Suchoptionen zurücksetzen": "Restablecer opciones de búsqueda"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5309,7 +5321,11 @@
     "Nach aktueller Seite abbrechen": "Annuleren na huidige pagina",
     "Vorherige 200 Treffer": "Vorige 200 treffers",
     "Weitere 200 Treffer": "Volgende 200 treffers",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Voorbeeld: {0}–{1} van {2} overeenkomende regels"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Voorbeeld: {0}–{1} van {2} overeenkomende regels",
+    "Ganze Trefferzeile anzeigen": "Volledige gevonden regel tonen",
+    "Treffergruppe": "Resultaatgroep",
+    "Zur Treffergruppe": "Naar resultaatgroep",
+    "Suchoptionen zurücksetzen": "Zoekopties herstellen"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6637,7 +6653,11 @@
     "Nach aktueller Seite abbrechen": "Annulla dopo la pagina corrente",
     "Vorherige 200 Treffer": "200 risultati precedenti",
     "Weitere 200 Treffer": "200 risultati successivi",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Anteprima: {0}–{1} di {2} righe corrispondenti"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Anteprima: {0}–{1} di {2} righe corrispondenti",
+    "Ganze Trefferzeile anzeigen": "Mostra la riga completa",
+    "Treffergruppe": "Gruppo di risultati",
+    "Zur Treffergruppe": "Vai al gruppo",
+    "Suchoptionen zurücksetzen": "Reimposta opzioni di ricerca"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7965,7 +7985,11 @@
     "Nach aktueller Seite abbrechen": "Cancelar após a página atual",
     "Vorherige 200 Treffer": "200 resultados anteriores",
     "Weitere 200 Treffer": "200 resultados seguintes",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Pré-visualização: {0}–{1} de {2} linhas correspondentes"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Pré-visualização: {0}–{1} de {2} linhas correspondentes",
+    "Ganze Trefferzeile anzeigen": "Mostrar linha completa",
+    "Treffergruppe": "Grupo de resultados",
+    "Zur Treffergruppe": "Ir para o grupo",
+    "Suchoptionen zurücksetzen": "Repor opções de pesquisa"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9293,7 +9317,11 @@
     "Nach aktueller Seite abbrechen": "Anuluj po bieżącej stronie",
     "Vorherige 200 Treffer": "Poprzednie 200 trafień",
     "Weitere 200 Treffer": "Następne 200 trafień",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Podgląd: {0}–{1} z {2} pasujących wierszy"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Podgląd: {0}–{1} z {2} pasujących wierszy",
+    "Ganze Trefferzeile anzeigen": "Pokaż cały znaleziony wiersz",
+    "Treffergruppe": "Grupa wyników",
+    "Zur Treffergruppe": "Przejdź do grupy",
+    "Suchoptionen zurücksetzen": "Resetuj opcje wyszukiwania"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10621,7 +10649,11 @@
     "Nach aktueller Seite abbrechen": "Zrušit po aktuální stránce",
     "Vorherige 200 Treffer": "Předchozích 200 výsledků",
     "Weitere 200 Treffer": "Dalších 200 výsledků",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Náhled: {0}–{1} z {2} odpovídajících řádků"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Náhled: {0}–{1} z {2} odpovídajících řádků",
+    "Ganze Trefferzeile anzeigen": "Zobrazit celý nalezený řádek",
+    "Treffergruppe": "Skupina výsledků",
+    "Zur Treffergruppe": "Přejít na skupinu",
+    "Suchoptionen zurücksetzen": "Obnovit možnosti hledání"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11949,7 +11981,11 @@
     "Nach aktueller Seite abbrechen": "Annuller efter aktuel side",
     "Vorherige 200 Treffer": "Forrige 200 fund",
     "Weitere 200 Treffer": "Næste 200 fund",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Forhåndsvisning: {0}–{1} af {2} matchende linjer"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Forhåndsvisning: {0}–{1} af {2} matchende linjer",
+    "Ganze Trefferzeile anzeigen": "Vis hele den fundne linje",
+    "Treffergruppe": "Resultatgruppe",
+    "Zur Treffergruppe": "Gå til resultatgruppe",
+    "Suchoptionen zurücksetzen": "Nulstil søgeindstillinger"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13277,7 +13313,11 @@
     "Nach aktueller Seite abbrechen": "Avbryt efter aktuell sida",
     "Vorherige 200 Treffer": "Föregående 200 träffar",
     "Weitere 200 Treffer": "Nästa 200 träffar",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Förhandsvisning: {0}–{1} av {2} matchande rader"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Förhandsvisning: {0}–{1} av {2} matchande rader",
+    "Ganze Trefferzeile anzeigen": "Visa hela den hittade raden",
+    "Treffergruppe": "Resultatgrupp",
+    "Zur Treffergruppe": "Gå till resultatgrupp",
+    "Suchoptionen zurücksetzen": "Återställ sökalternativ"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14605,7 +14645,11 @@
     "Nach aktueller Seite abbrechen": "Avbryt etter gjeldende side",
     "Vorherige 200 Treffer": "Forrige 200 treff",
     "Weitere 200 Treffer": "Neste 200 treff",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Forhåndsvisning: {0}–{1} av {2} samsvarende linjer"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Forhåndsvisning: {0}–{1} av {2} samsvarende linjer",
+    "Ganze Trefferzeile anzeigen": "Vis hele den funne linjen",
+    "Treffergruppe": "Resultatgruppe",
+    "Zur Treffergruppe": "Gå til resultatgruppe",
+    "Suchoptionen zurücksetzen": "Tilbakestill søkevalg"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15933,7 +15977,11 @@
     "Nach aktueller Seite abbrechen": "Peruuta nykyisen sivun jälkeen",
     "Vorherige 200 Treffer": "Edelliset 200 osumaa",
     "Weitere 200 Treffer": "Seuraavat 200 osumaa",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Esikatselu: {0}–{1}/{2} vastaavaa riviä"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Esikatselu: {0}–{1}/{2} vastaavaa riviä",
+    "Ganze Trefferzeile anzeigen": "Näytä koko löytynyt rivi",
+    "Treffergruppe": "Tulosryhmä",
+    "Zur Treffergruppe": "Siirry tulosryhmään",
+    "Suchoptionen zurücksetzen": "Palauta hakuasetukset"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17261,7 +17309,11 @@
     "Nach aktueller Seite abbrechen": "Geçerli sayfadan sonra iptal et",
     "Vorherige 200 Treffer": "Önceki 200 eşleşme",
     "Weitere 200 Treffer": "Sonraki 200 eşleşme",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Önizleme: {2} eşleşen satırdan {0}–{1}"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Önizleme: {2} eşleşen satırdan {0}–{1}",
+    "Ganze Trefferzeile anzeigen": "Eşleşen satırın tamamını göster",
+    "Treffergruppe": "Sonuç grubu",
+    "Zur Treffergruppe": "Sonuç grubuna git",
+    "Suchoptionen zurücksetzen": "Arama seçeneklerini sıfırla"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18589,7 +18641,11 @@
     "Nach aktueller Seite abbrechen": "Скасувати після поточної сторінки",
     "Vorherige 200 Treffer": "Попередні 200 збігів",
     "Weitere 200 Treffer": "Наступні 200 збігів",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Перегляд: {0}–{1} з {2} відповідних рядків"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Перегляд: {0}–{1} з {2} відповідних рядків",
+    "Ganze Trefferzeile anzeigen": "Показати весь знайдений рядок",
+    "Treffergruppe": "Група результатів",
+    "Zur Treffergruppe": "Перейти до групи",
+    "Suchoptionen zurücksetzen": "Скинути параметри пошуку"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19917,7 +19973,11 @@
     "Nach aktueller Seite abbrechen": "Ακύρωση μετά την τρέχουσα σελίδα",
     "Vorherige 200 Treffer": "Προηγούμενα 200 ευρήματα",
     "Weitere 200 Treffer": "Επόμενα 200 ευρήματα",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Προεπισκόπηση: {0}–{1} από {2} αντίστοιχες γραμμές"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "Προεπισκόπηση: {0}–{1} από {2} αντίστοιχες γραμμές",
+    "Ganze Trefferzeile anzeigen": "Εμφάνιση ολόκληρης γραμμής",
+    "Treffergruppe": "Ομάδα αποτελεσμάτων",
+    "Zur Treffergruppe": "Μετάβαση στην ομάδα",
+    "Suchoptionen zurücksetzen": "Επαναφορά επιλογών αναζήτησης"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -21245,7 +21305,11 @@
     "Nach aktueller Seite abbrechen": "現在のページの後で中止",
     "Vorherige 200 Treffer": "前の200件",
     "Weitere 200 Treffer": "次の200件",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "プレビュー：一致する{2}行のうち{0}～{1}行"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "プレビュー：一致する{2}行のうち{0}～{1}行",
+    "Ganze Trefferzeile anzeigen": "一致した行全体を表示",
+    "Treffergruppe": "結果グループ",
+    "Zur Treffergruppe": "グループに移動",
+    "Suchoptionen zurücksetzen": "検索オプションをリセット"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -22573,7 +22637,11 @@
     "Nach aktueller Seite abbrechen": "현재 페이지 후 취소",
     "Vorherige 200 Treffer": "이전 200개 결과",
     "Weitere 200 Treffer": "다음 200개 결과",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "미리 보기: 일치하는 {2}개 줄 중 {0}–{1}"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "미리 보기: 일치하는 {2}개 줄 중 {0}–{1}",
+    "Ganze Trefferzeile anzeigen": "일치하는 줄 전체 보기",
+    "Treffergruppe": "결과 그룹",
+    "Zur Treffergruppe": "그룹으로 이동",
+    "Suchoptionen zurücksetzen": "검색 옵션 초기화"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23901,7 +23969,11 @@
     "Nach aktueller Seite abbrechen": "الإلغاء بعد الصفحة الحالية",
     "Vorherige 200 Treffer": "النتائج الـ200 السابقة",
     "Weitere 200 Treffer": "النتائج الـ200 التالية",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "معاينة: {0}–{1} من {2} سطر مطابق"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "معاينة: {0}–{1} من {2} سطر مطابق",
+    "Ganze Trefferzeile anzeigen": "عرض السطر المطابق كاملاً",
+    "Treffergruppe": "مجموعة النتائج",
+    "Zur Treffergruppe": "الانتقال إلى المجموعة",
+    "Suchoptionen zurücksetzen": "إعادة ضبط خيارات البحث"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -25229,6 +25301,10 @@
     "Nach aktueller Seite abbrechen": "ביטול אחרי העמוד הנוכחי",
     "Vorherige 200 Treffer": "200 ההתאמות הקודמות",
     "Weitere 200 Treffer": "200 ההתאמות הבאות",
-    "Vorschau: {0}–{1} von {2} passenden Zeilen": "תצוגה מקדימה: {0}–{1} מתוך {2} שורות תואמות"
+    "Vorschau: {0}–{1} von {2} passenden Zeilen": "תצוגה מקדימה: {0}–{1} מתוך {2} שורות תואמות",
+    "Ganze Trefferzeile anzeigen": "הצגת כל השורה התואמת",
+    "Treffergruppe": "קבוצת תוצאות",
+    "Zur Treffergruppe": "מעבר לקבוצה",
+    "Suchoptionen zurücksetzen": "איפוס אפשרויות החיפוש"
   }
 }
