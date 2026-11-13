@@ -45,6 +45,17 @@ def write(record,remove=False):
     if s.status()!=s.Status.NoError:
         s.setValue(KEY,before);s.sync();raise OSError('Review storage failed')
 
+def next_pending_record(parent,doc,current):
+    """Only recorded, matching pages count as pending; unknown pages are not completed."""
+    records=read()+list(getattr(parent,'_ocr_review_memory',{}).values())
+    key=document_key(doc)
+    matched={r['page']:r for r in records if r['doc']==key and 0<=r['page']<len(doc)}
+    for offset in range(1,len(doc)+1):
+        page=(current+offset)%len(doc);r=matched.get(page)
+        if r and any(score<r['threshold'] and i not in r['reviewed'] for i,score in enumerate(r['scores'])):return r
+    return None
+
+
 def summary(parent,doc):
     """Ask only when OCR review metadata exists; current document hash is mandatory."""
     from PySide6.QtWidgets import QDialog,QVBoxLayout,QLabel,QTableWidget,QTableWidgetItem,QDialogButtonBox,QPushButton
@@ -84,6 +95,16 @@ def summary(parent,doc):
         if r is None:return
         dialog.reject()
         open_record(parent,doc,r,first_open=True)
+    next_page=QPushButton(tr('Nächste Seite mit offenen Prüfungen'));next_page.setObjectName('nextPendingPage');layout.addWidget(next_page)
+    next_page.setEnabled(any(any(v<r['threshold'] and i not in r['reviewed'] for i,v in enumerate(r['scores'])) for r in matched.values()))
+    def navigate_next():
+        try:
+            r=next_pending_record(parent,doc,table.currentRow())
+            if r:
+                table.setCurrentCell(r['page'],0)
+                dialog.reject();open_record(parent,doc,r,first_open=True)
+        except (ValueError,OSError,TypeError):parent.error(tr('Prüfstand konnte nicht gelesen oder gespeichert werden.'))
+    next_page.clicked.connect(navigate_next)
     jump.clicked.connect(navigate)
     table.cellDoubleClicked.connect(lambda *_: navigate())
     buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
@@ -139,7 +160,7 @@ def checkpoints(parent,doc):
 
 
 def compare_corrections(parent,doc,edits):
-    from PySide6.QtWidgets import QDialog,QVBoxLayout,QTableWidget,QTableWidgetItem,QDialogButtonBox,QHeaderView,QLabel,QScrollArea
+    from PySide6.QtWidgets import QDialog,QVBoxLayout,QTableWidget,QTableWidgetItem,QDialogButtonBox,QHeaderView,QLabel,QScrollArea,QPushButton,QHBoxLayout
     from PySide6.QtGui import QPixmap,QImage
     from PySide6.QtCore import Qt
     import pymupdf as pdf
@@ -158,13 +179,26 @@ def compare_corrections(parent,doc,edits):
     label=QLabel(tr('Scan-Ausschnitt der ausgewählten Zeile'));layout.addWidget(label)
     area=QScrollArea();area.setMinimumHeight(160);area.setMaximumHeight(260)
     preview=QLabel();preview.setObjectName('scanExcerpt');preview.setAlignment(Qt.AlignmentFlag.AlignCenter);area.setWidget(preview);layout.addWidget(area)
+    controls=QHBoxLayout();layout.addLayout(controls)
+    zoom_out=QPushButton('−');zoom_out.setAccessibleName(tr('Verkleinern'));zoom_out.setObjectName('scanZoomOut')
+    zoom_in=QPushButton('+');zoom_in.setAccessibleName(tr('Vergrößern'));zoom_in.setObjectName('scanZoomIn')
+    fit=QPushButton(tr('Einpassen'));fit.setObjectName('scanFit')
+    zoom_label=QLabel('100 %');zoom_label.setObjectName('scanZoomValue')
+    for widget in (zoom_out,zoom_in,fit,zoom_label):controls.addWidget(widget)
+    zoom=100
+    def change_zoom(value):
+        nonlocal zoom
+        zoom=max(25,min(800,value));show_excerpt(table.currentRow())
+    zoom_out.clicked.connect(lambda:change_zoom(zoom//2));zoom_in.clicked.connect(lambda:change_zoom(zoom*2));fit.clicked.connect(lambda:change_zoom(100))
     def show_excerpt(row,*_):
         if not 0<=row<len(changes):return
         page_no,_,_,box=changes[row];page=doc[page_no-1]
         clip=(pdf.Rect(box)*page.rotation_matrix)+(-8,-8,8,8)
         clip=clip & page.rect
         try:
-            scale=min(2.0,1400/max(1,clip.width),220/max(1,clip.height))
+            base_scale=min(2.0,min(1400,max(100,area.viewport().width()-4))/max(1,clip.width),min(220,max(100,area.viewport().height()-4))/max(1,clip.height))
+            scale=min(base_scale*zoom/100,4096/max(1,clip.width),4096/max(1,clip.height),(8000000/max(1,clip.width*clip.height))**0.5)
+            zoom_label.setText(str(zoom)+' %');zoom_out.setEnabled(zoom>25);zoom_in.setEnabled(zoom<800)
             pix=page.get_pixmap(matrix=pdf.Matrix(scale,scale),clip=clip,colorspace=pdf.csRGB,alpha=False)
             shown=QPixmap.fromImage(QImage(pix.samples,pix.width,pix.height,pix.stride,QImage.Format.Format_RGB888).copy())
             preview.setPixmap(shown);preview.resize(shown.size())

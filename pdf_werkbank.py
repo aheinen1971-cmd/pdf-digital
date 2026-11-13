@@ -9165,6 +9165,49 @@ class Window(QMainWindow):
                            if lines else "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus."))
             highlight(0)
 
+        search_row=QHBoxLayout()
+        class OCRSearchEdit(QLineEdit):
+            def keyPressEvent(self,event):
+                if event.key() in (Qt.Key.Key_Return,Qt.Key.Key_Enter):
+                    self.returnPressed.emit();event.accept()
+                else:super().keyPressEvent(event)
+        search=OCRSearchEdit();search.setPlaceholderText(self.ui("OCR-Korrekturzeilen durchsuchen"));search.setObjectName("ocrLineSearch");search_row.addWidget(search)
+        previous=QPushButton(self.ui("Vorherige Fundstelle"));previous.setObjectName("ocrSearchPrevious");search_row.addWidget(previous)
+        following=QPushButton(self.ui("Nächste Fundstelle"));following.setObjectName("ocrSearchNext");search_row.addWidget(following)
+        layout.insertLayout(2,search_row)
+        search_status=QLabel();search_status.setObjectName("ocrSearchStatus");layout.insertWidget(3,search_status)
+        def find_line(direction=1,first=False):
+            import unicodedata
+            remember()
+            normalize=lambda value:unicodedata.normalize('NFC',value).casefold()
+            query=normalize(search.text().strip());matches=[]
+            if query:
+                for number in range(len(doc)):
+                    values=edits.get(number)
+                    if values is None:values=[line[3] for line in ocr_lines(doc[number])]
+                    matches.extend((number,index) for index,value in enumerate(values) if query in normalize(value))
+            search_status.setText(self.ui('{0} passende Zeilen').format(len(matches)))
+            previous.setEnabled(bool(matches));following.setEnabled(bool(matches))
+            if not matches:return
+            here=(current,rows.currentRow())
+            if first:target=matches[0]
+            elif direction>0:target=next((item for item in matches if item>here),matches[0])
+            else:target=next((item for item in reversed(matches) if item<here),matches[-1])
+            selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0))
+        search.returnPressed.connect(lambda:find_line())
+        search.textChanged.connect(lambda *_:find_line(first=True))
+        previous.clicked.connect(lambda:find_line(-1));following.clicked.connect(lambda:find_line())
+        previous.setEnabled(False);following.setEnabled(False)
+        next_pending=QPushButton(self.ui('Nächste Seite mit offenen Prüfungen'));next_pending.setObjectName('ocrNextPendingPage');layout.insertWidget(4,next_pending)
+        pending_note=QLabel(self.ui('Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.'));pending_note.setWordWrap(True);layout.insertWidget(5,pending_note)
+        def open_next_pending():
+            from ocr_review_state import next_pending_record,open_record
+            try:
+                r=next_pending_record(self,doc,current)
+                if r is None:pending_note.setText(self.ui('Keine weiteren erfassten offenen Prüfungen.'));return
+                selector.setValue(r['page']+1);open_record(self,doc,r,first_open=True)
+            except Exception as exc:self.error(exc)
+        next_pending.clicked.connect(open_next_pending)
         selector.valueChanged.connect(load)
         rows.currentCellChanged.connect(highlight)
         load(initial + 1)

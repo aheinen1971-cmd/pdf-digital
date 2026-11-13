@@ -1298,7 +1298,15 @@
     "Weiterprüfen": "Continue reviewing",
     "Keine offenen Wörter unter diesem Prüfwert.": "No pending words below this confidence threshold.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Scan excerpt of the selected line",
-    "Scan-Ausschnitt nicht verfügbar.": "Scan excerpt unavailable."
+    "Scan-Ausschnitt nicht verfügbar.": "Scan excerpt unavailable.",
+    "Einpassen": "Fit",
+    "OCR-Korrekturzeilen durchsuchen": "Search OCR correction lines",
+    "Vorherige Fundstelle": "Previous match",
+    "Nächste Fundstelle": "Next match",
+    "{0} passende Zeilen": "{0} matching lines",
+    "Nächste Seite mit offenen Prüfungen": "Next page with pending reviews",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Pages without matching review progress remain unreviewed.",
+    "Keine weiteren erfassten offenen Prüfungen.": "No other recorded pending reviews."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -1693,8 +1701,8 @@
     "Update-Ordner": "Mettre à jour le dossier",
     "Updates": "Mises à jour",
     "Verbessern": "Améliorer",
-    "Vergrößern": "Zoomer",
-    "Verkleinern": "Zoom arrière",
+    "Vergrößern": "Agrandir",
+    "Verkleinern": "Réduire",
     "Versandcheck": "Chèque d'expédition",
     "Versandcheck abgeschlossen": "Contrôle d'expédition terminé",
     "Versandkopie": "Copie d'expédition",
@@ -2599,7 +2607,15 @@
     "Weiterprüfen": "Continuer la vérification",
     "Keine offenen Wörter unter diesem Prüfwert.": "Aucun mot à vérifier sous ce seuil.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Extrait du scan de la ligne sélectionnée",
-    "Scan-Ausschnitt nicht verfügbar.": "Extrait du scan indisponible."
+    "Scan-Ausschnitt nicht verfügbar.": "Extrait du scan indisponible.",
+    "Einpassen": "Ajuster",
+    "OCR-Korrekturzeilen durchsuchen": "Rechercher dans les lignes OCR",
+    "Vorherige Fundstelle": "Résultat précédent",
+    "Nächste Fundstelle": "Résultat suivant",
+    "{0} passende Zeilen": "{0} lignes correspondantes",
+    "Nächste Seite mit offenen Prüfungen": "Page suivante avec des vérifications en attente",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Les pages sans vérification correspondante restent non vérifiées.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Aucune autre vérification en attente enregistrée."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3900,7 +3916,15 @@
     "Weiterprüfen": "Seguir revisando",
     "Keine offenen Wörter unter diesem Prüfwert.": "No hay palabras pendientes por debajo de este umbral.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Fragmento escaneado de la línea seleccionada",
-    "Scan-Ausschnitt nicht verfügbar.": "Fragmento escaneado no disponible."
+    "Scan-Ausschnitt nicht verfügbar.": "Fragmento escaneado no disponible.",
+    "Einpassen": "Ajustar",
+    "OCR-Korrekturzeilen durchsuchen": "Buscar en líneas de corrección OCR",
+    "Vorherige Fundstelle": "Coincidencia anterior",
+    "Nächste Fundstelle": "Coincidencia siguiente",
+    "{0} passende Zeilen": "{0} líneas coincidentes",
+    "Nächste Seite mit offenen Prüfungen": "Siguiente página con revisiones pendientes",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Las páginas sin progreso coincidente siguen sin revisar.",
+    "Keine weiteren erfassten offenen Prüfungen.": "No hay más revisiones pendientes registradas."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -4295,8 +4319,8 @@
     "Update-Ordner": "Map bijwerken",
     "Updates": "-updates",
     "Verbessern": "Verbeteren",
-    "Vergrößern": "Inzoomen",
-    "Verkleinern": "Uitzoomen",
+    "Vergrößern": "Vergroten",
+    "Verkleinern": "Verkleinen",
     "Versandcheck": "Verzendingscontrole",
     "Versandcheck abgeschlossen": "Verzendingscontrole voltooid",
     "Versandkopie": "Verzendexemplaar",
@@ -5201,7 +5225,15 @@
     "Weiterprüfen": "Verder controleren",
     "Keine offenen Wörter unter diesem Prüfwert.": "Geen openstaande woorden onder deze drempel.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Scanuitsnede van de geselecteerde regel",
-    "Scan-Ausschnitt nicht verfügbar.": "Scanuitsnede niet beschikbaar."
+    "Scan-Ausschnitt nicht verfügbar.": "Scanuitsnede niet beschikbaar.",
+    "Einpassen": "Passend maken",
+    "OCR-Korrekturzeilen durchsuchen": "OCR-correctieregels doorzoeken",
+    "Vorherige Fundstelle": "Vorige overeenkomst",
+    "Nächste Fundstelle": "Volgende overeenkomst",
+    "{0} passende Zeilen": "{0} overeenkomende regels",
+    "Nächste Seite mit offenen Prüfungen": "Volgende pagina met openstaande controles",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Pagina’s zonder passende controlevoortgang blijven ongecontroleerd.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Geen andere vastgelegde openstaande controles."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -5597,7 +5629,7 @@
     "Updates": "Aggiornamenti",
     "Verbessern": "Migliora",
     "Vergrößern": "Ingrandisci",
-    "Verkleinern": "Rimpicciolire",
+    "Verkleinern": "Riduci",
     "Versandcheck": "Controllo della spedizione",
     "Versandcheck abgeschlossen": "Controllo della spedizione completato",
     "Versandkopie": "Copia di spedizione",
@@ -6502,7 +6534,15 @@
     "Weiterprüfen": "Continua verifica",
     "Keine offenen Wörter unter diesem Prüfwert.": "Nessuna parola da verificare sotto questa soglia.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Ritaglio della scansione della riga selezionata",
-    "Scan-Ausschnitt nicht verfügbar.": "Ritaglio della scansione non disponibile."
+    "Scan-Ausschnitt nicht verfügbar.": "Ritaglio della scansione non disponibile.",
+    "Einpassen": "Adatta",
+    "OCR-Korrekturzeilen durchsuchen": "Cerca nelle righe di correzione OCR",
+    "Vorherige Fundstelle": "Risultato precedente",
+    "Nächste Fundstelle": "Risultato successivo",
+    "{0} passende Zeilen": "{0} righe corrispondenti",
+    "Nächste Seite mit offenen Prüfungen": "Pagina successiva con verifiche in sospeso",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Le pagine senza una verifica corrispondente restano non verificate.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Nessun’altra verifica in sospeso registrata."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -6897,8 +6937,8 @@
     "Update-Ordner": "Atualizar pasta",
     "Updates": "Atualizações",
     "Verbessern": "Melhorar",
-    "Vergrößern": "Aumentar o zoom",
-    "Verkleinern": "Diminuir zoom",
+    "Vergrößern": "Ampliar",
+    "Verkleinern": "Reduzir",
     "Versandcheck": "Verificação de envio",
     "Versandcheck abgeschlossen": "Verificação de envio concluída",
     "Versandkopie": "Cópia de envio",
@@ -7803,7 +7843,15 @@
     "Weiterprüfen": "Continuar a revisão",
     "Keine offenen Wörter unter diesem Prüfwert.": "Não há palavras pendentes abaixo deste limiar.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Recorte digitalizado da linha selecionada",
-    "Scan-Ausschnitt nicht verfügbar.": "Recorte digitalizado indisponível."
+    "Scan-Ausschnitt nicht verfügbar.": "Recorte digitalizado indisponível.",
+    "Einpassen": "Ajustar",
+    "OCR-Korrekturzeilen durchsuchen": "Pesquisar linhas de correção OCR",
+    "Vorherige Fundstelle": "Resultado anterior",
+    "Nächste Fundstelle": "Resultado seguinte",
+    "{0} passende Zeilen": "{0} linhas correspondentes",
+    "Nächste Seite mit offenen Prüfungen": "Página seguinte com revisões pendentes",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "As páginas sem progresso correspondente continuam por rever.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Não há mais revisões pendentes registadas."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -8199,7 +8247,7 @@
     "Updates": "Aktualizacje",
     "Verbessern": "Popraw się",
     "Vergrößern": "Powiększ",
-    "Verkleinern": "Zmniejsz",
+    "Verkleinern": "Pomniejsz",
     "Versandcheck": "Kontrola wysyłki",
     "Versandcheck abgeschlossen": "Kontrola wysyłki zakończona",
     "Versandkopie": "Kopia wysyłkowa",
@@ -9104,7 +9152,15 @@
     "Weiterprüfen": "Kontynuuj sprawdzanie",
     "Keine offenen Wörter unter diesem Prüfwert.": "Brak niesprawdzonych słów poniżej tego progu.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Fragment skanu wybranego wiersza",
-    "Scan-Ausschnitt nicht verfügbar.": "Fragment skanu niedostępny."
+    "Scan-Ausschnitt nicht verfügbar.": "Fragment skanu niedostępny.",
+    "Einpassen": "Dopasuj",
+    "OCR-Korrekturzeilen durchsuchen": "Szukaj w wierszach korekty OCR",
+    "Vorherige Fundstelle": "Poprzednie trafienie",
+    "Nächste Fundstelle": "Następne trafienie",
+    "{0} passende Zeilen": "Pasujące wiersze: {0}",
+    "Nächste Seite mit offenen Prüfungen": "Następna strona z otwartymi kontrolami",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Strony bez pasującej kontroli nadal są niesprawdzone.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Brak innych zapisanych otwartych kontroli."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -9499,8 +9555,8 @@
     "Update-Ordner": "Aktualizujte složku",
     "Updates": "Aktualizace",
     "Verbessern": "Zlepšit",
-    "Vergrößern": "Přiblížit",
-    "Verkleinern": "Oddálit",
+    "Vergrößern": "Zvětšit",
+    "Verkleinern": "Zmenšit",
     "Versandcheck": "Kontrola zásilky",
     "Versandcheck abgeschlossen": "Kontrola odeslání dokončena",
     "Versandkopie": "Přepravní kopie",
@@ -10405,7 +10461,15 @@
     "Weiterprüfen": "Pokračovat v kontrole",
     "Keine offenen Wörter unter diesem Prüfwert.": "Žádná nezkontrolovaná slova pod tímto prahem.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Výřez skenu vybraného řádku",
-    "Scan-Ausschnitt nicht verfügbar.": "Výřez skenu není dostupný."
+    "Scan-Ausschnitt nicht verfügbar.": "Výřez skenu není dostupný.",
+    "Einpassen": "Přizpůsobit",
+    "OCR-Korrekturzeilen durchsuchen": "Hledat v řádcích oprav OCR",
+    "Vorherige Fundstelle": "Předchozí výskyt",
+    "Nächste Fundstelle": "Další výskyt",
+    "{0} passende Zeilen": "Odpovídající řádky: {0}",
+    "Nächste Seite mit offenen Prüfungen": "Další stránka s nedokončenými kontrolami",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Stránky bez odpovídající kontroly zůstávají nezkontrolované.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Žádné další zaznamenané nedokončené kontroly."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11706,7 +11770,15 @@
     "Weiterprüfen": "Fortsæt kontrollen",
     "Keine offenen Wörter unter diesem Prüfwert.": "Ingen ord mangler kontrol under denne tærskel.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Scanningsudsnit af den valgte linje",
-    "Scan-Ausschnitt nicht verfügbar.": "Scanningsudsnit er ikke tilgængeligt."
+    "Scan-Ausschnitt nicht verfügbar.": "Scanningsudsnit er ikke tilgængeligt.",
+    "Einpassen": "Tilpas",
+    "OCR-Korrekturzeilen durchsuchen": "Søg i OCR-rettelseslinjer",
+    "Vorherige Fundstelle": "Forrige fund",
+    "Nächste Fundstelle": "Næste fund",
+    "{0} passende Zeilen": "{0} matchende linjer",
+    "Nächste Seite mit offenen Prüfungen": "Næste side med åbne kontroller",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sider uden en passende kontrol forbliver ukontrollerede.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Ingen andre registrerede åbne kontroller."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13007,7 +13079,15 @@
     "Weiterprüfen": "Fortsätt granska",
     "Keine offenen Wörter unter diesem Prüfwert.": "Inga ogranskade ord under denna tröskel.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Skannat utsnitt av vald rad",
-    "Scan-Ausschnitt nicht verfügbar.": "Skannat utsnitt är inte tillgängligt."
+    "Scan-Ausschnitt nicht verfügbar.": "Skannat utsnitt är inte tillgängligt.",
+    "Einpassen": "Anpassa",
+    "OCR-Korrekturzeilen durchsuchen": "Sök i OCR-korrigeringsrader",
+    "Vorherige Fundstelle": "Föregående träff",
+    "Nächste Fundstelle": "Nästa träff",
+    "{0} passende Zeilen": "{0} matchande rader",
+    "Nächste Seite mit offenen Prüfungen": "Nästa sida med väntande granskningar",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sidor utan motsvarande granskning förblir ogranskade.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Inga andra registrerade väntande granskningar."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14308,7 +14388,15 @@
     "Weiterprüfen": "Fortsett kontrollen",
     "Keine offenen Wörter unter diesem Prüfwert.": "Ingen ord mangler kontroll under denne terskelen.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Skannet utsnitt av valgt linje",
-    "Scan-Ausschnitt nicht verfügbar.": "Skannet utsnitt er ikke tilgjengelig."
+    "Scan-Ausschnitt nicht verfügbar.": "Skannet utsnitt er ikke tilgjengelig.",
+    "Einpassen": "Tilpass",
+    "OCR-Korrekturzeilen durchsuchen": "Søk i OCR-rettelseslinjer",
+    "Vorherige Fundstelle": "Forrige treff",
+    "Nächste Fundstelle": "Neste treff",
+    "{0} passende Zeilen": "{0} samsvarende linjer",
+    "Nächste Seite mit offenen Prüfungen": "Neste side med åpne kontroller",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sider uten en passende kontroll forblir ukontrollerte.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Ingen andre registrerte åpne kontroller."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15609,7 +15697,15 @@
     "Weiterprüfen": "Jatka tarkistusta",
     "Keine offenen Wörter unter diesem Prüfwert.": "Ei tarkistamattomia sanoja tämän rajan alapuolella.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Valitun rivin skannausote",
-    "Scan-Ausschnitt nicht verfügbar.": "Skannausote ei ole saatavilla."
+    "Scan-Ausschnitt nicht verfügbar.": "Skannausote ei ole saatavilla.",
+    "Einpassen": "Sovita",
+    "OCR-Korrekturzeilen durchsuchen": "Hae OCR-korjausriveiltä",
+    "Vorherige Fundstelle": "Edellinen osuma",
+    "Nächste Fundstelle": "Seuraava osuma",
+    "{0} passende Zeilen": "{0} vastaavaa riviä",
+    "Nächste Seite mit offenen Prüfungen": "Seuraava sivu, jolla on avoimia tarkistuksia",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sivut ilman vastaavaa tarkistustilaa pysyvät tarkistamattomina.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Ei muita tallennettuja avoimia tarkistuksia."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -16910,7 +17006,15 @@
     "Weiterprüfen": "İncelemeye devam et",
     "Keine offenen Wörter unter diesem Prüfwert.": "Bu eşiğin altında bekleyen sözcük yok.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Seçili satırın tarama kesiti",
-    "Scan-Ausschnitt nicht verfügbar.": "Tarama kesiti kullanılamıyor."
+    "Scan-Ausschnitt nicht verfügbar.": "Tarama kesiti kullanılamıyor.",
+    "Einpassen": "Sığdır",
+    "OCR-Korrekturzeilen durchsuchen": "OCR düzeltme satırlarında ara",
+    "Vorherige Fundstelle": "Önceki eşleşme",
+    "Nächste Fundstelle": "Sonraki eşleşme",
+    "{0} passende Zeilen": "{0} eşleşen satır",
+    "Nächste Seite mit offenen Prüfungen": "Bekleyen incelemelerin olduğu sonraki sayfa",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Eşleşen incelemesi olmayan sayfalar incelenmemiş olarak kalır.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Başka kayıtlı bekleyen inceleme yok."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18211,7 +18315,15 @@
     "Weiterprüfen": "Продовжити перевірку",
     "Keine offenen Wörter unter diesem Prüfwert.": "Немає неперевірених слів нижче цього порога.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Фрагмент скану вибраного рядка",
-    "Scan-Ausschnitt nicht verfügbar.": "Фрагмент скану недоступний."
+    "Scan-Ausschnitt nicht verfügbar.": "Фрагмент скану недоступний.",
+    "Einpassen": "Умістити",
+    "OCR-Korrekturzeilen durchsuchen": "Пошук у рядках виправлення OCR",
+    "Vorherige Fundstelle": "Попередній збіг",
+    "Nächste Fundstelle": "Наступний збіг",
+    "{0} passende Zeilen": "Відповідні рядки: {0}",
+    "Nächste Seite mit offenen Prüfungen": "Наступна сторінка з відкритими перевірками",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Сторінки без відповідного стану перевірки залишаються неперевіреними.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Інших записаних відкритих перевірок немає."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19512,7 +19624,15 @@
     "Weiterprüfen": "Συνέχιση ελέγχου",
     "Keine offenen Wörter unter diesem Prüfwert.": "Δεν υπάρχουν εκκρεμείς λέξεις κάτω από αυτό το όριο.",
     "Scan-Ausschnitt der ausgewählten Zeile": "Απόσπασμα σάρωσης της επιλεγμένης γραμμής",
-    "Scan-Ausschnitt nicht verfügbar.": "Το απόσπασμα σάρωσης δεν είναι διαθέσιμο."
+    "Scan-Ausschnitt nicht verfügbar.": "Το απόσπασμα σάρωσης δεν είναι διαθέσιμο.",
+    "Einpassen": "Προσαρμογή",
+    "OCR-Korrekturzeilen durchsuchen": "Αναζήτηση στις γραμμές διόρθωσης OCR",
+    "Vorherige Fundstelle": "Προηγούμενο εύρημα",
+    "Nächste Fundstelle": "Επόμενο εύρημα",
+    "{0} passende Zeilen": "{0} αντίστοιχες γραμμές",
+    "Nächste Seite mit offenen Prüfungen": "Επόμενη σελίδα με εκκρεμείς ελέγχους",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Οι σελίδες χωρίς αντίστοιχο έλεγχο παραμένουν μη ελεγμένες.",
+    "Keine weiteren erfassten offenen Prüfungen.": "Δεν υπάρχουν άλλοι καταγεγραμμένοι εκκρεμείς έλεγχοι."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -19907,8 +20027,8 @@
     "Update-Ordner": "アップデートフォルダー",
     "Updates": "アップデート",
     "Verbessern": "改善",
-    "Vergrößern": "拡大してみる",
-    "Verkleinern": "ズームアウト",
+    "Vergrößern": "拡大",
+    "Verkleinern": "縮小",
     "Versandcheck": "発送確認",
     "Versandcheck abgeschlossen": "発送確認完了",
     "Versandkopie": "発送控え",
@@ -20813,7 +20933,15 @@
     "Weiterprüfen": "確認を続ける",
     "Keine offenen Wörter unter diesem Prüfwert.": "このしきい値未満の未確認単語はありません。",
     "Scan-Ausschnitt der ausgewählten Zeile": "選択した行のスキャン画像",
-    "Scan-Ausschnitt nicht verfügbar.": "スキャン画像を表示できません。"
+    "Scan-Ausschnitt nicht verfügbar.": "スキャン画像を表示できません。",
+    "Einpassen": "表示に合わせる",
+    "OCR-Korrekturzeilen durchsuchen": "OCR修正行を検索",
+    "Vorherige Fundstelle": "前の一致",
+    "Nächste Fundstelle": "次の一致",
+    "{0} passende Zeilen": "一致する行：{0}",
+    "Nächste Seite mit offenen Prüfungen": "未確認項目がある次のページ",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "一致する確認状況がないページは未確認のままです。",
+    "Keine weiteren erfassten offenen Prüfungen.": "記録済みの未確認項目はほかにありません。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -22114,7 +22242,15 @@
     "Weiterprüfen": "계속 검토",
     "Keine offenen Wörter unter diesem Prüfwert.": "이 기준값 미만의 미확인 단어가 없습니다.",
     "Scan-Ausschnitt der ausgewählten Zeile": "선택한 줄의 스캔 영역",
-    "Scan-Ausschnitt nicht verfügbar.": "스캔 영역을 표시할 수 없습니다."
+    "Scan-Ausschnitt nicht verfügbar.": "스캔 영역을 표시할 수 없습니다.",
+    "Einpassen": "맞추기",
+    "OCR-Korrekturzeilen durchsuchen": "OCR 수정 줄 검색",
+    "Vorherige Fundstelle": "이전 일치 항목",
+    "Nächste Fundstelle": "다음 일치 항목",
+    "{0} passende Zeilen": "일치하는 줄 {0}개",
+    "Nächste Seite mit offenen Prüfungen": "미완료 검토가 있는 다음 페이지",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "일치하는 검토 상태가 없는 페이지는 미검토 상태로 유지됩니다.",
+    "Keine weiteren erfassten offenen Prüfungen.": "기록된 다른 미완료 검토가 없습니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23415,7 +23551,15 @@
     "Weiterprüfen": "متابعة المراجعة",
     "Keine offenen Wörter unter diesem Prüfwert.": "لا توجد كلمات غير مراجعة دون هذه العتبة.",
     "Scan-Ausschnitt der ausgewählten Zeile": "مقتطف المسح للسطر المحدد",
-    "Scan-Ausschnitt nicht verfügbar.": "مقتطف المسح غير متاح."
+    "Scan-Ausschnitt nicht verfügbar.": "مقتطف المسح غير متاح.",
+    "Einpassen": "ملاءمة",
+    "OCR-Korrekturzeilen durchsuchen": "البحث في أسطر تصحيح OCR",
+    "Vorherige Fundstelle": "المطابقة السابقة",
+    "Nächste Fundstelle": "المطابقة التالية",
+    "{0} passende Zeilen": "{0} أسطر مطابقة",
+    "Nächste Seite mit offenen Prüfungen": "الصفحة التالية ذات المراجعات المعلقة",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "تظل الصفحات دون حالة مراجعة مطابقة غير مراجعة.",
+    "Keine weiteren erfassten offenen Prüfungen.": "لا توجد مراجعات معلقة أخرى مسجلة."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -23810,8 +23954,8 @@
     "Update-Ordner": "עדכן תיקייה",
     "Updates": "עדכונים",
     "Verbessern": "שפר",
-    "Vergrößern": "התקרב",
-    "Verkleinern": "התרחק",
+    "Vergrößern": "הגדלה",
+    "Verkleinern": "הקטנה",
     "Versandcheck": "המחאת משלוח",
     "Versandcheck abgeschlossen": "בדיקת משלוח הושלמה",
     "Versandkopie": "עותק משלוח",
@@ -24716,6 +24860,14 @@
     "Weiterprüfen": "המשך הבדיקה",
     "Keine offenen Wörter unter diesem Prüfwert.": "אין מילים שלא נבדקו מתחת לסף זה.",
     "Scan-Ausschnitt der ausgewählten Zeile": "קטע הסריקה של השורה שנבחרה",
-    "Scan-Ausschnitt nicht verfügbar.": "קטע הסריקה אינו זמין."
+    "Scan-Ausschnitt nicht verfügbar.": "קטע הסריקה אינו זמין.",
+    "Einpassen": "התאמה",
+    "OCR-Korrekturzeilen durchsuchen": "חיפוש בשורות תיקון OCR",
+    "Vorherige Fundstelle": "התאמה קודמת",
+    "Nächste Fundstelle": "התאמה הבאה",
+    "{0} passende Zeilen": "{0} שורות תואמות",
+    "Nächste Seite mit offenen Prüfungen": "העמוד הבא עם בדיקות פתוחות",
+    "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "עמודים ללא מצב בדיקה תואם נשארים לא בדוקים.",
+    "Keine weiteren erfassten offenen Prüfungen.": "אין בדיקות פתוחות מתועדות נוספות."
   }
 }
