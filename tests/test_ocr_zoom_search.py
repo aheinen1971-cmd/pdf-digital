@@ -45,13 +45,13 @@ with TemporaryDirectory() as folder,pdf.open() as doc,pdf.open() as seed:
     with patch.object(state,'compare_corrections',return_value=False) as compare:
      QTest.keyClick(search,Qt.Key.Key_Return);QTest.keyClick(search,Qt.Key.Key_Enter);compare.assert_not_called()
     selector.setValue(1)
-    assert dialog.findChild(QLabel,'ocrSearchStatus').text()==window.ui('{0} passende Zeilen').format(2)
+    assert dialog.findChild(QLabel,'ocrSearchStatus').text()==window.ui('Fundstelle {0} von {1} · Seite {2}').format(1,2,1)
     next_.click();assert selector.value()==3
     next_.click();assert selector.value()==1
     previous.click();assert selector.value()==3
     table.item(0,0).setText('Straße Ω العربية')
-    search.setText('STRASSE');assert selector.value()==3 and next_.isEnabled()
-    search.setText('العربية');assert next_.isEnabled()
+    search.setText('STRASSE');QTest.qWait(300);assert selector.value()==3 and next_.isEnabled()
+    search.setText('العربية');QTest.qWait(300);assert next_.isEnabled()
     search.setText('absent');assert not next_.isEnabled()
     search.clear();assert not next_.isEnabled()
     selector.setValue(1);selector.setValue(3);assert table.item(0,0).text()=='Straße Ω العربية'

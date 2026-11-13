@@ -9165,6 +9165,8 @@ class Window(QMainWindow):
                            if lines else "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus."))
             highlight(0)
 
+            position_status()
+
         search_row=QHBoxLayout()
         class OCRSearchEdit(QLineEdit):
             def keyPressEvent(self,event):
@@ -9176,27 +9178,72 @@ class Window(QMainWindow):
         following=QPushButton(self.ui("Nächste Fundstelle"));following.setObjectName("ocrSearchNext");search_row.addWidget(following)
         layout.insertLayout(2,search_row)
         search_status=QLabel();search_status.setObjectName("ocrSearchStatus");layout.insertWidget(3,search_status)
-        def find_line(direction=1,first=False):
-            import unicodedata
-            remember()
-            normalize=lambda value:unicodedata.normalize('NFC',value).casefold()
-            query=normalize(search.text().strip());matches=[]
-            if query:
-                for number in range(len(doc)):
-                    values=edits.get(number)
-                    if values is None:values=[line[3] for line in ocr_lines(doc[number])]
-                    matches.extend((number,index) for index,value in enumerate(values) if query in normalize(value))
-            search_status.setText(self.ui('{0} passende Zeilen').format(len(matches)))
-            previous.setEnabled(bool(matches));following.setEnabled(bool(matches))
-            if not matches:return
+        import unicodedata,time
+        from collections import OrderedDict
+        normalize=lambda value:unicodedata.normalize('NFC',value).casefold()
+        cache=OrderedDict();cache_chars=0
+        matches=[];scan_page=0;query='';destination=(1,True);origin=(0,0)
+        search_timer=QTimer(dialog);search_timer.setSingleShot(True);search_timer.setInterval(220)
+        worker=QTimer(dialog);worker.setInterval(0)
+        def position_status(*_):
+            if worker.isActive() or search_timer.isActive():return
             here=(current,rows.currentRow())
-            if first:target=matches[0]
-            elif direction>0:target=next((item for item in matches if item>here),matches[0])
-            else:target=next((item for item in reversed(matches) if item<here),matches[-1])
-            selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0))
+            if here in matches:
+                search_status.setText(self.ui('Fundstelle {0} von {1} · Seite {2}').format(matches.index(here)+1,len(matches),current+1))
+            else:search_status.setText(self.ui('{0} passende Zeilen').format(len(matches)))
+        def normalized_lines(number):
+            nonlocal cache_chars
+            # Drafts are always read afresh; the document itself stays unchanged in this dialog.
+            if number in edits:return [normalize(value) for value in edits[number]]
+            if number in cache:
+                cache.move_to_end(number);return cache[number]
+            values=[normalize(line[3]) for line in ocr_lines(doc[number])]
+            size=sum(len(value) for value in values)
+            if size<=8000000:
+                while cache and (cache_chars+size>8000000 or len(cache)>=2000):
+                    _,removed=cache.popitem(last=False);cache_chars-=sum(len(value) for value in removed)
+                cache[number]=values;cache_chars+=size
+            return values
+        def scan_step():
+            nonlocal scan_page
+            deadline=time.monotonic()+0.012;processed=0
+            try:
+                while scan_page<len(doc) and processed<8:
+                    matches.extend((scan_page,index) for index,value in enumerate(normalized_lines(scan_page)) if query in value)
+                    scan_page+=1;processed+=1
+                    if time.monotonic()>=deadline:break
+            except Exception as exc:
+                worker.stop();matches.clear();position_status();self.error(exc);return
+            if scan_page<len(doc):
+                if not worker.isActive():worker.start()
+                return
+            worker.stop();previous.setEnabled(bool(matches));following.setEnabled(bool(matches))
+            if matches:
+                direction,first=destination
+                if first:target=matches[0]
+                elif direction>0:target=next((item for item in matches if item>origin),matches[0])
+                else:target=next((item for item in reversed(matches) if item<origin),matches[-1])
+                selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0))
+            position_status()
+        def find_line(direction=1,first=False):
+            nonlocal scan_page,query,destination,origin
+            search_timer.stop();worker.stop();remember()
+            query=normalize(search.text().strip());matches.clear();scan_page=0
+            destination=(direction,first);origin=(current,rows.currentRow())
+            previous.setEnabled(False);following.setEnabled(False)
+            if not query:position_status();return
+            search_status.setText(self.ui('Suche läuft …'));scan_step()
+        def schedule_search(*_):
+            worker.stop();matches.clear();previous.setEnabled(False);following.setEnabled(False)
+            if not search.text().strip():search_timer.stop();position_status();return
+            search_status.setText(self.ui('Suche läuft …'));search_timer.start()
+        worker.timeout.connect(scan_step);search_timer.timeout.connect(lambda:find_line(first=True))
         search.returnPressed.connect(lambda:find_line())
-        search.textChanged.connect(lambda *_:find_line(first=True))
+        search.textChanged.connect(schedule_search)
+        rows.itemChanged.connect(schedule_search)
+        rows.currentCellChanged.connect(position_status)
         previous.clicked.connect(lambda:find_line(-1));following.clicked.connect(lambda:find_line())
+        dialog.finished.connect(lambda *_:(search_timer.stop(),worker.stop()))
         previous.setEnabled(False);following.setEnabled(False)
         next_pending=QPushButton(self.ui('Nächste Seite mit offenen Prüfungen'));next_pending.setObjectName('ocrNextPendingPage');layout.insertWidget(4,next_pending)
         pending_note=QLabel(self.ui('Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.'));pending_note.setWordWrap(True);layout.insertWidget(5,pending_note)
@@ -9211,7 +9258,9 @@ class Window(QMainWindow):
         selector.valueChanged.connect(load)
         rows.currentCellChanged.connect(highlight)
         load(initial + 1)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        accepted=dialog.exec()
+        search_timer.stop();worker.stop()
+        if accepted == QDialog.DialogCode.Accepted:
             remember()
             return edits
         return {}

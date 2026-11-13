@@ -126,21 +126,29 @@ def open_record(parent,doc,record,first_open=False):
 
 
 def checkpoints(parent,doc):
-    from PySide6.QtWidgets import QDialog,QVBoxLayout,QLabel,QTableWidget,QTableWidgetItem,QPushButton,QDialogButtonBox
+    from PySide6.QtWidgets import QDialog,QVBoxLayout,QLabel,QTableWidget,QTableWidgetItem,QPushButton,QDialogButtonBox,QCheckBox
     tr=parent.ui;key=document_key(doc)
     dialog=QDialog(parent);dialog.setWindowTitle(tr('Gespeicherte Prüfstände'));dialog.setLayoutDirection(parent.layoutDirection());dialog.resize(800,500)
     layout=QVBoxLayout(dialog)
     note=QLabel(tr('Öffnen ist nur für das unveränderte aktuelle Dokument möglich. Alte Prüfstände lassen sich löschen. Es werden keine Dateinamen oder Texte gespeichert.'));note.setWordWrap(True);layout.addWidget(note)
     table=QTableWidget(0,5);table.setObjectName('checkpoints');table.setHorizontalHeaderLabels([tr('Seite'),tr('Geprüft'),tr('OCR-Sprache'),tr('Gespeichert am'),tr('Aktuelles Dokument')]);table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers);layout.addWidget(table)
+    current_only=QCheckBox(tr('Nur aktuelles Dokument'));current_only.setObjectName('currentDocumentOnly');layout.insertWidget(1,current_only)
+    pending_only=QCheckBox(tr('Nur offene Prüfungen'));pending_only.setObjectName('pendingReviewsOnly');layout.insertWidget(2,pending_only)
     rows=[]
     def refresh():
-        rows[:]=list(reversed(read()));table.setRowCount(len(rows))
+        old=selected()
+        rows[:]=[r for r in reversed(read()) if (not current_only.isChecked() or r['doc']==key) and (not pending_only.isChecked() or any(value<r['threshold'] and i not in r['reviewed'] for i,value in enumerate(r['scores'])))]
+        table.blockSignals(True);table.clearContents();table.setRowCount(len(rows))
+        table.setCurrentCell(-1,-1)
         for n,r in enumerate(rows):
             visible={i for i,s in enumerate(r['scores']) if s<r['threshold']}
             date=datetime.fromisoformat(r['saved_at']).astimezone().strftime('%Y-%m-%d %H:%M:%S') if r.get('saved_at') else '—'
             values=[str(r['page']+1),tr('{0} von {1} geprüft').format(len(visible.intersection(r['reviewed'])),len(visible)),r['language'],date,'✓' if r['doc']==key else '—']
             for col,value in enumerate(values):table.setItem(n,col,QTableWidgetItem(value))
-        table.resizeColumnsToContents();update()
+        if old:
+            index=next((i for i,r in enumerate(rows) if (r['doc'],r['page'],r['language'])==(old['doc'],old['page'],old['language'])),-1)
+            if index>=0:table.setCurrentCell(index,0)
+        table.blockSignals(False);table.resizeColumnsToContents();update()
     opening=QPushButton(tr('Prüfung fortsetzen'));opening.setObjectName('openCheckpoint');layout.addWidget(opening)
     deleting=QPushButton(tr('Prüfstand löschen'));deleting.setObjectName('deleteCheckpoint');layout.addWidget(deleting)
     def selected():return rows[table.currentRow()] if 0<=table.currentRow()<len(rows) else None
@@ -156,6 +164,7 @@ def checkpoints(parent,doc):
         except (ValueError,OSError,TypeError):parent.error(tr('Prüfstand konnte nicht gelesen oder gespeichert werden.'))
     opening.clicked.connect(lambda:action());deleting.clicked.connect(lambda:action(True));table.cellDoubleClicked.connect(lambda *_:action());table.currentCellChanged.connect(update)
     buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Close);buttons.button(QDialogButtonBox.StandardButton.Close).setText(tr('Schließen'));buttons.rejected.connect(dialog.reject);layout.addWidget(buttons)
+    current_only.toggled.connect(refresh);pending_only.toggled.connect(refresh)
     refresh();dialog.exec()
 
 

@@ -1306,7 +1306,11 @@
     "{0} passende Zeilen": "{0} matching lines",
     "Nächste Seite mit offenen Prüfungen": "Next page with pending reviews",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Pages without matching review progress remain unreviewed.",
-    "Keine weiteren erfassten offenen Prüfungen.": "No other recorded pending reviews."
+    "Keine weiteren erfassten offenen Prüfungen.": "No other recorded pending reviews.",
+    "Fundstelle {0} von {1} · Seite {2}": "Match {0} of {1} · Page {2}",
+    "Suche läuft …": "Searching …",
+    "Nur aktuelles Dokument": "Current document only",
+    "Nur offene Prüfungen": "Pending reviews only"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2615,7 +2619,11 @@
     "{0} passende Zeilen": "{0} lignes correspondantes",
     "Nächste Seite mit offenen Prüfungen": "Page suivante avec des vérifications en attente",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Les pages sans vérification correspondante restent non vérifiées.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Aucune autre vérification en attente enregistrée."
+    "Keine weiteren erfassten offenen Prüfungen.": "Aucune autre vérification en attente enregistrée.",
+    "Fundstelle {0} von {1} · Seite {2}": "Résultat {0} sur {1} · Page {2}",
+    "Suche läuft …": "Recherche en cours …",
+    "Nur aktuelles Dokument": "Document actuel uniquement",
+    "Nur offene Prüfungen": "Vérifications en attente uniquement"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3924,7 +3932,11 @@
     "{0} passende Zeilen": "{0} líneas coincidentes",
     "Nächste Seite mit offenen Prüfungen": "Siguiente página con revisiones pendientes",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Las páginas sin progreso coincidente siguen sin revisar.",
-    "Keine weiteren erfassten offenen Prüfungen.": "No hay más revisiones pendientes registradas."
+    "Keine weiteren erfassten offenen Prüfungen.": "No hay más revisiones pendientes registradas.",
+    "Fundstelle {0} von {1} · Seite {2}": "Coincidencia {0} de {1} · Página {2}",
+    "Suche läuft …": "Buscando …",
+    "Nur aktuelles Dokument": "Solo el documento actual",
+    "Nur offene Prüfungen": "Solo revisiones pendientes"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5233,7 +5245,11 @@
     "{0} passende Zeilen": "{0} overeenkomende regels",
     "Nächste Seite mit offenen Prüfungen": "Volgende pagina met openstaande controles",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Pagina’s zonder passende controlevoortgang blijven ongecontroleerd.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Geen andere vastgelegde openstaande controles."
+    "Keine weiteren erfassten offenen Prüfungen.": "Geen andere vastgelegde openstaande controles.",
+    "Fundstelle {0} von {1} · Seite {2}": "Overeenkomst {0} van {1} · Pagina {2}",
+    "Suche läuft …": "Zoeken …",
+    "Nur aktuelles Dokument": "Alleen huidig document",
+    "Nur offene Prüfungen": "Alleen openstaande controles"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6542,7 +6558,11 @@
     "{0} passende Zeilen": "{0} righe corrispondenti",
     "Nächste Seite mit offenen Prüfungen": "Pagina successiva con verifiche in sospeso",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Le pagine senza una verifica corrispondente restano non verificate.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Nessun’altra verifica in sospeso registrata."
+    "Keine weiteren erfassten offenen Prüfungen.": "Nessun’altra verifica in sospeso registrata.",
+    "Fundstelle {0} von {1} · Seite {2}": "Risultato {0} di {1} · Pagina {2}",
+    "Suche läuft …": "Ricerca in corso …",
+    "Nur aktuelles Dokument": "Solo documento attuale",
+    "Nur offene Prüfungen": "Solo verifiche in sospeso"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7851,7 +7871,11 @@
     "{0} passende Zeilen": "{0} linhas correspondentes",
     "Nächste Seite mit offenen Prüfungen": "Página seguinte com revisões pendentes",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "As páginas sem progresso correspondente continuam por rever.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Não há mais revisões pendentes registadas."
+    "Keine weiteren erfassten offenen Prüfungen.": "Não há mais revisões pendentes registadas.",
+    "Fundstelle {0} von {1} · Seite {2}": "Resultado {0} de {1} · Página {2}",
+    "Suche läuft …": "A pesquisar …",
+    "Nur aktuelles Dokument": "Apenas documento atual",
+    "Nur offene Prüfungen": "Apenas revisões pendentes"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9160,7 +9184,11 @@
     "{0} passende Zeilen": "Pasujące wiersze: {0}",
     "Nächste Seite mit offenen Prüfungen": "Następna strona z otwartymi kontrolami",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Strony bez pasującej kontroli nadal są niesprawdzone.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Brak innych zapisanych otwartych kontroli."
+    "Keine weiteren erfassten offenen Prüfungen.": "Brak innych zapisanych otwartych kontroli.",
+    "Fundstelle {0} von {1} · Seite {2}": "Trafienie {0} z {1} · Strona {2}",
+    "Suche läuft …": "Wyszukiwanie …",
+    "Nur aktuelles Dokument": "Tylko bieżący dokument",
+    "Nur offene Prüfungen": "Tylko otwarte kontrole"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10469,7 +10497,11 @@
     "{0} passende Zeilen": "Odpovídající řádky: {0}",
     "Nächste Seite mit offenen Prüfungen": "Další stránka s nedokončenými kontrolami",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Stránky bez odpovídající kontroly zůstávají nezkontrolované.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Žádné další zaznamenané nedokončené kontroly."
+    "Keine weiteren erfassten offenen Prüfungen.": "Žádné další zaznamenané nedokončené kontroly.",
+    "Fundstelle {0} von {1} · Seite {2}": "Výskyt {0} z {1} · Stránka {2}",
+    "Suche läuft …": "Hledání …",
+    "Nur aktuelles Dokument": "Jen aktuální dokument",
+    "Nur offene Prüfungen": "Jen nedokončené kontroly"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11778,7 +11810,11 @@
     "{0} passende Zeilen": "{0} matchende linjer",
     "Nächste Seite mit offenen Prüfungen": "Næste side med åbne kontroller",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sider uden en passende kontrol forbliver ukontrollerede.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Ingen andre registrerede åbne kontroller."
+    "Keine weiteren erfassten offenen Prüfungen.": "Ingen andre registrerede åbne kontroller.",
+    "Fundstelle {0} von {1} · Seite {2}": "Fund {0} af {1} · Side {2}",
+    "Suche läuft …": "Søger …",
+    "Nur aktuelles Dokument": "Kun aktuelt dokument",
+    "Nur offene Prüfungen": "Kun åbne kontroller"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13087,7 +13123,11 @@
     "{0} passende Zeilen": "{0} matchande rader",
     "Nächste Seite mit offenen Prüfungen": "Nästa sida med väntande granskningar",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sidor utan motsvarande granskning förblir ogranskade.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Inga andra registrerade väntande granskningar."
+    "Keine weiteren erfassten offenen Prüfungen.": "Inga andra registrerade väntande granskningar.",
+    "Fundstelle {0} von {1} · Seite {2}": "Träff {0} av {1} · Sida {2}",
+    "Suche läuft …": "Söker …",
+    "Nur aktuelles Dokument": "Endast aktuellt dokument",
+    "Nur offene Prüfungen": "Endast väntande granskningar"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14396,7 +14436,11 @@
     "{0} passende Zeilen": "{0} samsvarende linjer",
     "Nächste Seite mit offenen Prüfungen": "Neste side med åpne kontroller",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sider uten en passende kontroll forblir ukontrollerte.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Ingen andre registrerte åpne kontroller."
+    "Keine weiteren erfassten offenen Prüfungen.": "Ingen andre registrerte åpne kontroller.",
+    "Fundstelle {0} von {1} · Seite {2}": "Treff {0} av {1} · Side {2}",
+    "Suche läuft …": "Søker …",
+    "Nur aktuelles Dokument": "Bare gjeldende dokument",
+    "Nur offene Prüfungen": "Bare åpne kontroller"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15705,7 +15749,11 @@
     "{0} passende Zeilen": "{0} vastaavaa riviä",
     "Nächste Seite mit offenen Prüfungen": "Seuraava sivu, jolla on avoimia tarkistuksia",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Sivut ilman vastaavaa tarkistustilaa pysyvät tarkistamattomina.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Ei muita tallennettuja avoimia tarkistuksia."
+    "Keine weiteren erfassten offenen Prüfungen.": "Ei muita tallennettuja avoimia tarkistuksia.",
+    "Fundstelle {0} von {1} · Seite {2}": "Osuma {0}/{1} · Sivu {2}",
+    "Suche läuft …": "Haetaan …",
+    "Nur aktuelles Dokument": "Vain nykyinen asiakirja",
+    "Nur offene Prüfungen": "Vain avoimet tarkistukset"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17014,7 +17062,11 @@
     "{0} passende Zeilen": "{0} eşleşen satır",
     "Nächste Seite mit offenen Prüfungen": "Bekleyen incelemelerin olduğu sonraki sayfa",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Eşleşen incelemesi olmayan sayfalar incelenmemiş olarak kalır.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Başka kayıtlı bekleyen inceleme yok."
+    "Keine weiteren erfassten offenen Prüfungen.": "Başka kayıtlı bekleyen inceleme yok.",
+    "Fundstelle {0} von {1} · Seite {2}": "Eşleşme {0}/{1} · Sayfa {2}",
+    "Suche läuft …": "Aranıyor …",
+    "Nur aktuelles Dokument": "Yalnızca geçerli belge",
+    "Nur offene Prüfungen": "Yalnızca bekleyen incelemeler"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18323,7 +18375,11 @@
     "{0} passende Zeilen": "Відповідні рядки: {0}",
     "Nächste Seite mit offenen Prüfungen": "Наступна сторінка з відкритими перевірками",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Сторінки без відповідного стану перевірки залишаються неперевіреними.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Інших записаних відкритих перевірок немає."
+    "Keine weiteren erfassten offenen Prüfungen.": "Інших записаних відкритих перевірок немає.",
+    "Fundstelle {0} von {1} · Seite {2}": "Збіг {0} із {1} · Сторінка {2}",
+    "Suche läuft …": "Пошук …",
+    "Nur aktuelles Dokument": "Лише поточний документ",
+    "Nur offene Prüfungen": "Лише відкриті перевірки"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19632,7 +19688,11 @@
     "{0} passende Zeilen": "{0} αντίστοιχες γραμμές",
     "Nächste Seite mit offenen Prüfungen": "Επόμενη σελίδα με εκκρεμείς ελέγχους",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "Οι σελίδες χωρίς αντίστοιχο έλεγχο παραμένουν μη ελεγμένες.",
-    "Keine weiteren erfassten offenen Prüfungen.": "Δεν υπάρχουν άλλοι καταγεγραμμένοι εκκρεμείς έλεγχοι."
+    "Keine weiteren erfassten offenen Prüfungen.": "Δεν υπάρχουν άλλοι καταγεγραμμένοι εκκρεμείς έλεγχοι.",
+    "Fundstelle {0} von {1} · Seite {2}": "Εύρημα {0} από {1} · Σελίδα {2}",
+    "Suche läuft …": "Αναζήτηση …",
+    "Nur aktuelles Dokument": "Μόνο τρέχον έγγραφο",
+    "Nur offene Prüfungen": "Μόνο εκκρεμείς έλεγχοι"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -20941,7 +21001,11 @@
     "{0} passende Zeilen": "一致する行：{0}",
     "Nächste Seite mit offenen Prüfungen": "未確認項目がある次のページ",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "一致する確認状況がないページは未確認のままです。",
-    "Keine weiteren erfassten offenen Prüfungen.": "記録済みの未確認項目はほかにありません。"
+    "Keine weiteren erfassten offenen Prüfungen.": "記録済みの未確認項目はほかにありません。",
+    "Fundstelle {0} von {1} · Seite {2}": "一致 {0}/{1} · ページ {2}",
+    "Suche läuft …": "検索中 …",
+    "Nur aktuelles Dokument": "現在の文書のみ",
+    "Nur offene Prüfungen": "未完了の確認のみ"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -22250,7 +22314,11 @@
     "{0} passende Zeilen": "일치하는 줄 {0}개",
     "Nächste Seite mit offenen Prüfungen": "미완료 검토가 있는 다음 페이지",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "일치하는 검토 상태가 없는 페이지는 미검토 상태로 유지됩니다.",
-    "Keine weiteren erfassten offenen Prüfungen.": "기록된 다른 미완료 검토가 없습니다."
+    "Keine weiteren erfassten offenen Prüfungen.": "기록된 다른 미완료 검토가 없습니다.",
+    "Fundstelle {0} von {1} · Seite {2}": "일치 {0}/{1} · 페이지 {2}",
+    "Suche läuft …": "검색 중 …",
+    "Nur aktuelles Dokument": "현재 문서만",
+    "Nur offene Prüfungen": "미완료 검토만"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23559,7 +23627,11 @@
     "{0} passende Zeilen": "{0} أسطر مطابقة",
     "Nächste Seite mit offenen Prüfungen": "الصفحة التالية ذات المراجعات المعلقة",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "تظل الصفحات دون حالة مراجعة مطابقة غير مراجعة.",
-    "Keine weiteren erfassten offenen Prüfungen.": "لا توجد مراجعات معلقة أخرى مسجلة."
+    "Keine weiteren erfassten offenen Prüfungen.": "لا توجد مراجعات معلقة أخرى مسجلة.",
+    "Fundstelle {0} von {1} · Seite {2}": "المطابقة {0} من {1} · الصفحة {2}",
+    "Suche läuft …": "جارٍ البحث …",
+    "Nur aktuelles Dokument": "المستند الحالي فقط",
+    "Nur offene Prüfungen": "المراجعات المعلقة فقط"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -24868,6 +24940,10 @@
     "{0} passende Zeilen": "{0} שורות תואמות",
     "Nächste Seite mit offenen Prüfungen": "העמוד הבא עם בדיקות פתוחות",
     "Seiten ohne passenden Prüfstand gelten weiterhin als nicht geprüft.": "עמודים ללא מצב בדיקה תואם נשארים לא בדוקים.",
-    "Keine weiteren erfassten offenen Prüfungen.": "אין בדיקות פתוחות מתועדות נוספות."
+    "Keine weiteren erfassten offenen Prüfungen.": "אין בדיקות פתוחות מתועדות נוספות.",
+    "Fundstelle {0} von {1} · Seite {2}": "התאמה {0} מתוך {1} · עמוד {2}",
+    "Suche läuft …": "מתבצע חיפוש …",
+    "Nur aktuelles Dokument": "המסמך הנוכחי בלבד",
+    "Nur offene Prüfungen": "בדיקות פתוחות בלבד"
   }
 }
