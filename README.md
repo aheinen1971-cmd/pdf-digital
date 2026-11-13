@@ -1,6 +1,13 @@
-# PDF Digital 1.66.0 für Windows
+# PDF Digital 1.67.0 für Windows
 
 **Alles finden und bearbeiten**
+
+### Neu in 1.67.0: Scanzoom, Korrektursuche und offene Prüfseiten
+
+- Den Scan-Ausschnitt im OCR-Textvergleich mit **Plus**, **Minus** und **Einpassen** vergrößern oder verkleinern, auch auf gedrehten Seiten.
+- **OCR-Korrekturzeilen durchsuchen** findet Text über alle Seiten, einschließlich noch nicht übernommener Korrekturen. Vorherige/nächste Fundstelle und Enter wechseln zwischen passenden Zeilen. Enter übernimmt keine Korrekturen.
+- **Nächste Seite mit offenen Prüfungen** führt anhand passender Prüfstände zur nächsten offenen Wortprüfung. Seiten ohne passenden Prüfstand bleiben ungeprüft.
+- Alle 20 Oberflächensprachen einschließlich Arabisch und Hebräisch. Keine automatische Textkorrektur.
 
 ### Neu in 1.66.0: Speichererinnerung, offene Wörter und Scanvergleich
 
@@ -91,7 +98,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.66.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.67.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -101,7 +108,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.66.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.67.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
