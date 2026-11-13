@@ -9066,7 +9066,7 @@ class Window(QMainWindow):
         dialog = QDialog(self)
         dialog.setLayoutDirection(self.layoutDirection())
         dialog.setWindowTitle(self.ui("OCR-Korrektur"))
-        dialog.resize(1000, 690)
+        dialog.resize(1000, 900)
         layout = QVBoxLayout(dialog)
         notice = QLabel(self.ui("Wähle eine Textzeile, um ihre Position im Scan zu sehen. "
                         "Die Korrektur ändert nur die unsichtbare Textebene."))
@@ -9123,6 +9123,17 @@ class Window(QMainWindow):
         current = initial
         base = None
         scale = 1.0
+        location_history=[]
+        restoring_location=False
+        location_loaded=False
+
+        def remember_location():
+            target=(current,rows.currentRow())
+            if location_loaded and not restoring_location and target[1]>=0:
+                if not location_history or location_history[-1]!=target:
+                    location_history.append(target)
+                    del location_history[:-100]
+                back_location.setEnabled(bool(location_history))
 
         def remember():
             if not lines:
@@ -9147,7 +9158,8 @@ class Window(QMainWindow):
             image.resize(shown.size())
 
         def load(number):
-            nonlocal lines, current, base, scale
+            nonlocal lines, current, base, scale,location_loaded
+            if number-1!=current:remember_location()
             remember()
             current = number - 1
             page = doc[current]
@@ -9164,6 +9176,7 @@ class Window(QMainWindow):
             notice.setText(self.ui("Wähle eine Zeile zum Markieren. Ein Doppelklick ändert nur die unsichtbare Textebene."
                            if lines else "Diese Seite hat keine bearbeitbare Scan-Textebene. Führe bei Bedarf zuerst OCR aus."))
             highlight(0)
+            location_loaded=True
 
             position_status()
 
@@ -9216,6 +9229,34 @@ class Window(QMainWindow):
             expand.setEnabled(item is not None)
             full_text.setVisible(expand.isChecked() and item is not None)
         expand.toggled.connect(full_preview);preview.currentItemChanged.connect(full_preview)
+        context=QCheckBox(self.ui('Zeile davor und danach anzeigen'));context.setObjectName('ocrPreviewContext')
+        context.setEnabled(False)
+        back_location=QPushButton(self.ui('Zur letzten Fundstelle zurück'));back_location.setObjectName('ocrLocationBack')
+        back_location.setAutoDefault(False);back_location.setEnabled(False)
+        copy_results=QPushButton(self.ui('Ausgewählte Treffer kopieren'));copy_results.setObjectName('ocrResultsCopy')
+        copy_results.setAutoDefault(False);copy_results.setEnabled(False)
+        preview.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        result_tools=QHBoxLayout();result_tools.addWidget(context);result_tools.addWidget(back_location);result_tools.addWidget(copy_results)
+        layout.insertLayout(9,result_tools)
+        copy_note=QLabel();copy_note.setObjectName('ocrCopyStatus');copy_note.setWordWrap(True);layout.insertWidget(10,copy_note)
+        def context_preview(*_):
+            item=preview.currentItem();context.setEnabled(item is not None)
+            if item is not None and context.isChecked():
+                page,index=item.data(Qt.ItemDataRole.UserRole)
+                remember();values=normalized_lines(page)
+                full_text.setPlainText('\n'.join(values[max(0,index-1):index+2]))
+                full_text.setVisible(True)
+            else:full_preview()
+        context.toggled.connect(context_preview);preview.currentItemChanged.connect(context_preview)
+        expand.toggled.connect(context_preview)
+        def copy_selected():
+            selected=sorted(preview.selectedItems(),key=preview.row)
+            if not selected:return
+            text='\n'.join(self.ui('Seite {0}').format(item.data(Qt.ItemDataRole.UserRole)[0]+1)+' · '+item.data(Qt.ItemDataRole.UserRole+1) for item in selected)
+            QApplication.clipboard().setText(text)
+            copy_note.setText(self.ui('{0} Treffer kopiert').format(len(selected)))
+        copy_results.clicked.connect(copy_selected)
+        preview.itemSelectionChanged.connect(lambda:copy_results.setEnabled(bool(preview.selectedItems())))
         # Keep at most 200 rendered rows, including when browsing very large results.
         import html
         preview_offset=0
@@ -9252,6 +9293,7 @@ class Window(QMainWindow):
             chunks.append(html.escape(value[cursor:end]))
             return ('…' if start else '')+''.join(chunks)+('…' if end<len(value) else '')
         def show_previews():
+            copy_note.clear()
             preview.clear()
             selected=matches[preview_offset:preview_offset+200] if matcher is not None else []
             for target in selected:
@@ -9273,7 +9315,7 @@ class Window(QMainWindow):
             group.setMaximum(max(1,(len(matches)+199)//200));group.setValue(preview_offset//200+1)
             group.setEnabled(bool(matches));jump_group.setEnabled(bool(matches))
             if selected:preview.setCurrentRow(0)
-            full_preview()
+            context_preview()
         def preview_page(direction):
             nonlocal preview_offset
             if worker.isActive() or search_timer.isActive():return
@@ -9285,10 +9327,22 @@ class Window(QMainWindow):
             if worker.isActive() or search_timer.isActive():return
             group.interpretText();preview_offset=(group.value()-1)*200;show_previews()
         jump_group.clicked.connect(go_group)
+        def go_location(target):
+            if target!=(current,rows.currentRow()) and target[0]==current:remember_location()
+            selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0));position_status()
+        def return_location():
+            nonlocal restoring_location
+            if not location_history:return
+            target=location_history.pop();restoring_location=True
+            try:
+                cancel_search();go_location(target)
+            finally:restoring_location=False
+            back_location.setEnabled(bool(location_history))
+        back_location.clicked.connect(return_location)
         def jump_preview(item):
             target=item.data(Qt.ItemDataRole.UserRole)
             if target is not None:
-                selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0));position_status()
+                go_location(target)
         preview.itemClicked.connect(jump_preview)
         preview.itemActivated.connect(jump_preview)
         def cancel_search():
@@ -9347,7 +9401,7 @@ class Window(QMainWindow):
                 if first:target=matches[0]
                 elif direction>0:target=next((item for item in matches if item>origin),matches[0])
                 else:target=next((item for item in reversed(matches) if item<origin),matches[-1])
-                selector.setValue(target[0]+1);rows.setCurrentCell(target[1],0);rows.scrollToItem(rows.item(target[1],0))
+                go_location(target)
             position_status()
         def find_line(direction=1,first=False):
             nonlocal scan_page,query,destination,origin,pages,matcher,preview_offset
@@ -9397,7 +9451,7 @@ class Window(QMainWindow):
         rows.itemChanged.connect(schedule_search)
         rows.currentCellChanged.connect(position_status)
         previous.clicked.connect(lambda:find_line(-1));following.clicked.connect(lambda:find_line())
-        selector.valueChanged.connect(lambda *_:schedule_search() if scope.currentIndex()==1 else None)
+        selector.valueChanged.connect(lambda *_:schedule_search() if scope.currentIndex()==1 and not restoring_location else None)
         dialog.finished.connect(lambda *_:(search_timer.stop(),worker.stop()))
         previous.setEnabled(False);following.setEnabled(False)
         next_pending=QPushButton(self.ui('Nächste Seite mit offenen Prüfungen'));next_pending.setObjectName('ocrNextPendingPage');layout.insertWidget(4,next_pending)

@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Treffer im Zusammenhang, Rücksprung und Kopieren
+
+- **Zeile davor und danach anzeigen** zeigt die Nachbarzeilen derselben Seite im lesbaren Textbereich. Ungespeicherte Korrekturen werden berücksichtigt; an Seitenrändern werden nur vorhandene Zeilen gezeigt. Das Dokument wird nicht verändert.
+- **Zur letzten Fundstelle zurück** kehrt zur vorherigen Position in der OCR-Korrektur zurück, auch nach einem Seitenwechsel. Der auf 100 Positionen begrenzte Verlauf bleibt nur im geöffneten Dialog. Ein Rücksprung beendet einen laufenden Suchdurchlauf; Suchtext und Korrekturentwürfe bleiben erhalten.
+- **Ausgewählte Treffer kopieren** kopiert die markierten Zeilen der aktuellen Treffergruppe mit Seitenzahlen als Klartext. Mehrfachauswahl mit Strg/Shift; höchstens 200 sichtbare Treffer pro Gruppe. Die Zwischenablage wird nur durch diesen ausdrücklichen Klick beschrieben.
+- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert.
+
 ### Neu in 1.71.0: Vollständige Trefferzeile, Gruppensprung und Filterreset
 
 - **Ganze Trefferzeile anzeigen** klappt einen lesbaren, kopierbaren Textbereich für die ausgewählte Zeile auf. Auch lange Zeilen und Sonderzeichen werden vollständig als Text angezeigt; die Vorschau verändert keine PDF-Inhalte. Erneutes Betätigen klappt sie zu.

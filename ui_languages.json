@@ -1329,7 +1329,11 @@
     "Ganze Trefferzeile anzeigen": "Show full matching line",
     "Treffergruppe": "Result group",
     "Zur Treffergruppe": "Go to result group",
-    "Suchoptionen zurücksetzen": "Reset search options"
+    "Suchoptionen zurücksetzen": "Reset search options",
+    "Zeile davor und danach anzeigen": "Show the preceding and following lines",
+    "Zur letzten Fundstelle zurück": "Back to the previous location",
+    "Ausgewählte Treffer kopieren": "Copy selected results",
+    "{0} Treffer kopiert": "{0} results copied"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2661,7 +2665,11 @@
     "Ganze Trefferzeile anzeigen": "Afficher toute la ligne trouvée",
     "Treffergruppe": "Groupe de résultats",
     "Zur Treffergruppe": "Aller au groupe",
-    "Suchoptionen zurücksetzen": "Réinitialiser les options de recherche"
+    "Suchoptionen zurücksetzen": "Réinitialiser les options de recherche",
+    "Zeile davor und danach anzeigen": "Afficher les lignes précédente et suivante",
+    "Zur letzten Fundstelle zurück": "Revenir à la position précédente",
+    "Ausgewählte Treffer kopieren": "Copier les résultats sélectionnés",
+    "{0} Treffer kopiert": "{0} résultats copiés"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -3993,7 +4001,11 @@
     "Ganze Trefferzeile anzeigen": "Mostrar la línea completa",
     "Treffergruppe": "Grupo de resultados",
     "Zur Treffergruppe": "Ir al grupo",
-    "Suchoptionen zurücksetzen": "Restablecer opciones de búsqueda"
+    "Suchoptionen zurücksetzen": "Restablecer opciones de búsqueda",
+    "Zeile davor und danach anzeigen": "Mostrar las líneas anterior y siguiente",
+    "Zur letzten Fundstelle zurück": "Volver a la ubicación anterior",
+    "Ausgewählte Treffer kopieren": "Copiar resultados seleccionados",
+    "{0} Treffer kopiert": "{0} resultados copiados"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5325,7 +5337,11 @@
     "Ganze Trefferzeile anzeigen": "Volledige gevonden regel tonen",
     "Treffergruppe": "Resultaatgroep",
     "Zur Treffergruppe": "Naar resultaatgroep",
-    "Suchoptionen zurücksetzen": "Zoekopties herstellen"
+    "Suchoptionen zurücksetzen": "Zoekopties herstellen",
+    "Zeile davor und danach anzeigen": "Vorige en volgende regel tonen",
+    "Zur letzten Fundstelle zurück": "Terug naar de vorige locatie",
+    "Ausgewählte Treffer kopieren": "Geselecteerde resultaten kopiëren",
+    "{0} Treffer kopiert": "{0} resultaten gekopieerd"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6657,7 +6673,11 @@
     "Ganze Trefferzeile anzeigen": "Mostra la riga completa",
     "Treffergruppe": "Gruppo di risultati",
     "Zur Treffergruppe": "Vai al gruppo",
-    "Suchoptionen zurücksetzen": "Reimposta opzioni di ricerca"
+    "Suchoptionen zurücksetzen": "Reimposta opzioni di ricerca",
+    "Zeile davor und danach anzeigen": "Mostra le righe precedente e successiva",
+    "Zur letzten Fundstelle zurück": "Torna alla posizione precedente",
+    "Ausgewählte Treffer kopieren": "Copia i risultati selezionati",
+    "{0} Treffer kopiert": "{0} risultati copiati"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -7989,7 +8009,11 @@
     "Ganze Trefferzeile anzeigen": "Mostrar linha completa",
     "Treffergruppe": "Grupo de resultados",
     "Zur Treffergruppe": "Ir para o grupo",
-    "Suchoptionen zurücksetzen": "Repor opções de pesquisa"
+    "Suchoptionen zurücksetzen": "Repor opções de pesquisa",
+    "Zeile davor und danach anzeigen": "Mostrar as linhas anterior e seguinte",
+    "Zur letzten Fundstelle zurück": "Voltar à posição anterior",
+    "Ausgewählte Treffer kopieren": "Copiar resultados selecionados",
+    "{0} Treffer kopiert": "{0} resultados copiados"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9321,7 +9345,11 @@
     "Ganze Trefferzeile anzeigen": "Pokaż cały znaleziony wiersz",
     "Treffergruppe": "Grupa wyników",
     "Zur Treffergruppe": "Przejdź do grupy",
-    "Suchoptionen zurücksetzen": "Resetuj opcje wyszukiwania"
+    "Suchoptionen zurücksetzen": "Resetuj opcje wyszukiwania",
+    "Zeile davor und danach anzeigen": "Pokaż poprzedni i następny wiersz",
+    "Zur letzten Fundstelle zurück": "Wróć do poprzedniego miejsca",
+    "Ausgewählte Treffer kopieren": "Kopiuj wybrane wyniki",
+    "{0} Treffer kopiert": "Skopiowano wyniki: {0}"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10653,7 +10681,11 @@
     "Ganze Trefferzeile anzeigen": "Zobrazit celý nalezený řádek",
     "Treffergruppe": "Skupina výsledků",
     "Zur Treffergruppe": "Přejít na skupinu",
-    "Suchoptionen zurücksetzen": "Obnovit možnosti hledání"
+    "Suchoptionen zurücksetzen": "Obnovit možnosti hledání",
+    "Zeile davor und danach anzeigen": "Zobrazit předchozí a následující řádek",
+    "Zur letzten Fundstelle zurück": "Zpět na předchozí místo",
+    "Ausgewählte Treffer kopieren": "Kopírovat vybrané výsledky",
+    "{0} Treffer kopiert": "Zkopírované výsledky: {0}"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -11985,7 +12017,11 @@
     "Ganze Trefferzeile anzeigen": "Vis hele den fundne linje",
     "Treffergruppe": "Resultatgruppe",
     "Zur Treffergruppe": "Gå til resultatgruppe",
-    "Suchoptionen zurücksetzen": "Nulstil søgeindstillinger"
+    "Suchoptionen zurücksetzen": "Nulstil søgeindstillinger",
+    "Zeile davor und danach anzeigen": "Vis linjen før og efter",
+    "Zur letzten Fundstelle zurück": "Tilbage til forrige sted",
+    "Ausgewählte Treffer kopieren": "Kopiér valgte resultater",
+    "{0} Treffer kopiert": "{0} resultater kopieret"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13317,7 +13353,11 @@
     "Ganze Trefferzeile anzeigen": "Visa hela den hittade raden",
     "Treffergruppe": "Resultatgrupp",
     "Zur Treffergruppe": "Gå till resultatgrupp",
-    "Suchoptionen zurücksetzen": "Återställ sökalternativ"
+    "Suchoptionen zurücksetzen": "Återställ sökalternativ",
+    "Zeile davor und danach anzeigen": "Visa föregående och följande rad",
+    "Zur letzten Fundstelle zurück": "Tillbaka till föregående plats",
+    "Ausgewählte Treffer kopieren": "Kopiera valda resultat",
+    "{0} Treffer kopiert": "{0} resultat kopierade"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14649,7 +14689,11 @@
     "Ganze Trefferzeile anzeigen": "Vis hele den funne linjen",
     "Treffergruppe": "Resultatgruppe",
     "Zur Treffergruppe": "Gå til resultatgruppe",
-    "Suchoptionen zurücksetzen": "Tilbakestill søkevalg"
+    "Suchoptionen zurücksetzen": "Tilbakestill søkevalg",
+    "Zeile davor und danach anzeigen": "Vis linjen før og etter",
+    "Zur letzten Fundstelle zurück": "Tilbake til forrige sted",
+    "Ausgewählte Treffer kopieren": "Kopier valgte resultater",
+    "{0} Treffer kopiert": "{0} resultater kopiert"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -15981,7 +16025,11 @@
     "Ganze Trefferzeile anzeigen": "Näytä koko löytynyt rivi",
     "Treffergruppe": "Tulosryhmä",
     "Zur Treffergruppe": "Siirry tulosryhmään",
-    "Suchoptionen zurücksetzen": "Palauta hakuasetukset"
+    "Suchoptionen zurücksetzen": "Palauta hakuasetukset",
+    "Zeile davor und danach anzeigen": "Näytä edellinen ja seuraava rivi",
+    "Zur letzten Fundstelle zurück": "Takaisin edelliseen kohtaan",
+    "Ausgewählte Treffer kopieren": "Kopioi valitut tulokset",
+    "{0} Treffer kopiert": "Kopioituja tuloksia: {0}"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17313,7 +17361,11 @@
     "Ganze Trefferzeile anzeigen": "Eşleşen satırın tamamını göster",
     "Treffergruppe": "Sonuç grubu",
     "Zur Treffergruppe": "Sonuç grubuna git",
-    "Suchoptionen zurücksetzen": "Arama seçeneklerini sıfırla"
+    "Suchoptionen zurücksetzen": "Arama seçeneklerini sıfırla",
+    "Zeile davor und danach anzeigen": "Önceki ve sonraki satırı göster",
+    "Zur letzten Fundstelle zurück": "Önceki konuma dön",
+    "Ausgewählte Treffer kopieren": "Seçili sonuçları kopyala",
+    "{0} Treffer kopiert": "{0} sonuç kopyalandı"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -18645,7 +18697,11 @@
     "Ganze Trefferzeile anzeigen": "Показати весь знайдений рядок",
     "Treffergruppe": "Група результатів",
     "Zur Treffergruppe": "Перейти до групи",
-    "Suchoptionen zurücksetzen": "Скинути параметри пошуку"
+    "Suchoptionen zurücksetzen": "Скинути параметри пошуку",
+    "Zeile davor und danach anzeigen": "Показати попередній і наступний рядки",
+    "Zur letzten Fundstelle zurück": "Повернутися до попереднього місця",
+    "Ausgewählte Treffer kopieren": "Копіювати вибрані результати",
+    "{0} Treffer kopiert": "Скопійовано результатів: {0}"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -19977,7 +20033,11 @@
     "Ganze Trefferzeile anzeigen": "Εμφάνιση ολόκληρης γραμμής",
     "Treffergruppe": "Ομάδα αποτελεσμάτων",
     "Zur Treffergruppe": "Μετάβαση στην ομάδα",
-    "Suchoptionen zurücksetzen": "Επαναφορά επιλογών αναζήτησης"
+    "Suchoptionen zurücksetzen": "Επαναφορά επιλογών αναζήτησης",
+    "Zeile davor und danach anzeigen": "Εμφάνιση προηγούμενης και επόμενης γραμμής",
+    "Zur letzten Fundstelle zurück": "Επιστροφή στην προηγούμενη θέση",
+    "Ausgewählte Treffer kopieren": "Αντιγραφή επιλεγμένων αποτελεσμάτων",
+    "{0} Treffer kopiert": "Αντιγράφηκαν {0} αποτελέσματα"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -21309,7 +21369,11 @@
     "Ganze Trefferzeile anzeigen": "一致した行全体を表示",
     "Treffergruppe": "結果グループ",
     "Zur Treffergruppe": "グループに移動",
-    "Suchoptionen zurücksetzen": "検索オプションをリセット"
+    "Suchoptionen zurücksetzen": "検索オプションをリセット",
+    "Zeile davor und danach anzeigen": "前後の行を表示",
+    "Zur letzten Fundstelle zurück": "前の位置に戻る",
+    "Ausgewählte Treffer kopieren": "選択した検索結果をコピー",
+    "{0} Treffer kopiert": "{0} 件の結果をコピーしました"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -22641,7 +22705,11 @@
     "Ganze Trefferzeile anzeigen": "일치하는 줄 전체 보기",
     "Treffergruppe": "결과 그룹",
     "Zur Treffergruppe": "그룹으로 이동",
-    "Suchoptionen zurücksetzen": "검색 옵션 초기화"
+    "Suchoptionen zurücksetzen": "검색 옵션 초기화",
+    "Zeile davor und danach anzeigen": "이전 및 다음 줄 표시",
+    "Zur letzten Fundstelle zurück": "이전 위치로 돌아가기",
+    "Ausgewählte Treffer kopieren": "선택한 결과 복사",
+    "{0} Treffer kopiert": "결과 {0}개 복사됨"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -23973,7 +24041,11 @@
     "Ganze Trefferzeile anzeigen": "عرض السطر المطابق كاملاً",
     "Treffergruppe": "مجموعة النتائج",
     "Zur Treffergruppe": "الانتقال إلى المجموعة",
-    "Suchoptionen zurücksetzen": "إعادة ضبط خيارات البحث"
+    "Suchoptionen zurücksetzen": "إعادة ضبط خيارات البحث",
+    "Zeile davor und danach anzeigen": "عرض السطر السابق والتالي",
+    "Zur letzten Fundstelle zurück": "العودة إلى الموضع السابق",
+    "Ausgewählte Treffer kopieren": "نسخ النتائج المحددة",
+    "{0} Treffer kopiert": "تم نسخ {0} نتيجة"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -25305,6 +25377,10 @@
     "Ganze Trefferzeile anzeigen": "הצגת כל השורה התואמת",
     "Treffergruppe": "קבוצת תוצאות",
     "Zur Treffergruppe": "מעבר לקבוצה",
-    "Suchoptionen zurücksetzen": "איפוס אפשרויות החיפוש"
+    "Suchoptionen zurücksetzen": "איפוס אפשרויות החיפוש",
+    "Zeile davor und danach anzeigen": "הצגת השורה הקודמת והבאה",
+    "Zur letzten Fundstelle zurück": "חזרה למיקום הקודם",
+    "Ausgewählte Treffer kopieren": "העתקת התוצאות שנבחרו",
+    "{0} Treffer kopiert": "הועתקו {0} תוצאות"
   }
 }
