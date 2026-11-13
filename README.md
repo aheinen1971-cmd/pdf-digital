@@ -1,8 +1,8 @@
-# PDF Digital 1.68.0 für Windows
+# PDF Digital 1.69.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Suchbereich, Trefferliste und Abbruchsteuerung
+### Neu in 1.69.0: Suchbereich, Trefferliste und Abbruchsteuerung
 
 - In der OCR-Korrektur alle Seiten, die aktuelle Seite oder einen Bereich durchsuchen. Ganze Wörter und Groß-/Kleinschreibung sind optional; ohne Groß-/Kleinschreibung wird Unicode-Faltung verwendet. Ganze Wörter orientieren sich an Unicode-Wortzeichen, nicht an einer sprachspezifischen Wortzerlegung.
 - Die anklickbare Vorschau zeigt bis zu 200 passende Textzeilen mit Seitenzahl. Gesamtzähler und Vor-/Zurück-Navigation berücksichtigen alle passenden Zeilen, auch jenseits der Vorschau. Noch nicht übernommene Korrekturen werden mit durchsucht.
@@ -112,7 +112,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.68.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.69.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -122,7 +122,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.68.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.69.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
