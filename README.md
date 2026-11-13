@@ -1,13 +1,12 @@
-# PDF Digital 1.72.0 für Windows
+# PDF Digital 1.73.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Mehr Dokumentfläche, markierter Zusammenhang und Kurzhilfe
+### Neu in 1.73.0: Mehr Dokumentfläche, markierter Zusammenhang und Kurzhilfe
 
 - **Suchwerkzeuge einklappen/anzeigen** blendet Filter und Zusatzwerkzeuge gemeinsam aus und wieder ein. Suchfeld, Navigation, Suchstatus und Abbruch bleiben erreichbar. Suchtext, Optionen, Auswahl und Korrekturentwürfe bleiben erhalten. Der ausgeklappte Werkzeugbereich kann gescrollt werden und lässt Platz für Scan und Text.
 - Die vollständige Textvorschau markiert die Trefferzeile und passende Suchwörter, auch bei Unicode und Groß-/Kleinschreibungsfaltung. Nachbarzeilen bleiben als Zusammenhang lesbar. Die Hervorhebung ändert keinen PDF-Text und keinen kopierten Text.
 - **Kurzhilfe** erklärt Mehrfachauswahl, Kopieren, Rücksprung und Hervorhebung direkt im Prüffenster. Die betreffenden Werkzeuge haben außerdem kurze Hinweise beim Darüberfahren. Alle sechs neuen Bedientexte sind in allen 20 Oberflächensprachen verfügbar.
-- Lokal vorbereitet; noch nicht veröffentlicht oder persönlich installiert.
 
 ### Neu in 1.72.0: Treffer im Zusammenhang, Rücksprung und Kopieren
 
@@ -141,7 +140,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.72.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.73.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -151,7 +150,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.72.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.73.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
