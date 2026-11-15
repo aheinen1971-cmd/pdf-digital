@@ -1,13 +1,13 @@
-# PDF Digital 1.75.0 für Windows
+# PDF Digital 1.76.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Druckumfang, einzelne Seiten und benannte Vorlagen
+### Neu in 1.76.0: Druckumfang, einzelne Seiten und benannte Vorlagen
 
 - Die Vorschau zeigt die Zahl ausgewählter PDF-Seiten, die Exemplare und den gesamten rechnerischen Blattbedarf. Mehrere Seiten pro Blattseite, Duplex und unvollständige letzte Blätter werden je Exemplar berücksichtigt. Zusätzliche Drucker-Trennblätter sind nicht enthalten.
 - **Einzelne Seiten auswählen** öffnet eine Liste mit Häkchen direkt bei der Vorschau. Abgewählte Seiten werden zusätzlich zum Seitenbereich und Gerade-/Ungerade-Filter ausgelassen. **Alle Seiten wieder einschließen** setzt die Häkchen zurück; die übrigen Filter bleiben bestehen. Diese Auswahl gilt nur im offenen Druckdialog, verändert keine PDF und wird nicht in Vorlagen gespeichert.
 - **Benannte Druckvorlagen** speichert bis zu 20 Vorlagen je Drucker, mit Namen von 1–80 Zeichen. Speichern schreibt ausdrücklich; Öffnen übernimmt die unterstützten Druckeinstellungen, nicht die Seitenwahl. Ersetzen und Löschen fragen nach. Die bisherige Standardvorgabe je Drucker bleibt unabhängig bestehen.
-- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert. Kein physischer Papierdruck im automatisierten Test.
+- Alle 20 Oberflächensprachen. Kein physischer Papierdruck im automatisierten Test.
 
 ### Neu in 1.75.0: Papierformat, Druckvorgaben und mehrere Seiten pro Blatt
 
@@ -161,7 +161,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.75.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.76.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -171,7 +171,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.75.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.76.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
