@@ -91,22 +91,21 @@ with TemporaryDirectory() as temp:
     if samsung:
         settings = QSettings("PDF Werkbank", "PDF Werkbank")
         previous = settings.value("samsung_printer")
-        native_exec = QPrintDialog.exec
+        preview_setup = window.print_preview_setup
         observed = []
 
-        def capture_profile(dialog):
-            printer = dialog.printer()
+        def capture_profile(doc, printer, devices):
             assert printer.printerName() == samsung.printerName()
             assert printer.pageLayout().pageSize().id() == QPageSize.PageSizeId.A4
             assert printer.duplex() == QPrinter.DuplexMode.DuplexLongSide
             observed.append(printer.printerName())
-            return QDialog.DialogCode.Rejected
+            return None
 
-        QPrintDialog.exec = capture_profile
+        window.print_preview_setup = capture_profile
         try:
             window.print_dialog(samsung=True)
         finally:
-            QPrintDialog.exec = native_exec
+            window.print_preview_setup = preview_setup
             if previous is None:
                 settings.remove("samsung_printer")
             else:

@@ -10597,18 +10597,15 @@ class Window(QMainWindow):
         if not session:
             return
         devices = QPrinterInfo.availablePrinters()
-        if not devices:
-            self.error(self.ui("Windows meldet keinen installierten Drucker."))
-            return
-        settings = QSettings("PDF Werkbank", "PDF Werkbank")
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        if devices and printer.printerName() not in [d.printerName() for d in devices]:
+            printer = QPrinter(devices[0], QPrinter.PrinterMode.HighResolution)
         if samsung:
-            known = settings.value("samsung_printer", "", str)
-            candidates = [device for device in devices if "samsung" in device.printerName().casefold()]
-            device = next((device for device in candidates if device.printerName() == known), None)
-            if device is None:
-                device = next((device for device in candidates if "clx-3300" in device.printerName().casefold()), None)
-            if device is None and candidates:
-                device = candidates[0]
+            known = self.favorite_settings.value("samsung_printer", "", str)
+            candidates = [d for d in devices if "samsung" in d.printerName().casefold()]
+            device = next((d for d in candidates if d.printerName() == known), None)
+            device = device or next((d for d in candidates if "clx-3300" in d.printerName().casefold()), None)
+            device = device or (candidates[0] if candidates else None)
             if device is None:
                 self.error(self.ui("Windows meldet keinen Samsung-Drucker. Verwende Datei → Drucken für einen anderen Drucker."))
                 return
@@ -10618,65 +10615,200 @@ class Window(QMainWindow):
             printer = QPrinter(device, QPrinter.PrinterMode.HighResolution)
             printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
             printer.setDuplex(QPrinter.DuplexMode.DuplexLongSide)
-            settings.setValue("samsung_printer", device.printerName())
-        else:
-            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
         printer.setDocName(session.path.name)
-        dialog = QPrintDialog(printer, self)
-        dialog.setMinMax(1, len(session.doc))
-        dialog.setFromTo(1, len(session.doc))
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-        start, end = 1, len(session.doc)
-        if printer.printRange() == QPrinter.PrintRange.PageRange:
-            start = max(1, printer.fromPage())
-            end = min(end, printer.toPage())
-        indices = list(range(start - 1, end))
-        options = QDialog(self)
-        options.setWindowTitle(self.ui("Duplex und Seitenfolge"))
-        form = QFormLayout(options)
-        duplex = QComboBox()
-        device = QPrinterInfo.printerInfo(printer.printerName())
-        supported = device.supportedDuplexModes()
-        duplex.addItem("Einseitig", QPrinter.DuplexMode.DuplexNone)
-        for label, mode in [("Lange Kante (wie ein Buch)", QPrinter.DuplexMode.DuplexLongSide),
-                            ("Kurze Kante (wie ein Kalender)", QPrinter.DuplexMode.DuplexShortSide)]:
-            if mode in supported:
-                duplex.addItem(label, mode)
-        duplex.setCurrentIndex(max(0, duplex.findData(printer.duplex())))
-        form.addRow(self.ui("Duplex"), duplex)
-        subset = QComboBox()
-        subset.addItems(["Alle ausgewählten Seiten", "Nur ungerade Seiten", "Nur gerade Seiten"])
-        subset.setToolTip(self.ui("Für manuelles Wenden kannst du zwei getrennte Druckaufträge starten."))
-        form.addRow(self.ui("Seiten"), subset)
-        order = QComboBox()
-        order.addItems(["Vorwärts", "Rückwärts"])
-        form.addRow(self.ui("Reihenfolge"), order)
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setText(self.ui("Vorschau"))
-        buttons.accepted.connect(options.accept)
-        buttons.rejected.connect(options.reject)
-        form.addRow(buttons)
-        if options.exec() != QDialog.DialogCode.Accepted:
-            return
-        if subset.currentIndex():
-            indices = [index for index in indices if (index + 1) % 2 == (subset.currentIndex() % 2)]
-        reverse = order.currentIndex() == 1
-        if reverse:
-            indices.reverse()
-        if not indices:
-            self.error(self.ui("Die Auswahl enthält keine Seiten."))
-            return
-        printer.setDuplex(duplex.currentData())
-        printer.setPageOrder(QPrinter.PageOrder.FirstPageFirst)
         try:
-            if not self.confirm_print(session.doc, indices, printer):
+            result = self.print_preview_setup(session.doc, printer, devices)
+            if result is None:
                 return
+            printer, indices = result
+            printer.setDocName(session.path.name)
+            printer.setPrintRange(QPrinter.PrintRange.AllPages)
             print_pages(session.doc, printer, indices)
         except Exception as exc:
             self.error(exc)
             return
+        if samsung:
+            self.favorite_settings.setValue("samsung_printer", printer.printerName())
         self.statusBar().showMessage(self.ui("Druckauftrag übergeben."), 6500)
+
+    def print_preview_setup(self, doc, printer, devices):
+        """Preview first; no printer output until the explicit final confirmation."""
+        dialog = QDialog(self)
+        dialog.setObjectName("printSetup")
+        dialog.setLayoutDirection(self.layoutDirection())
+        dialog.setWindowTitle(self.ui("Druckvorschau"))
+        outer = QVBoxLayout(dialog)
+        split = QSplitter(Qt.Orientation.Horizontal)
+        outer.addWidget(split, 1)
+        preview = QWidget()
+        view = QVBoxLayout(preview)
+        panels = QHBoxLayout()
+        view.addLayout(panels, 1)
+        images = []
+        for side in range(2):
+            panel = QWidget()
+            layout = QVBoxLayout(panel)
+            heading = QLabel()
+            heading.setObjectName("printHeading" + str(side))
+            heading.setWordWrap(True)
+            area = QScrollArea()
+            area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            image = QLabel()
+            image.setObjectName("printImage" + str(side))
+            area.setWidget(image)
+            layout.addWidget(heading)
+            layout.addWidget(area, 1)
+            panels.addWidget(panel)
+            images.append((panel, heading, image))
+        nav = QHBoxLayout()
+        previous, following = QPushButton("‹"), QPushButton("›")
+        previous.setObjectName("printPrevious")
+        following.setObjectName("printNext")
+        previous.setAccessibleName(self.ui("Vorherige Seite"))
+        following.setAccessibleName(self.ui("Nächste Seite"))
+        count = QLabel()
+        count.setObjectName("printCount")
+        nav.addWidget(previous); nav.addWidget(count); nav.addWidget(following)
+        view.addLayout(nav)
+        split.addWidget(preview)
+        settings_area = QScrollArea()
+        settings_area.setWidgetResizable(True)
+        settings_widget = QWidget()
+        form = QFormLayout(settings_widget)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        settings_area.setWidget(settings_widget)
+        split.addWidget(settings_area)
+        split.setStretchFactor(0, 3); split.setStretchFactor(1, 2)
+
+        def combo(name, choices):
+            widget = QComboBox(); widget.setObjectName(name)
+            widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            widget.setMinimumContentsLength(12)
+            for label, value in choices: widget.addItem(self.ui(label), value)
+            return widget
+
+        device_choice = QComboBox(); device_choice.setObjectName("printPrinter")
+        device_choice.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        device_choice.setMinimumContentsLength(12)
+        for device in devices: device_choice.addItem(device.printerName())
+        device_choice.setCurrentIndex(max(0, device_choice.findText(printer.printerName())))
+        form.addRow(self.ui("Drucker"), device_choice)
+        advanced = QPushButton(self.ui("Druckereinstellungen …"))
+        advanced.setObjectName("printAdvanced")
+        form.addRow(advanced)
+        first, last = QSpinBox(), QSpinBox()
+        for widget, name in ((first, "printFrom"), (last, "printTo")):
+            widget.setObjectName(name); widget.setRange(1, len(doc))
+        last.setValue(len(doc))
+        form.addRow(self.ui("Von Seite"), first)
+        form.addRow(self.ui("Bis Seite"), last)
+        subset = combo("printSubset", [("Alle ausgewählten Seiten", 0), ("Nur ungerade Seiten", 1), ("Nur gerade Seiten", 2)])
+        form.addRow(self.ui("Seiten"), subset)
+        order = combo("printOrder", [("Vorwärts", False), ("Rückwärts", True)])
+        form.addRow(self.ui("Reihenfolge"), order)
+        copies = QSpinBox(); copies.setObjectName("printCopies"); copies.setRange(1, 999); copies.setValue(printer.copyCount())
+        form.addRow(self.ui("Exemplare"), copies)
+        collate = QCheckBox(self.ui("Sortieren")); collate.setObjectName("printCollate"); collate.setChecked(printer.collateCopies())
+        form.addRow(collate)
+        orientation = combo("printOrientation", [("Hochformat", QPageLayout.Orientation.Portrait), ("Querformat", QPageLayout.Orientation.Landscape)])
+        form.addRow(self.ui("Ausrichtung"), orientation)
+        duplex = QComboBox(); duplex.setObjectName("printDuplex")
+        duplex.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        duplex.setMinimumContentsLength(12)
+        form.addRow(self.ui("Duplex"), duplex)
+        notice = QLabel(); notice.setObjectName("printNotice"); notice.setWordWrap(True)
+        form.addRow(notice)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        go = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        go.setObjectName("printSubmit"); go.setText(self.ui("Jetzt drucken"))
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
+        outer.addWidget(buttons)
+        buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject)
+        position, selected = 0, []
+        timer = QTimer(dialog); timer.setSingleShot(True); timer.setInterval(80)
+
+        def sync_printer():
+            orientation.blockSignals(True)
+            orientation.setCurrentIndex(max(0, orientation.findData(printer.pageLayout().orientation())))
+            orientation.blockSignals(False)
+            duplex.blockSignals(True); duplex.clear()
+            duplex.addItem(self.ui("Einseitig"), QPrinter.DuplexMode.DuplexNone)
+            supported = QPrinterInfo.printerInfo(printer.printerName()).supportedDuplexModes()
+            for label, mode in [("Lange Kante (wie ein Buch)", QPrinter.DuplexMode.DuplexLongSide), ("Kurze Kante (wie ein Kalender)", QPrinter.DuplexMode.DuplexShortSide)]:
+                if mode in supported: duplex.addItem(self.ui(label), mode)
+            duplex.setCurrentIndex(max(0, duplex.findData(printer.duplex())))
+            duplex.blockSignals(False)
+
+        def render(reset=False):
+            nonlocal position, selected
+            timer.stop()
+            selected = list(range(first.value() - 1, last.value())) if first.value() <= last.value() else []
+            if subset.currentData(): selected = [i for i in selected if (i + 1) % 2 == subset.currentData() % 2]
+            if order.currentData(): selected.reverse()
+            printer.setPageOrientation(orientation.currentData())
+            printer.setDuplex(duplex.currentData())
+            printer.setCopyCount(copies.value()); printer.setCollateCopies(collate.isChecked())
+            printer.setPageOrder(QPrinter.PageOrder.FirstPageFirst)
+            sheets = print_sheets(selected, printer.duplex() != QPrinter.DuplexMode.DuplexNone)
+            position = 0 if reset else min(position, max(0, len(sheets) - 1))
+            previous.setEnabled(position > 0); following.setEnabled(position + 1 < len(sheets))
+            count.setText(self.ui_format("Blatt {0} von {1}", position + 1 if sheets else 0, len(sheets)))
+            notice.setText(self.ui("Die Auswahl enthält keine Seiten.") if not sheets else (self.ui("Windows meldet keinen installierten Drucker.") if not devices else ""))
+            go.setEnabled(bool(sheets) and bool(devices))
+            try:
+                for side, (panel, heading, image) in enumerate(images):
+                    panel.setVisible(side == 0 or printer.duplex() != QPrinter.DuplexMode.DuplexNone)
+                    index = sheets[position][side] if sheets and side < len(sheets[position]) else None
+                    heading.setText(self.ui_format("PDF-Seite {0}", index + 1) if index is not None else "—")
+                    shot = print_preview_image(doc, index, printer, 240 if printer.duplex() != QPrinter.DuplexMode.DuplexNone else 440)
+                    image.setPixmap(shot); image.resize(shot.size())
+            except Exception:
+                for _, _, image in images: image.clear()
+                notice.setText(self.ui("Druckvorschau konnte nicht erstellt werden.")); go.setEnabled(False)
+
+        def change_printer():
+            nonlocal printer
+            printer = QPrinter(QPrinterInfo.printerInfo(device_choice.currentText()), QPrinter.PrinterMode.HighResolution)
+            sync_printer(); render(True)
+
+        def native_settings():
+            nonlocal printer
+            # A cancelled native settings dialog must not mutate the preview settings.
+            candidate = QPrinter(QPrinterInfo.printerInfo(printer.printerName()), QPrinter.PrinterMode.HighResolution)
+            candidate.setPageLayout(printer.pageLayout()); candidate.setDuplex(printer.duplex())
+            candidate.setCopyCount(copies.value()); candidate.setCollateCopies(collate.isChecked())
+            native = QPrintDialog(candidate, dialog)
+            native.setMinMax(1, len(doc)); native.setFromTo(first.value(), last.value())
+            if native.exec() != QDialog.DialogCode.Accepted: return
+            printer = candidate
+            device_choice.blockSignals(True); device_choice.setCurrentIndex(device_choice.findText(printer.printerName())); device_choice.blockSignals(False)
+            copies.setValue(printer.copyCount()); collate.setChecked(printer.collateCopies())
+            if printer.printRange() == QPrinter.PrintRange.PageRange:
+                first.setValue(printer.fromPage()); last.setValue(printer.toPage())
+            else: first.setValue(1); last.setValue(len(doc))
+            sync_printer(); render(True)
+
+        def move(delta):
+            nonlocal position
+            position += delta; render()
+
+        sync_printer()
+        for widget in (first, last, copies): widget.valueChanged.connect(lambda: timer.start())
+        for widget in (subset, order, orientation, duplex): widget.currentIndexChanged.connect(lambda: timer.start())
+        collate.toggled.connect(lambda: timer.start())
+        timer.timeout.connect(lambda: render(True))
+        device_choice.currentIndexChanged.connect(change_printer)
+        advanced.clicked.connect(native_settings); advanced.setEnabled(bool(devices))
+        previous.clicked.connect(lambda: move(-1)); following.clicked.connect(lambda: move(1))
+        dialog.resize(1000, 720); split.setSizes([570, 380])
+        render(True)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        # Flush pending edits even when Print is clicked before the debounce expires.
+        render(); timer.stop()
+        result = (printer, selected) if accepted and go.isEnabled() else None
+        dialog.deleteLater()
+        return result
+
 
     def confirm_print(self, doc, indices, printer):
         dialog = QDialog(self)
