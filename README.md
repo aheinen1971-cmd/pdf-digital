@@ -1,13 +1,13 @@
-# PDF Digital 1.73.0 für Windows
+# PDF Digital 1.74.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Seitenvorschau direkt beim Drucken
+### Neu in 1.74.0: Seitenvorschau direkt beim Drucken
 
 - „Drucken“ öffnet sofort die PDF-Seitenvorschau mit Einstellungen daneben: Drucker, Seitenbereich, gerade/ungerade Seiten, Reihenfolge, Exemplare, Sortierung, Ausrichtung und unterstützte Duplexarten.
 - Änderungen aktualisieren die Vorschau. Erweiterte Druckereinstellungen bleiben erreichbar; Abbrechen dort verwirft die Änderungen. Erst „Jetzt drucken“ übergibt den Auftrag.
 - Vorschau auch ohne installierten Drucker; Drucken bleibt dann gesperrt. Ungültige/ leere Seitenauswahl und Vorschaufehler verhindern die Übergabe. Große PDFs werden nicht vollständig für die Vorschau gerendert.
-- Alle 20 Oberflächensprachen einschließlich Rechts-nach-links-Anordnung. Lokal vorbereitet und isoliert geprüft; noch nicht veröffentlicht oder persönlich installiert.
+- Alle 20 Oberflächensprachen einschließlich Rechts-nach-links-Anordnung.
 
 ### Neu in 1.73.0: Mehr Dokumentfläche, markierter Zusammenhang und Kurzhilfe
 
@@ -147,7 +147,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.73.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.74.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -157,7 +157,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.73.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.74.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
