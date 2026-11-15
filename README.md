@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Druckumfang, einzelne Seiten und benannte Vorlagen
+
+- Die Vorschau zeigt die Zahl ausgewählter PDF-Seiten, die Exemplare und den gesamten rechnerischen Blattbedarf. Mehrere Seiten pro Blattseite, Duplex und unvollständige letzte Blätter werden je Exemplar berücksichtigt. Zusätzliche Drucker-Trennblätter sind nicht enthalten.
+- **Einzelne Seiten auswählen** öffnet eine Liste mit Häkchen direkt bei der Vorschau. Abgewählte Seiten werden zusätzlich zum Seitenbereich und Gerade-/Ungerade-Filter ausgelassen. **Alle Seiten wieder einschließen** setzt die Häkchen zurück; die übrigen Filter bleiben bestehen. Diese Auswahl gilt nur im offenen Druckdialog, verändert keine PDF und wird nicht in Vorlagen gespeichert.
+- **Benannte Druckvorlagen** speichert bis zu 20 Vorlagen je Drucker, mit Namen von 1–80 Zeichen. Speichern schreibt ausdrücklich; Öffnen übernimmt die unterstützten Druckeinstellungen, nicht die Seitenwahl. Ersetzen und Löschen fragen nach. Die bisherige Standardvorgabe je Drucker bleibt unabhängig bestehen.
+- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert. Kein physischer Papierdruck im automatisierten Test.
+
 ### Neu in 1.75.0: Papierformat, Druckvorgaben und mehrere Seiten pro Blatt
 
 - Papierformat und **Anpassen / Originalgröße (100 %)** direkt in der Druckvorschau wählen. Gestrichelte Grenzen zeigen den druckbaren Bereich. Eine Warnung weist auf mögliche Randabschnitte bei den gerade angezeigten Seiten hin; sie ist keine Prüfung aller Dokumentseiten oder ihrer weißen Ränder.

@@ -598,6 +598,12 @@ def print_sheets(indices, duplex):
             for i in range(0, len(indices), 2)]
 
 
+def print_totals(page_count, pages_per_side, duplex, copies):
+    sides = (page_count + pages_per_side - 1) // pages_per_side
+    sheets = (sides + 1) // 2 if duplex else sides
+    return sides * copies, sheets * copies
+
+
 def print_layout_options(printer):
     mode = getattr(printer, "pdf_scale_mode", "fit")
     count = getattr(printer, "pdf_pages_per_side", 1)
@@ -10719,6 +10725,23 @@ class Window(QMainWindow):
         count.setObjectName("printCount")
         nav.addWidget(previous); nav.addWidget(count); nav.addWidget(following)
         view.addLayout(nav)
+        summary = QLabel(); summary.setObjectName("printSummary"); summary.setWordWrap(True)
+        view.addWidget(summary)
+        summary_note = QLabel(self.ui("Papierbedarf ohne Drucker-Trennblätter.")); summary_note.setWordWrap(True)
+        view.addWidget(summary_note)
+        choose_pages = QPushButton(self.ui("Einzelne Seiten auswählen")); choose_pages.setCheckable(True); choose_pages.setObjectName("printChoosePages")
+        view.addWidget(choose_pages)
+        selection_panel = QWidget(); selection_layout = QVBoxLayout(selection_panel); selection_layout.setContentsMargins(0, 0, 0, 0)
+        selection_help = QLabel(self.ui("Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.")); selection_help.setWordWrap(True)
+        selection_layout.addWidget(selection_help)
+        page_choices = QListWidget(); page_choices.setObjectName("printPageChoices"); page_choices.setMaximumHeight(145)
+        for number in range(len(doc)):
+            item = QListWidgetItem(self.ui_format("PDF-Seite {0}", number + 1)); item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked); page_choices.addItem(item)
+        selection_layout.addWidget(page_choices)
+        reset_pages = QPushButton(self.ui("Alle Seiten wieder einschließen")); reset_pages.setObjectName("printResetPages"); selection_layout.addWidget(reset_pages)
+        view.addWidget(selection_panel); selection_panel.hide()
+        choose_pages.toggled.connect(selection_panel.setVisible)
         split.addWidget(preview)
         settings_area = QScrollArea()
         settings_area.setWidgetResizable(True)
@@ -10778,6 +10801,17 @@ class Window(QMainWindow):
         save_settings = QPushButton(self.ui("Druckeinstellungen speichern")); save_settings.setObjectName("printSaveSettings")
         form.addRow(save_settings)
         saved_notice = QLabel(); saved_notice.setObjectName("printSavedNotice"); saved_notice.setWordWrap(True); form.addRow(saved_notice)
+        named = QComboBox(); named.setObjectName("printNamedPresets")
+        named.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon); named.setMinimumContentsLength(12)
+        form.addRow(self.ui("Benannte Druckvorlagen"), named)
+        preset_name = QLineEdit(); preset_name.setObjectName("printPresetName"); preset_name.setMaxLength(80)
+        form.addRow(self.ui("Vorlagenname"), preset_name)
+        named_buttons = QWidget(); named_row = QHBoxLayout(named_buttons); named_row.setContentsMargins(0, 0, 0, 0)
+        named_save = QPushButton(self.ui("Speichern")); named_save.setObjectName("printNamedSave")
+        named_load = QPushButton(self.ui("Öffnen")); named_load.setObjectName("printNamedLoad")
+        named_delete = QPushButton(self.ui("Löschen")); named_delete.setObjectName("printNamedDelete")
+        for button in (named_save, named_load, named_delete): named_row.addWidget(button)
+        form.addRow(named_buttons)
         notice = QLabel(); notice.setObjectName("printNotice"); notice.setWordWrap(True)
         form.addRow(notice)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -10787,6 +10821,7 @@ class Window(QMainWindow):
         outer.addWidget(buttons)
         buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject)
         position, selected = 0, []
+        excluded = set()
         timer = QTimer(dialog); timer.setSingleShot(True); timer.setInterval(80)
 
         def sync_printer():
@@ -10814,6 +10849,7 @@ class Window(QMainWindow):
             timer.stop()
             selected = list(range(first.value() - 1, last.value())) if first.value() <= last.value() else []
             if subset.currentData(): selected = [i for i in selected if (i + 1) % 2 == subset.currentData() % 2]
+            selected = [i for i in selected if i not in excluded]
             if order.currentData(): selected.reverse()
             if paper.currentData() is not None:
                 printer.setPageSize(paper.currentData())
@@ -10824,6 +10860,8 @@ class Window(QMainWindow):
             printer.setCopyCount(copies.value()); printer.setCollateCopies(collate.isChecked())
             printer.setPageOrder(QPrinter.PageOrder.FirstPageFirst)
             sheets = print_sheets(print_sides(selected, printer), printer.duplex() != QPrinter.DuplexMode.DuplexNone)
+            _, total_sheets = print_totals(len(selected), per_side.currentData(), printer.duplex() != QPrinter.DuplexMode.DuplexNone, copies.value())
+            summary.setText(self.ui_format("PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}", len(selected), copies.value(), total_sheets))
             position = 0 if reset else min(position, max(0, len(sheets) - 1))
             previous.setEnabled(position > 0); following.setEnabled(position + 1 < len(sheets))
             count.setText(self.ui_format("Blatt {0} von {1}", position + 1 if sheets else 0, len(sheets)))
@@ -10837,7 +10875,12 @@ class Window(QMainWindow):
                     numbers = (index,) if isinstance(index, int) else (index or ())
                     heading.setText(self.ui_format("PDF-Seite {0}", ", ".join(str(i + 1) for i in numbers)) if numbers else "—")
                     clipped = clipped or any(item[3] for item in print_placements(doc, index, printer))
-                    shot = print_preview_image(doc, index, printer, 240 if printer.duplex() != QPrinter.DuplexMode.DuplexNone else 440)
+                    width = 240 if printer.duplex() != QPrinter.DuplexMode.DuplexNone else 440
+                    viewport = image.parentWidget()
+                    if dialog.isVisible() and viewport.height() > 50:
+                        sheet = printer.pageLayout().fullRectPoints()
+                        width = min(width, viewport.width() - 8, (viewport.height() - 8) * sheet.width() / sheet.height())
+                    shot = print_preview_image(doc, index, printer, max(40, width))
                     image.setPixmap(shot); image.resize(shot.size())
                 margin_notice.setText(self.ui("Achtung: Seiteninhalt kann am Rand abgeschnitten werden.") if clipped else self.ui("Die angezeigten Seiten passen in den druckbaren Bereich."))
             except Exception:
@@ -10848,7 +10891,9 @@ class Window(QMainWindow):
         def change_printer():
             nonlocal printer
             printer = QPrinter(QPrinterInfo.printerInfo(device_choice.currentText()), QPrinter.PrinterMode.HighResolution)
-            sync_printer(); load_settings(); saved_notice.clear(); render(True)
+            scaling.setCurrentIndex(0); per_side.setCurrentIndex(0)
+            copies.setValue(printer.copyCount()); collate.setChecked(printer.collateCopies())
+            sync_printer(); load_settings(); refresh_named(); saved_notice.clear(); render(True)
 
         def native_settings():
             nonlocal printer
@@ -10865,47 +10910,114 @@ class Window(QMainWindow):
             if printer.printRange() == QPrinter.PrintRange.PageRange:
                 first.setValue(printer.fromPage()); last.setValue(printer.toPage())
             else: first.setValue(1); last.setValue(len(doc))
-            sync_printer(); render(True)
+            sync_printer(); refresh_named(); render(True)
 
         def settings_key():
             return "print/preset/" + hashlib.sha256(printer.printerName().encode("utf-8")).hexdigest()
 
+        def apply_settings(values):
+            if not isinstance(values, dict) or values.get("version") != 1: return
+            for widget, key in ((scaling, "scale"), (per_side, "pages")):
+                found = widget.findData(values.get(key))
+                if found >= 0: widget.setCurrentIndex(found)
+            for widget, key in ((orientation, "orientation"), (duplex, "duplex")):
+                found = next((i for i in range(widget.count()) if widget.itemData(i).value == values.get(key)), -1)
+                if found >= 0: widget.setCurrentIndex(found)
+            for i in range(paper.count()):
+                size = paper.itemData(i)
+                if size.id().value == values.get("paper") and size.name() == values.get("paperName"):
+                    paper.setCurrentIndex(i); break
+            if type(values.get("copies")) is int and 1 <= values["copies"] <= 999: copies.setValue(values["copies"])
+            if type(values.get("collate")) is bool: collate.setChecked(values["collate"])
+
         def load_settings():
             try:
                 raw = self.favorite_settings.value(settings_key(), "", str)
-                if len(raw) > 4096: return
-                values = json.loads(raw)
-                if not isinstance(values, dict) or values.get("version") != 1: return
-                for widget, key in ((scaling, "scale"), (per_side, "pages")):
-                    found = widget.findData(values.get(key))
-                    if found >= 0: widget.setCurrentIndex(found)
-                for widget, key in ((orientation, "orientation"), (duplex, "duplex")):
-                    found = next((i for i in range(widget.count()) if widget.itemData(i).value == values.get(key)), -1)
-                    if found >= 0: widget.setCurrentIndex(found)
-                for i in range(paper.count()):
-                    size = paper.itemData(i)
-                    if size.id().value == values.get("paper") and size.name() == values.get("paperName"):
-                        paper.setCurrentIndex(i); break
-                if type(values.get("copies")) is int and 1 <= values["copies"] <= 999: copies.setValue(values["copies"])
-                if type(values.get("collate")) is bool: collate.setChecked(values["collate"])
+                if len(raw) <= 4096: apply_settings(json.loads(raw))
             except (ValueError, TypeError, AttributeError):
                 pass
 
-        def save_preset():
+        def current_settings():
             render()
             size = printer.pageLayout().pageSize()
-            values = dict(version=1, scale=scaling.currentData(), pages=per_side.currentData(),
-                          paper=size.id().value, paperName=size.name(), orientation=printer.pageLayout().orientation().value,
-                          duplex=printer.duplex().value, copies=copies.value(), collate=collate.isChecked())
-            self.favorite_settings.setValue(settings_key(), json.dumps(values))
+            return dict(version=1, scale=scaling.currentData(), pages=per_side.currentData(),
+                        paper=size.id().value, paperName=size.name(), orientation=printer.pageLayout().orientation().value,
+                        duplex=printer.duplex().value, copies=copies.value(), collate=collate.isChecked())
+
+        def write_settings(key, value):
+            self.favorite_settings.setValue(key, json.dumps(value))
             self.favorite_settings.sync()
             saved_notice.setText(self.ui("Druckeinstellungen gespeichert.") if self.favorite_settings.status() == QSettings.Status.NoError else self.ui("Druckeinstellungen konnten nicht gespeichert werden."))
+
+        def save_preset():
+            write_settings(settings_key(), current_settings())
+
+        def named_key():
+            return settings_key().replace("print/preset/", "print/named/")
+
+        def read_named():
+            try:
+                raw = self.favorite_settings.value(named_key(), "{}", str)
+                if len(raw) > 65536: return {}
+                data = json.loads(raw)
+                if not isinstance(data, dict) or len(data) > 20: return {}
+                return {name: value for name, value in data.items() if isinstance(name, str) and name.strip() == name and 0 < len(name) <= 80
+                        and not any(ord(c) < 32 for c in name) and isinstance(value, dict) and value.get("version") == 1}
+            except (ValueError, TypeError):
+                return {}
+
+        def refresh_named(preferred=""):
+            names = sorted(read_named(), key=str.casefold)
+            named.blockSignals(True); named.clear(); named.addItems(names)
+            if preferred in names: named.setCurrentText(preferred)
+            named.blockSignals(False)
+            preset_name.setText(named.currentText())
+            named_load.setEnabled(bool(names)); named_delete.setEnabled(bool(names))
+
+        def confirm_named(text, name):
+            box = QMessageBox(dialog); box.setWindowTitle(self.ui("Benannte Druckvorlagen")); box.setText(self.ui_format(text, name))
+            box.setTextFormat(Qt.TextFormat.PlainText)
+            box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
+            box.button(QMessageBox.StandardButton.Yes).setText(self.ui("Speichern") if text == "Vorlage „{0}“ ersetzen?" else self.ui("Löschen"))
+            box.button(QMessageBox.StandardButton.Cancel).setText(self.ui("Abbrechen")); box.setDefaultButton(QMessageBox.StandardButton.Cancel)
+            return box.exec() == QMessageBox.StandardButton.Yes
+
+        def save_named():
+            name = preset_name.text().strip(); data = read_named()
+            if not name or any(ord(c) < 32 for c in name) or len(name) > 80 or (name not in data and len(data) >= 20):
+                saved_notice.setText(self.ui("Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.")); return
+            if name in data and not confirm_named("Vorlage „{0}“ ersetzen?", name): return
+            data[name] = current_settings(); write_settings(named_key(), data); refresh_named(name)
+
+        def load_named():
+            apply_settings(read_named().get(named.currentText())); render(True)
+
+        def delete_named():
+            name = named.currentText(); data = read_named()
+            if name not in data or not confirm_named("Vorlage „{0}“ löschen?", name): return
+            del data[name]; write_settings(named_key(), data); refresh_named()
+
+        def page_changed(item):
+            number = page_choices.row(item)
+            if item.checkState() == Qt.CheckState.Checked: excluded.discard(number)
+            else: excluded.add(number)
+            timer.start()
+
+        def include_all():
+            excluded.clear(); page_choices.blockSignals(True)
+            for i in range(page_choices.count()): page_choices.item(i).setCheckState(Qt.CheckState.Checked)
+            page_choices.blockSignals(False); render(True)
 
         def move(delta):
             nonlocal position
             position += delta; render()
 
-        sync_printer(); load_settings()
+        sync_printer(); load_settings(); refresh_named()
+        named_save.clicked.connect(save_named); named_save.setEnabled(bool(devices))
+        named_load.clicked.connect(load_named); named_delete.clicked.connect(delete_named)
+        named.currentTextChanged.connect(preset_name.setText)
+        page_choices.itemChanged.connect(page_changed); reset_pages.clicked.connect(include_all)
+        choose_pages.toggled.connect(lambda: timer.start())
         save_settings.clicked.connect(save_preset); save_settings.setEnabled(bool(devices))
         for widget in (first, last, copies): widget.valueChanged.connect(lambda: timer.start())
         for widget in (subset, order, orientation, duplex, paper, scaling, per_side): widget.currentIndexChanged.connect(lambda: timer.start())

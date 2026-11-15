@@ -1369,7 +1369,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "The displayed pages fit within the printable area.",
     "Druckeinstellungen speichern": "Save print settings",
     "Druckeinstellungen gespeichert.": "Print settings saved.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Print settings could not be saved."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Print settings could not be saved.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF pages: {0} · Copies: {1} · Total sheets: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Paper count excludes printer separator sheets.",
+    "Einzelne Seiten auswählen": "Select individual pages",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Uncheck to exclude pages. Page range and odd/even filters also apply.",
+    "Alle Seiten wieder einschließen": "Include all pages again",
+    "Benannte Druckvorlagen": "Named print presets",
+    "Vorlagenname": "Preset name",
+    "Vorlage „{0}“ ersetzen?": "Replace preset “{0}”?",
+    "Vorlage „{0}“ löschen?": "Delete preset “{0}”?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Name: 1–80 characters. Up to 20 presets per printer."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2741,7 +2751,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Les pages affichées tiennent dans la zone imprimable.",
     "Druckeinstellungen speichern": "Enregistrer les réglages d’impression",
     "Druckeinstellungen gespeichert.": "Réglages d’impression enregistrés.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Impossible d’enregistrer les réglages d’impression."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Impossible d’enregistrer les réglages d’impression.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Pages PDF : {0} · Exemplaires : {1} · Feuilles au total : {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Le calcul exclut les feuilles de séparation de l’imprimante.",
+    "Einzelne Seiten auswählen": "Sélectionner les pages individuellement",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Décochez pour exclure des pages. La plage et les filtres pair/impair s’appliquent aussi.",
+    "Alle Seiten wieder einschließen": "Inclure à nouveau toutes les pages",
+    "Benannte Druckvorlagen": "Préréglages d’impression nommés",
+    "Vorlagenname": "Nom du préréglage",
+    "Vorlage „{0}“ ersetzen?": "Remplacer le préréglage « {0} » ?",
+    "Vorlage „{0}“ löschen?": "Supprimer le préréglage « {0} » ?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Nom : 1 à 80 caractères. Jusqu’à 20 préréglages par imprimante."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4113,7 +4133,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Las páginas mostradas caben en el área imprimible.",
     "Druckeinstellungen speichern": "Guardar ajustes de impresión",
     "Druckeinstellungen gespeichert.": "Ajustes de impresión guardados.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "No se pudieron guardar los ajustes de impresión."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "No se pudieron guardar los ajustes de impresión.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Páginas PDF: {0} · Copias: {1} · Hojas en total: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "El cálculo excluye las hojas separadoras de la impresora.",
+    "Einzelne Seiten auswählen": "Seleccionar páginas individuales",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Desmarque para excluir páginas. También se aplican el intervalo y los filtros par/impar.",
+    "Alle Seiten wieder einschließen": "Volver a incluir todas las páginas",
+    "Benannte Druckvorlagen": "Preajustes de impresión con nombre",
+    "Vorlagenname": "Nombre del preajuste",
+    "Vorlage „{0}“ ersetzen?": "¿Reemplazar el preajuste «{0}»?",
+    "Vorlage „{0}“ löschen?": "¿Eliminar el preajuste «{0}»?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Nombre: 1–80 caracteres. Hasta 20 preajustes por impresora."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5485,7 +5515,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "De weergegeven pagina’s passen binnen het afdrukbare gebied.",
     "Druckeinstellungen speichern": "Afdrukinstellingen opslaan",
     "Druckeinstellungen gespeichert.": "Afdrukinstellingen opgeslagen.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Afdrukinstellingen konden niet worden opgeslagen."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Afdrukinstellingen konden niet worden opgeslagen.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF-pagina’s: {0} · Exemplaren: {1} · Totaal vellen: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Papierberekening zonder scheidingsvellen van de printer.",
+    "Einzelne Seiten auswählen": "Afzonderlijke pagina’s selecteren",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Vink uit om pagina’s uit te sluiten. Paginabereik en even/oneven gelden daarnaast.",
+    "Alle Seiten wieder einschließen": "Alle pagina’s weer opnemen",
+    "Benannte Druckvorlagen": "Benoemde afdrukvoorinstellingen",
+    "Vorlagenname": "Naam voorinstelling",
+    "Vorlage „{0}“ ersetzen?": "Voorinstelling ‘{0}’ vervangen?",
+    "Vorlage „{0}“ löschen?": "Voorinstelling ‘{0}’ verwijderen?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Naam: 1–80 tekens. Maximaal 20 voorinstellingen per printer."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6857,7 +6897,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Le pagine visualizzate rientrano nell’area stampabile.",
     "Druckeinstellungen speichern": "Salva impostazioni di stampa",
     "Druckeinstellungen gespeichert.": "Impostazioni di stampa salvate.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Impossibile salvare le impostazioni di stampa."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Impossibile salvare le impostazioni di stampa.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Pagine PDF: {0} · Copie: {1} · Fogli totali: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Il calcolo esclude i fogli separatori della stampante.",
+    "Einzelne Seiten auswählen": "Seleziona singole pagine",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Deseleziona per escludere pagine. Si applicano anche intervallo e filtri pari/dispari.",
+    "Alle Seiten wieder einschließen": "Includi di nuovo tutte le pagine",
+    "Benannte Druckvorlagen": "Preimpostazioni di stampa con nome",
+    "Vorlagenname": "Nome preimpostazione",
+    "Vorlage „{0}“ ersetzen?": "Sostituire la preimpostazione «{0}»?",
+    "Vorlage „{0}“ löschen?": "Eliminare la preimpostazione «{0}»?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Nome: 1–80 caratteri. Massimo 20 preimpostazioni per stampante."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8229,7 +8279,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "As páginas apresentadas cabem na área imprimível.",
     "Druckeinstellungen speichern": "Guardar definições de impressão",
     "Druckeinstellungen gespeichert.": "Definições de impressão guardadas.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Não foi possível guardar as definições de impressão."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Não foi possível guardar as definições de impressão.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Páginas PDF: {0} · Cópias: {1} · Total de folhas: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "O cálculo exclui as folhas separadoras da impressora.",
+    "Einzelne Seiten auswählen": "Selecionar páginas individuais",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Desmarque para excluir páginas. O intervalo e os filtros par/ímpar também se aplicam.",
+    "Alle Seiten wieder einschließen": "Voltar a incluir todas as páginas",
+    "Benannte Druckvorlagen": "Predefinições de impressão com nome",
+    "Vorlagenname": "Nome da predefinição",
+    "Vorlage „{0}“ ersetzen?": "Substituir a predefinição «{0}»?",
+    "Vorlage „{0}“ löschen?": "Eliminar a predefinição «{0}»?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Nome: 1–80 caracteres. Até 20 predefinições por impressora."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9601,7 +9661,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Wyświetlane strony mieszczą się w obszarze drukowania.",
     "Druckeinstellungen speichern": "Zapisz ustawienia drukowania",
     "Druckeinstellungen gespeichert.": "Ustawienia drukowania zapisane.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Nie udało się zapisać ustawień drukowania."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Nie udało się zapisać ustawień drukowania.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Strony PDF: {0} · Kopie: {1} · Arkusze łącznie: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Obliczenie nie obejmuje arkuszy rozdzielających drukarki.",
+    "Einzelne Seiten auswählen": "Wybierz pojedyncze strony",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Odznacz, aby wykluczyć strony. Zakres oraz filtry parzyste/nieparzyste nadal obowiązują.",
+    "Alle Seiten wieder einschließen": "Ponownie uwzględnij wszystkie strony",
+    "Benannte Druckvorlagen": "Nazwane ustawienia drukowania",
+    "Vorlagenname": "Nazwa ustawienia",
+    "Vorlage „{0}“ ersetzen?": "Zastąpić ustawienie „{0}”?",
+    "Vorlage „{0}“ löschen?": "Usunąć ustawienie „{0}”?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Nazwa: 1–80 znaków. Maksymalnie 20 ustawień na drukarkę."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10973,7 +11043,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Zobrazené stránky se vejdou do tisknutelné oblasti.",
     "Druckeinstellungen speichern": "Uložit nastavení tisku",
     "Druckeinstellungen gespeichert.": "Nastavení tisku uloženo.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Nastavení tisku se nepodařilo uložit."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Nastavení tisku se nepodařilo uložit.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Stránky PDF: {0} · Kopie: {1} · Listů celkem: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Výpočet nezahrnuje oddělovací listy tiskárny.",
+    "Einzelne Seiten auswählen": "Vybrat jednotlivé stránky",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Zrušením zaškrtnutí vyloučíte stránky. Platí také rozsah a filtr sudých/lichých stránek.",
+    "Alle Seiten wieder einschließen": "Znovu zahrnout všechny stránky",
+    "Benannte Druckvorlagen": "Pojmenované předvolby tisku",
+    "Vorlagenname": "Název předvolby",
+    "Vorlage „{0}“ ersetzen?": "Nahradit předvolbu „{0}“?",
+    "Vorlage „{0}“ löschen?": "Smazat předvolbu „{0}“?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Název: 1–80 znaků. Nejvýše 20 předvoleb na tiskárnu."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12345,7 +12425,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "De viste sider passer i udskriftsområdet.",
     "Druckeinstellungen speichern": "Gem udskriftsindstillinger",
     "Druckeinstellungen gespeichert.": "Udskriftsindstillinger gemt.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Udskriftsindstillinger kunne ikke gemmes."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Udskriftsindstillinger kunne ikke gemmes.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF-sider: {0} · Kopier: {1} · Ark i alt: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Papirberegningen omfatter ikke printerens skilleark.",
+    "Einzelne Seiten auswählen": "Vælg enkelte sider",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Fjern markeringen for at udelade sider. Sideinterval og lige/ulige gælder også.",
+    "Alle Seiten wieder einschließen": "Medtag alle sider igen",
+    "Benannte Druckvorlagen": "Navngivne udskriftsforvalg",
+    "Vorlagenname": "Navn på forvalg",
+    "Vorlage „{0}“ ersetzen?": "Erstat forvalget »{0}«?",
+    "Vorlage „{0}“ löschen?": "Slet forvalget »{0}«?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Navn: 1–80 tegn. Højst 20 forvalg pr. printer."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13717,7 +13807,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "De visade sidorna ryms inom utskriftsområdet.",
     "Druckeinstellungen speichern": "Spara utskriftsinställningar",
     "Druckeinstellungen gespeichert.": "Utskriftsinställningar sparade.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Utskriftsinställningarna kunde inte sparas."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Utskriftsinställningarna kunde inte sparas.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF-sidor: {0} · Kopior: {1} · Ark totalt: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Pappersberäkningen utesluter skrivarens skiljeark.",
+    "Einzelne Seiten auswählen": "Välj enskilda sidor",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Avmarkera för att utesluta sidor. Sidintervall och jämna/udda gäller också.",
+    "Alle Seiten wieder einschließen": "Ta med alla sidor igen",
+    "Benannte Druckvorlagen": "Namngivna utskriftsförval",
+    "Vorlagenname": "Förvalets namn",
+    "Vorlage „{0}“ ersetzen?": "Ersätta förvalet ”{0}”?",
+    "Vorlage „{0}“ löschen?": "Ta bort förvalet ”{0}”?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Namn: 1–80 tecken. Högst 20 förval per skrivare."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15089,7 +15189,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "De viste sidene passer i utskriftsområdet.",
     "Druckeinstellungen speichern": "Lagre utskriftsinnstillinger",
     "Druckeinstellungen gespeichert.": "Utskriftsinnstillinger lagret.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Utskriftsinnstillingene kunne ikke lagres."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Utskriftsinnstillingene kunne ikke lagres.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF-sider: {0} · Kopier: {1} · Ark totalt: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Papirberegningen utelater skriverens skilleark.",
+    "Einzelne Seiten auswählen": "Velg enkeltsider",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Fjern avmerkingen for å utelate sider. Sideområde og partall/oddetall gjelder også.",
+    "Alle Seiten wieder einschließen": "Ta med alle sider igjen",
+    "Benannte Druckvorlagen": "Navngitte utskriftsforvalg",
+    "Vorlagenname": "Navn på forvalg",
+    "Vorlage „{0}“ ersetzen?": "Erstatte forvalget «{0}»?",
+    "Vorlage „{0}“ löschen?": "Slette forvalget «{0}»?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Navn: 1–80 tegn. Høyst 20 forvalg per skriver."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16461,7 +16571,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Näytetyt sivut mahtuvat tulostusalueelle.",
     "Druckeinstellungen speichern": "Tallenna tulostusasetukset",
     "Druckeinstellungen gespeichert.": "Tulostusasetukset tallennettu.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Tulostusasetuksia ei voitu tallentaa."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Tulostusasetuksia ei voitu tallentaa.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF-sivuja: {0} · Kopioita: {1} · Arkkeja yhteensä: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Paperimäärä ei sisällä tulostimen erotinarkkeja.",
+    "Einzelne Seiten auswählen": "Valitse yksittäiset sivut",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Poista valinta jättääksesi sivuja pois. Sivualue ja parilliset/parittomat-suodatin pätevät myös.",
+    "Alle Seiten wieder einschließen": "Sisällytä kaikki sivut uudelleen",
+    "Benannte Druckvorlagen": "Nimetyt tulostusesiasetukset",
+    "Vorlagenname": "Esiasetuksen nimi",
+    "Vorlage „{0}“ ersetzen?": "Korvataanko esiasetus ”{0}”?",
+    "Vorlage „{0}“ löschen?": "Poistetaanko esiasetus ”{0}”?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Nimi: 1–80 merkkiä. Enintään 20 esiasetusta tulostinta kohti."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17833,7 +17953,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Gösterilen sayfalar yazdırılabilir alana sığıyor.",
     "Druckeinstellungen speichern": "Yazdırma ayarlarını kaydet",
     "Druckeinstellungen gespeichert.": "Yazdırma ayarları kaydedildi.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Yazdırma ayarları kaydedilemedi."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Yazdırma ayarları kaydedilemedi.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF sayfaları: {0} · Kopyalar: {1} · Toplam yaprak: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Kağıt hesabına yazıcının ayırıcı yaprakları dahil değildir.",
+    "Einzelne Seiten auswählen": "Tek tek sayfa seç",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Sayfaları hariç tutmak için işareti kaldırın. Sayfa aralığı ve tek/çift filtreleri de geçerlidir.",
+    "Alle Seiten wieder einschließen": "Tüm sayfaları yeniden dahil et",
+    "Benannte Druckvorlagen": "Adlandırılmış yazdırma ön ayarları",
+    "Vorlagenname": "Ön ayar adı",
+    "Vorlage „{0}“ ersetzen?": "“{0}” ön ayarı değiştirilsin mi?",
+    "Vorlage „{0}“ löschen?": "“{0}” ön ayarı silinsin mi?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Ad: 1–80 karakter. Yazıcı başına en fazla 20 ön ayar."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19205,7 +19335,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Показані сторінки вміщуються в область друку.",
     "Druckeinstellungen speichern": "Зберегти налаштування друку",
     "Druckeinstellungen gespeichert.": "Налаштування друку збережено.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Не вдалося зберегти налаштування друку."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Не вдалося зберегти налаштування друку.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Сторінки PDF: {0} · Копії: {1} · Аркушів загалом: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Розрахунок не враховує розділювальні аркуші принтера.",
+    "Einzelne Seiten auswählen": "Вибрати окремі сторінки",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Зніміть позначку, щоб виключити сторінки. Діапазон і фільтри парних/непарних також діють.",
+    "Alle Seiten wieder einschließen": "Знову включити всі сторінки",
+    "Benannte Druckvorlagen": "Іменовані шаблони друку",
+    "Vorlagenname": "Назва шаблону",
+    "Vorlage „{0}“ ersetzen?": "Замінити шаблон «{0}»?",
+    "Vorlage „{0}“ löschen?": "Видалити шаблон «{0}»?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Назва: 1–80 символів. До 20 шаблонів на принтер."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -20577,7 +20717,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "Οι εμφανιζόμενες σελίδες χωρούν στην εκτυπώσιμη περιοχή.",
     "Druckeinstellungen speichern": "Αποθήκευση ρυθμίσεων εκτύπωσης",
     "Druckeinstellungen gespeichert.": "Οι ρυθμίσεις εκτύπωσης αποθηκεύτηκαν.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "Δεν ήταν δυνατή η αποθήκευση των ρυθμίσεων εκτύπωσης."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Δεν ήταν δυνατή η αποθήκευση των ρυθμίσεων εκτύπωσης.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "Σελίδες PDF: {0} · Αντίγραφα: {1} · Φύλλα συνολικά: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "Ο υπολογισμός δεν περιλαμβάνει διαχωριστικά φύλλα του εκτυπωτή.",
+    "Einzelne Seiten auswählen": "Επιλογή μεμονωμένων σελίδων",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "Αποεπιλέξτε για εξαίρεση σελίδων. Ισχύουν επίσης το εύρος και τα φίλτρα μονών/ζυγών.",
+    "Alle Seiten wieder einschließen": "Συμπερίληψη όλων των σελίδων ξανά",
+    "Benannte Druckvorlagen": "Ονομαστικές προεπιλογές εκτύπωσης",
+    "Vorlagenname": "Όνομα προεπιλογής",
+    "Vorlage „{0}“ ersetzen?": "Αντικατάσταση της προεπιλογής «{0}»;",
+    "Vorlage „{0}“ löschen?": "Διαγραφή της προεπιλογής «{0}»;",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "Όνομα: 1–80 χαρακτήρες. Έως 20 προεπιλογές ανά εκτυπωτή."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -21949,7 +22099,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "表示中のページは印刷可能領域に収まっています。",
     "Druckeinstellungen speichern": "印刷設定を保存",
     "Druckeinstellungen gespeichert.": "印刷設定を保存しました。",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "印刷設定を保存できませんでした。"
+    "Druckeinstellungen konnten nicht gespeichert werden.": "印刷設定を保存できませんでした。",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDFページ数：{0} · 部数：{1} · 合計用紙枚数：{2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "プリンターの区切り紙は計算に含みません。",
+    "Einzelne Seiten auswählen": "個別のページを選択",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "チェックを外すとページを除外します。ページ範囲と奇数・偶数の条件も適用されます。",
+    "Alle Seiten wieder einschließen": "すべてのページを再び含める",
+    "Benannte Druckvorlagen": "名前付き印刷プリセット",
+    "Vorlagenname": "プリセット名",
+    "Vorlage „{0}“ ersetzen?": "プリセット「{0}」を置き換えますか？",
+    "Vorlage „{0}“ löschen?": "プリセット「{0}」を削除しますか？",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "名前は1～80文字。プリンターごとに最大20件。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -23321,7 +23481,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "표시된 페이지가 인쇄 가능 영역에 맞습니다.",
     "Druckeinstellungen speichern": "인쇄 설정 저장",
     "Druckeinstellungen gespeichert.": "인쇄 설정을 저장했습니다.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "인쇄 설정을 저장하지 못했습니다."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "인쇄 설정을 저장하지 못했습니다.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "PDF 페이지: {0} · 매수: {1} · 총 용지: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "용지 계산에는 프린터의 구분 용지가 포함되지 않습니다.",
+    "Einzelne Seiten auswählen": "개별 페이지 선택",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "체크를 해제하면 페이지가 제외됩니다. 페이지 범위와 홀수/짝수 조건도 적용됩니다.",
+    "Alle Seiten wieder einschließen": "모든 페이지 다시 포함",
+    "Benannte Druckvorlagen": "이름이 있는 인쇄 프리셋",
+    "Vorlagenname": "프리셋 이름",
+    "Vorlage „{0}“ ersetzen?": "프리셋 “{0}”을 교체할까요?",
+    "Vorlage „{0}“ löschen?": "프리셋 “{0}”을 삭제할까요?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "이름: 1~80자. 프린터당 최대 20개."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -24693,7 +24863,17 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "الصفحات المعروضة تناسب المنطقة القابلة للطباعة.",
     "Druckeinstellungen speichern": "حفظ إعدادات الطباعة",
     "Druckeinstellungen gespeichert.": "تم حفظ إعدادات الطباعة.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "تعذر حفظ إعدادات الطباعة."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "تعذر حفظ إعدادات الطباعة.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "صفحات PDF: {0} · النسخ: {1} · إجمالي الأوراق: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "لا يشمل حساب الورق أوراق الفصل الخاصة بالطابعة.",
+    "Einzelne Seiten auswählen": "اختيار صفحات منفردة",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "أزل العلامة لاستبعاد صفحات. يظل نطاق الصفحات ومرشح الزوجي/الفردي ساريين أيضًا.",
+    "Alle Seiten wieder einschließen": "إدراج جميع الصفحات مجددًا",
+    "Benannte Druckvorlagen": "إعدادات طباعة مسبقة مسماة",
+    "Vorlagenname": "اسم الإعداد المسبق",
+    "Vorlage „{0}“ ersetzen?": "استبدال الإعداد المسبق «{0}»؟",
+    "Vorlage „{0}“ löschen?": "حذف الإعداد المسبق «{0}»؟",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "الاسم: 1–80 حرفًا. حتى 20 إعدادًا لكل طابعة."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -26065,6 +26245,16 @@
     "Die angezeigten Seiten passen in den druckbaren Bereich.": "העמודים המוצגים נכנסים לאזור הניתן להדפסה.",
     "Druckeinstellungen speichern": "שמירת הגדרות הדפסה",
     "Druckeinstellungen gespeichert.": "הגדרות ההדפסה נשמרו.",
-    "Druckeinstellungen konnten nicht gespeichert werden.": "לא ניתן לשמור את הגדרות ההדפסה."
+    "Druckeinstellungen konnten nicht gespeichert werden.": "לא ניתן לשמור את הגדרות ההדפסה.",
+    "PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}": "עמודי PDF: {0} · עותקים: {1} · סך הגיליונות: {2}",
+    "Papierbedarf ohne Drucker-Trennblätter.": "חישוב הנייר אינו כולל דפי הפרדה של המדפסת.",
+    "Einzelne Seiten auswählen": "בחירת עמודים בודדים",
+    "Häkchen entfernen, um Seiten auszuschließen. Seitenbereich und Gerade/Ungerade gelten zusätzlich.": "בטלו סימון כדי להוציא עמודים. טווח העמודים ומסנני זוגי/אי־זוגי חלים גם הם.",
+    "Alle Seiten wieder einschließen": "כלילת כל העמודים מחדש",
+    "Benannte Druckvorlagen": "תבניות הדפסה בעלות שם",
+    "Vorlagenname": "שם התבנית",
+    "Vorlage „{0}“ ersetzen?": "להחליף את התבנית „{0}“?",
+    "Vorlage „{0}“ löschen?": "למחוק את התבנית „{0}“?",
+    "Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.": "שם: 1–80 תווים. עד 20 תבניות לכל מדפסת."
   }
 }
