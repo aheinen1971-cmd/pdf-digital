@@ -598,24 +598,76 @@ def print_sheets(indices, duplex):
             for i in range(0, len(indices), 2)]
 
 
+def print_layout_options(printer):
+    mode = getattr(printer, "pdf_scale_mode", "fit")
+    count = getattr(printer, "pdf_pages_per_side", 1)
+    return (mode if mode in ("fit", "actual") else "fit", count if count in (1, 2, 4) else 1)
+
+
+def print_sides(indices, printer):
+    count = print_layout_options(printer)[1]
+    if count == 1:
+        return list(indices)
+    return [tuple(indices[i:i + count]) for i in range(0, len(indices), count)]
+
+
+def print_placements(doc, indices, printer):
+    """Point-based geometry shared by preview and output; cells never overlap."""
+    if indices is None:
+        return []
+    indices = (indices,) if isinstance(indices, int) else indices
+    mode, count = print_layout_options(printer)
+    area = printer.pageLayout().paintRectPoints()
+    cols, rows = ((1, 1) if count == 1 else ((2, 1) if area.width() > area.height() else (1, 2))) if count != 4 else (2, 2)
+    gap = 8 if count > 1 else 0
+    width, height = (area.width() - gap * (cols - 1)) / cols, (area.height() - gap * (rows - 1)) / rows
+    if width <= 0 or height <= 0:
+        raise ValueError("Invalid printable area")
+    result = []
+    for slot, index in enumerate(indices):
+        page = doc[index]
+        cell = QRectF(area.x() + (slot % cols) * (width + gap), area.y() + (slot // cols) * (height + gap), width, height)
+        ratio = min(width / page.rect.width, height / page.rect.height) if mode == "fit" else 1.0
+        target = QRectF(cell.center().x() - page.rect.width * ratio / 2, cell.center().y() - page.rect.height * ratio / 2, page.rect.width * ratio, page.rect.height * ratio)
+        clipped = target.width() > cell.width() + .1 or target.height() > cell.height() + .1
+        result.append((index, cell, target, clipped))
+    return result
+
+
+def draw_print_side(painter, doc, indices, printer, scale, offset_x=0, offset_y=0, guides=False):
+    for index, cell, target, clipped in print_placements(doc, indices, printer):
+        def mapped(rect):
+            return QRectF((rect.x() - offset_x) * scale, (rect.y() - offset_y) * scale, rect.width() * scale, rect.height() * scale)
+        painter.save()
+        painter.setClipRect(mapped(cell))
+        page = doc[index]
+        ratio = target.width() / page.rect.width
+        visible = target.intersected(cell)
+        source = pdf.Rect((visible.x() - target.x()) / ratio,
+                          (visible.y() - target.y()) / ratio,
+                          (visible.right() - target.x()) / ratio,
+                          (visible.bottom() - target.y()) / ratio)
+        # Render only the visible part, including for very large pages at 100%.
+        data = page.get_pixmap(matrix=pdf.Matrix(min(ratio * scale, 300 / 72), min(ratio * scale, 300 / 72)), clip=source, alpha=False)
+        image = QPixmap.fromImage(QImage(data.samples, data.width, data.height, data.stride, QImage.Format.Format_RGB888))
+        painter.drawPixmap(mapped(visible), image, QRectF(image.rect()))
+        painter.restore()
+        if guides:
+            painter.setPen(QPen(QColor("#b91c1c" if clipped else "#94a3b8"), 1, Qt.PenStyle.DashLine))
+            painter.drawRect(mapped(cell))
+
+
 def print_preview_image(doc, index, printer, width):
-    paper = printer.pageLayout()
-    sheet = paper.fullRectPoints()
-    printable = paper.paintRectPoints()
+    sheet = printer.pageLayout().fullRectPoints()
     scale = min(width / sheet.width(), 495 / sheet.height())
     preview = QPixmap(max(1, round(sheet.width() * scale)), max(1, round(sheet.height() * scale)))
     preview.fill(Qt.GlobalColor.white)
-    if index is not None:
-        page = doc[index]
-        ratio = min(printable.width() / page.rect.width, printable.height() / page.rect.height) * scale
-        content = pixmap(page, ratio)
-        painter = QPainter(preview)
-        painter.drawPixmap(round((printable.x() + printable.width() / 2) * scale - content.width() / 2),
-                           round((printable.y() + printable.height() / 2) * scale - content.height() / 2),
-                           content)
+    painter = QPainter(preview)
+    try:
+        draw_print_side(painter, doc, index, printer, scale, guides=True)
+    finally:
         painter.end()
     return preview
-
 
 
 def print_pages(doc, printer, indices):
@@ -623,16 +675,12 @@ def print_pages(doc, printer, indices):
     if not painter.begin(printer):
         raise RuntimeError("Der Druckauftrag konnte nicht gestartet werden.")
     try:
-        for i, index in enumerate(indices):
+        for i, side in enumerate(print_sides(indices, printer)):
             if i and not printer.newPage():
                 raise RuntimeError("Der Drucker hat keine weitere Seite angenommen.")
-            page = doc[index]
-            area = printer.pageLayout().paintRectPixels(printer.resolution())
-            ratio = min(area.width() / page.rect.width, area.height() / page.rect.height)
-            width, height = int(page.rect.width * ratio), int(page.rect.height * ratio)
-            destination = QRect((area.width() - width) // 2, (area.height() - height) // 2, width, height)
+            area = printer.pageLayout().paintRectPoints()
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-            painter.drawPixmap(destination, pixmap(page, min(ratio, 300 / 72)))
+            draw_print_side(painter, doc, side, printer, printer.resolution() / 72, area.x(), area.y())
     except Exception:
         printer.abort()
         raise
@@ -640,6 +688,7 @@ def print_pages(doc, printer, indices):
         painter.end()
     if printer.printerState() == QPrinter.PrinterState.Error:
         raise RuntimeError("Der Drucker meldet einen Fehler.")
+
 
 
 def text_spans(page, textpage=None):
@@ -10716,6 +10765,19 @@ class Window(QMainWindow):
         duplex.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         duplex.setMinimumContentsLength(12)
         form.addRow(self.ui("Duplex"), duplex)
+        paper = QComboBox(); paper.setObjectName("printPaper")
+        form.addRow(self.ui("Papierformat"), paper)
+        scaling = combo("printScaling", [("Anpassen", "fit"), ("Originalgröße (100 %)", "actual")])
+        form.addRow(self.ui("Skalierung"), scaling)
+        per_side = combo("printPerSide", [("1", 1), ("2", 2), ("4", 4)])
+        form.addRow(self.ui("Seiten pro Blattseite"), per_side)
+        boundary = QLabel(self.ui("Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten."))
+        boundary.setWordWrap(True); form.addRow(boundary)
+        margin_notice = QLabel(); margin_notice.setObjectName("printMargins"); margin_notice.setWordWrap(True)
+        form.addRow(margin_notice)
+        save_settings = QPushButton(self.ui("Druckeinstellungen speichern")); save_settings.setObjectName("printSaveSettings")
+        form.addRow(save_settings)
+        saved_notice = QLabel(); saved_notice.setObjectName("printSavedNotice"); saved_notice.setWordWrap(True); form.addRow(saved_notice)
         notice = QLabel(); notice.setObjectName("printNotice"); notice.setWordWrap(True)
         form.addRow(notice)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -10728,6 +10790,14 @@ class Window(QMainWindow):
         timer = QTimer(dialog); timer.setSingleShot(True); timer.setInterval(80)
 
         def sync_printer():
+            current = printer.pageLayout().pageSize()
+            info = QPrinterInfo.printerInfo(printer.printerName())
+            sizes = info.supportedPageSizes() if hasattr(info, "supportedPageSizes") else []
+            paper.blockSignals(True); paper.clear()
+            for size in [current, *sizes]:
+                if not any(paper.itemData(i).isEquivalentTo(size) for i in range(paper.count())):
+                    paper.addItem(size.name(), size)
+            paper.blockSignals(False)
             orientation.blockSignals(True)
             orientation.setCurrentIndex(max(0, orientation.findData(printer.pageLayout().orientation())))
             orientation.blockSignals(False)
@@ -10745,31 +10815,40 @@ class Window(QMainWindow):
             selected = list(range(first.value() - 1, last.value())) if first.value() <= last.value() else []
             if subset.currentData(): selected = [i for i in selected if (i + 1) % 2 == subset.currentData() % 2]
             if order.currentData(): selected.reverse()
+            if paper.currentData() is not None:
+                printer.setPageSize(paper.currentData())
             printer.setPageOrientation(orientation.currentData())
+            printer.pdf_scale_mode = scaling.currentData()
+            printer.pdf_pages_per_side = per_side.currentData()
             printer.setDuplex(duplex.currentData())
             printer.setCopyCount(copies.value()); printer.setCollateCopies(collate.isChecked())
             printer.setPageOrder(QPrinter.PageOrder.FirstPageFirst)
-            sheets = print_sheets(selected, printer.duplex() != QPrinter.DuplexMode.DuplexNone)
+            sheets = print_sheets(print_sides(selected, printer), printer.duplex() != QPrinter.DuplexMode.DuplexNone)
             position = 0 if reset else min(position, max(0, len(sheets) - 1))
             previous.setEnabled(position > 0); following.setEnabled(position + 1 < len(sheets))
             count.setText(self.ui_format("Blatt {0} von {1}", position + 1 if sheets else 0, len(sheets)))
             notice.setText(self.ui("Die Auswahl enthält keine Seiten.") if not sheets else (self.ui("Windows meldet keinen installierten Drucker.") if not devices else ""))
             go.setEnabled(bool(sheets) and bool(devices))
             try:
+                clipped = False
                 for side, (panel, heading, image) in enumerate(images):
                     panel.setVisible(side == 0 or printer.duplex() != QPrinter.DuplexMode.DuplexNone)
                     index = sheets[position][side] if sheets and side < len(sheets[position]) else None
-                    heading.setText(self.ui_format("PDF-Seite {0}", index + 1) if index is not None else "—")
+                    numbers = (index,) if isinstance(index, int) else (index or ())
+                    heading.setText(self.ui_format("PDF-Seite {0}", ", ".join(str(i + 1) for i in numbers)) if numbers else "—")
+                    clipped = clipped or any(item[3] for item in print_placements(doc, index, printer))
                     shot = print_preview_image(doc, index, printer, 240 if printer.duplex() != QPrinter.DuplexMode.DuplexNone else 440)
                     image.setPixmap(shot); image.resize(shot.size())
+                margin_notice.setText(self.ui("Achtung: Seiteninhalt kann am Rand abgeschnitten werden.") if clipped else self.ui("Die angezeigten Seiten passen in den druckbaren Bereich."))
             except Exception:
                 for _, _, image in images: image.clear()
+                margin_notice.clear()
                 notice.setText(self.ui("Druckvorschau konnte nicht erstellt werden.")); go.setEnabled(False)
 
         def change_printer():
             nonlocal printer
             printer = QPrinter(QPrinterInfo.printerInfo(device_choice.currentText()), QPrinter.PrinterMode.HighResolution)
-            sync_printer(); render(True)
+            sync_printer(); load_settings(); saved_notice.clear(); render(True)
 
         def native_settings():
             nonlocal printer
@@ -10788,13 +10867,48 @@ class Window(QMainWindow):
             else: first.setValue(1); last.setValue(len(doc))
             sync_printer(); render(True)
 
+        def settings_key():
+            return "print/preset/" + hashlib.sha256(printer.printerName().encode("utf-8")).hexdigest()
+
+        def load_settings():
+            try:
+                raw = self.favorite_settings.value(settings_key(), "", str)
+                if len(raw) > 4096: return
+                values = json.loads(raw)
+                if not isinstance(values, dict) or values.get("version") != 1: return
+                for widget, key in ((scaling, "scale"), (per_side, "pages")):
+                    found = widget.findData(values.get(key))
+                    if found >= 0: widget.setCurrentIndex(found)
+                for widget, key in ((orientation, "orientation"), (duplex, "duplex")):
+                    found = next((i for i in range(widget.count()) if widget.itemData(i).value == values.get(key)), -1)
+                    if found >= 0: widget.setCurrentIndex(found)
+                for i in range(paper.count()):
+                    size = paper.itemData(i)
+                    if size.id().value == values.get("paper") and size.name() == values.get("paperName"):
+                        paper.setCurrentIndex(i); break
+                if type(values.get("copies")) is int and 1 <= values["copies"] <= 999: copies.setValue(values["copies"])
+                if type(values.get("collate")) is bool: collate.setChecked(values["collate"])
+            except (ValueError, TypeError, AttributeError):
+                pass
+
+        def save_preset():
+            render()
+            size = printer.pageLayout().pageSize()
+            values = dict(version=1, scale=scaling.currentData(), pages=per_side.currentData(),
+                          paper=size.id().value, paperName=size.name(), orientation=printer.pageLayout().orientation().value,
+                          duplex=printer.duplex().value, copies=copies.value(), collate=collate.isChecked())
+            self.favorite_settings.setValue(settings_key(), json.dumps(values))
+            self.favorite_settings.sync()
+            saved_notice.setText(self.ui("Druckeinstellungen gespeichert.") if self.favorite_settings.status() == QSettings.Status.NoError else self.ui("Druckeinstellungen konnten nicht gespeichert werden."))
+
         def move(delta):
             nonlocal position
             position += delta; render()
 
-        sync_printer()
+        sync_printer(); load_settings()
+        save_settings.clicked.connect(save_preset); save_settings.setEnabled(bool(devices))
         for widget in (first, last, copies): widget.valueChanged.connect(lambda: timer.start())
-        for widget in (subset, order, orientation, duplex): widget.currentIndexChanged.connect(lambda: timer.start())
+        for widget in (subset, order, orientation, duplex, paper, scaling, per_side): widget.currentIndexChanged.connect(lambda: timer.start())
         collate.toggled.connect(lambda: timer.start())
         timer.timeout.connect(lambda: render(True))
         device_choice.currentIndexChanged.connect(change_printer)

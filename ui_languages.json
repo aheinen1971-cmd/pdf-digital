@@ -1358,7 +1358,18 @@
     "Rückwärts": "Reverse",
     "Einseitig": "Single-sided",
     "Lange Kante (wie ein Buch)": "Long edge (like a book)",
-    "Kurze Kante (wie ein Kalender)": "Short edge (like a calendar)"
+    "Kurze Kante (wie ein Kalender)": "Short edge (like a calendar)",
+    "Papierformat": "Paper size",
+    "Anpassen": "Fit",
+    "Originalgröße (100 %)": "Actual size (100 %)",
+    "Skalierung": "Scaling",
+    "Seiten pro Blattseite": "Pages per sheet side",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Dashed lines: printable area. Margin warning applies to the displayed pages.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Warning: page content may be cut off at the edges.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "The displayed pages fit within the printable area.",
+    "Druckeinstellungen speichern": "Save print settings",
+    "Druckeinstellungen gespeichert.": "Print settings saved.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Print settings could not be saved."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2719,7 +2730,18 @@
     "Rückwärts": "Ordre inverse",
     "Einseitig": "Recto uniquement",
     "Lange Kante (wie ein Buch)": "Bord long (comme un livre)",
-    "Kurze Kante (wie ein Kalender)": "Bord court (comme un calendrier)"
+    "Kurze Kante (wie ein Kalender)": "Bord court (comme un calendrier)",
+    "Papierformat": "Format du papier",
+    "Anpassen": "Ajuster",
+    "Originalgröße (100 %)": "Taille réelle (100 %)",
+    "Skalierung": "Mise à l’échelle",
+    "Seiten pro Blattseite": "Pages par face de feuille",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Pointillés : zone imprimable. L’avertissement de marge concerne les pages affichées.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Attention : le contenu peut être coupé sur les bords.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Les pages affichées tiennent dans la zone imprimable.",
+    "Druckeinstellungen speichern": "Enregistrer les réglages d’impression",
+    "Druckeinstellungen gespeichert.": "Réglages d’impression enregistrés.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Impossible d’enregistrer les réglages d’impression."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4080,7 +4102,18 @@
     "Rückwärts": "Orden inverso",
     "Einseitig": "Una cara",
     "Lange Kante (wie ein Buch)": "Borde largo (como un libro)",
-    "Kurze Kante (wie ein Kalender)": "Borde corto (como un calendario)"
+    "Kurze Kante (wie ein Kalender)": "Borde corto (como un calendario)",
+    "Papierformat": "Tamaño del papel",
+    "Anpassen": "Ajustar",
+    "Originalgröße (100 %)": "Tamaño real (100 %)",
+    "Skalierung": "Escala",
+    "Seiten pro Blattseite": "Páginas por cara de hoja",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Líneas discontinuas: área imprimible. La advertencia de margen se aplica a las páginas mostradas.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Atención: el contenido puede cortarse en los bordes.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Las páginas mostradas caben en el área imprimible.",
+    "Druckeinstellungen speichern": "Guardar ajustes de impresión",
+    "Druckeinstellungen gespeichert.": "Ajustes de impresión guardados.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "No se pudieron guardar los ajustes de impresión."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5441,7 +5474,18 @@
     "Rückwärts": "Achteruit",
     "Einseitig": "Enkelzijdig",
     "Lange Kante (wie ein Buch)": "Lange zijde (als een boek)",
-    "Kurze Kante (wie ein Kalender)": "Korte zijde (als een kalender)"
+    "Kurze Kante (wie ein Kalender)": "Korte zijde (als een kalender)",
+    "Papierformat": "Papierformaat",
+    "Anpassen": "Aanpassen",
+    "Originalgröße (100 %)": "Ware grootte (100 %)",
+    "Skalierung": "Schaal",
+    "Seiten pro Blattseite": "Pagina’s per velzijde",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Stippellijnen: afdrukbaar gebied. De randwaarschuwing geldt voor de weergegeven pagina’s.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Let op: pagina-inhoud kan aan de randen worden afgesneden.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "De weergegeven pagina’s passen binnen het afdrukbare gebied.",
+    "Druckeinstellungen speichern": "Afdrukinstellingen opslaan",
+    "Druckeinstellungen gespeichert.": "Afdrukinstellingen opgeslagen.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Afdrukinstellingen konden niet worden opgeslagen."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6802,7 +6846,18 @@
     "Rückwärts": "Ordine inverso",
     "Einseitig": "Solo fronte",
     "Lange Kante (wie ein Buch)": "Lato lungo (come un libro)",
-    "Kurze Kante (wie ein Kalender)": "Lato corto (come un calendario)"
+    "Kurze Kante (wie ein Kalender)": "Lato corto (come un calendario)",
+    "Papierformat": "Formato carta",
+    "Anpassen": "Adatta",
+    "Originalgröße (100 %)": "Dimensioni reali (100 %)",
+    "Skalierung": "Ridimensionamento",
+    "Seiten pro Blattseite": "Pagine per facciata",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Linee tratteggiate: area stampabile. L’avviso sui margini riguarda le pagine visualizzate.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Attenzione: il contenuto potrebbe essere tagliato ai bordi.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Le pagine visualizzate rientrano nell’area stampabile.",
+    "Druckeinstellungen speichern": "Salva impostazioni di stampa",
+    "Druckeinstellungen gespeichert.": "Impostazioni di stampa salvate.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Impossibile salvare le impostazioni di stampa."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8163,7 +8218,18 @@
     "Rückwärts": "Ordem inversa",
     "Einseitig": "Uma face",
     "Lange Kante (wie ein Buch)": "Margem longa (como um livro)",
-    "Kurze Kante (wie ein Kalender)": "Margem curta (como um calendário)"
+    "Kurze Kante (wie ein Kalender)": "Margem curta (como um calendário)",
+    "Papierformat": "Formato do papel",
+    "Anpassen": "Ajustar",
+    "Originalgröße (100 %)": "Tamanho real (100 %)",
+    "Skalierung": "Escala",
+    "Seiten pro Blattseite": "Páginas por face da folha",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Linhas tracejadas: área imprimível. O aviso de margem aplica-se às páginas apresentadas.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Atenção: o conteúdo pode ser cortado nas margens.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "As páginas apresentadas cabem na área imprimível.",
+    "Druckeinstellungen speichern": "Guardar definições de impressão",
+    "Druckeinstellungen gespeichert.": "Definições de impressão guardadas.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Não foi possível guardar as definições de impressão."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9524,7 +9590,18 @@
     "Rückwärts": "Od końca",
     "Einseitig": "Jednostronnie",
     "Lange Kante (wie ein Buch)": "Długa krawędź (jak książka)",
-    "Kurze Kante (wie ein Kalender)": "Krótka krawędź (jak kalendarz)"
+    "Kurze Kante (wie ein Kalender)": "Krótka krawędź (jak kalendarz)",
+    "Papierformat": "Rozmiar papieru",
+    "Anpassen": "Dopasuj",
+    "Originalgröße (100 %)": "Rozmiar rzeczywisty (100 %)",
+    "Skalierung": "Skalowanie",
+    "Seiten pro Blattseite": "Strony na stronę arkusza",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Linie przerywane: obszar drukowania. Ostrzeżenie o marginesach dotyczy wyświetlanych stron.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Uwaga: zawartość może zostać obcięta przy krawędziach.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Wyświetlane strony mieszczą się w obszarze drukowania.",
+    "Druckeinstellungen speichern": "Zapisz ustawienia drukowania",
+    "Druckeinstellungen gespeichert.": "Ustawienia drukowania zapisane.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Nie udało się zapisać ustawień drukowania."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -10885,7 +10962,18 @@
     "Rückwärts": "Obráceně",
     "Einseitig": "Jednostranně",
     "Lange Kante (wie ein Buch)": "Dlouhá hrana (jako kniha)",
-    "Kurze Kante (wie ein Kalender)": "Krátká hrana (jako kalendář)"
+    "Kurze Kante (wie ein Kalender)": "Krátká hrana (jako kalendář)",
+    "Papierformat": "Formát papíru",
+    "Anpassen": "Přizpůsobit",
+    "Originalgröße (100 %)": "Skutečná velikost (100 %)",
+    "Skalierung": "Měřítko",
+    "Seiten pro Blattseite": "Stránek na stranu listu",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Přerušované čáry: tisknutelná oblast. Varování okrajů platí pro zobrazené stránky.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Pozor: obsah může být na okrajích oříznut.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Zobrazené stránky se vejdou do tisknutelné oblasti.",
+    "Druckeinstellungen speichern": "Uložit nastavení tisku",
+    "Druckeinstellungen gespeichert.": "Nastavení tisku uloženo.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Nastavení tisku se nepodařilo uložit."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12246,7 +12334,18 @@
     "Rückwärts": "Bagfra",
     "Einseitig": "Enkeltsidet",
     "Lange Kante (wie ein Buch)": "Lang kant (som en bog)",
-    "Kurze Kante (wie ein Kalender)": "Kort kant (som en kalender)"
+    "Kurze Kante (wie ein Kalender)": "Kort kant (som en kalender)",
+    "Papierformat": "Papirstørrelse",
+    "Anpassen": "Tilpas",
+    "Originalgröße (100 %)": "Faktisk størrelse (100 %)",
+    "Skalierung": "Skalering",
+    "Seiten pro Blattseite": "Sider pr. arkside",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Stiplede linjer: udskriftsområde. Margenadvarslen gælder de viste sider.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Advarsel: indhold kan blive beskåret ved kanterne.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "De viste sider passer i udskriftsområdet.",
+    "Druckeinstellungen speichern": "Gem udskriftsindstillinger",
+    "Druckeinstellungen gespeichert.": "Udskriftsindstillinger gemt.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Udskriftsindstillinger kunne ikke gemmes."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13607,7 +13706,18 @@
     "Rückwärts": "Baklänges",
     "Einseitig": "Enkelsidigt",
     "Lange Kante (wie ein Buch)": "Långsida (som en bok)",
-    "Kurze Kante (wie ein Kalender)": "Kortsida (som en kalender)"
+    "Kurze Kante (wie ein Kalender)": "Kortsida (som en kalender)",
+    "Papierformat": "Pappersstorlek",
+    "Anpassen": "Anpassa",
+    "Originalgröße (100 %)": "Verklig storlek (100 %)",
+    "Skalierung": "Skalning",
+    "Seiten pro Blattseite": "Sidor per arksida",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Streckade linjer: utskrivbart område. Marginalvarningen gäller de visade sidorna.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Varning: innehåll kan beskäras vid kanterna.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "De visade sidorna ryms inom utskriftsområdet.",
+    "Druckeinstellungen speichern": "Spara utskriftsinställningar",
+    "Druckeinstellungen gespeichert.": "Utskriftsinställningar sparade.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Utskriftsinställningarna kunde inte sparas."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -14968,7 +15078,18 @@
     "Rückwärts": "Bakover",
     "Einseitig": "Enkeltsidig",
     "Lange Kante (wie ein Buch)": "Lang kant (som en bok)",
-    "Kurze Kante (wie ein Kalender)": "Kort kant (som en kalender)"
+    "Kurze Kante (wie ein Kalender)": "Kort kant (som en kalender)",
+    "Papierformat": "Papirstørrelse",
+    "Anpassen": "Tilpass",
+    "Originalgröße (100 %)": "Faktisk størrelse (100 %)",
+    "Skalierung": "Skalering",
+    "Seiten pro Blattseite": "Sider per arkside",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Stiplede linjer: utskriftsområde. Margvarselet gjelder de viste sidene.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Advarsel: innhold kan bli beskåret ved kantene.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "De viste sidene passer i utskriftsområdet.",
+    "Druckeinstellungen speichern": "Lagre utskriftsinnstillinger",
+    "Druckeinstellungen gespeichert.": "Utskriftsinnstillinger lagret.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Utskriftsinnstillingene kunne ikke lagres."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16329,7 +16450,18 @@
     "Rückwärts": "Käänteinen järjestys",
     "Einseitig": "Yksipuolinen",
     "Lange Kante (wie ein Buch)": "Pitkä reuna (kuten kirja)",
-    "Kurze Kante (wie ein Kalender)": "Lyhyt reuna (kuten kalenteri)"
+    "Kurze Kante (wie ein Kalender)": "Lyhyt reuna (kuten kalenteri)",
+    "Papierformat": "Paperikoko",
+    "Anpassen": "Sovita",
+    "Originalgröße (100 %)": "Todellinen koko (100 %)",
+    "Skalierung": "Skaalaus",
+    "Seiten pro Blattseite": "Sivuja arkin puolta kohti",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Katkoviivat: tulostusalue. Reunavaroitus koskee näytettyjä sivuja.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Varoitus: sisältöä voi leikkautua reunoista.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Näytetyt sivut mahtuvat tulostusalueelle.",
+    "Druckeinstellungen speichern": "Tallenna tulostusasetukset",
+    "Druckeinstellungen gespeichert.": "Tulostusasetukset tallennettu.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Tulostusasetuksia ei voitu tallentaa."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -17690,7 +17822,18 @@
     "Rückwärts": "Ters sıra",
     "Einseitig": "Tek taraflı",
     "Lange Kante (wie ein Buch)": "Uzun kenar (kitap gibi)",
-    "Kurze Kante (wie ein Kalender)": "Kısa kenar (takvim gibi)"
+    "Kurze Kante (wie ein Kalender)": "Kısa kenar (takvim gibi)",
+    "Papierformat": "Kağıt boyutu",
+    "Anpassen": "Sığdır",
+    "Originalgröße (100 %)": "Gerçek boyut (%100)",
+    "Skalierung": "Ölçeklendirme",
+    "Seiten pro Blattseite": "Yaprak yüzü başına sayfa",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Kesik çizgiler: yazdırılabilir alan. Kenar uyarısı gösterilen sayfalar için geçerlidir.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Uyarı: sayfa içeriği kenarlardan kesilebilir.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Gösterilen sayfalar yazdırılabilir alana sığıyor.",
+    "Druckeinstellungen speichern": "Yazdırma ayarlarını kaydet",
+    "Druckeinstellungen gespeichert.": "Yazdırma ayarları kaydedildi.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Yazdırma ayarları kaydedilemedi."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19051,7 +19194,18 @@
     "Rückwärts": "Зворотний порядок",
     "Einseitig": "Односторонній",
     "Lange Kante (wie ein Buch)": "Довгий край (як у книзі)",
-    "Kurze Kante (wie ein Kalender)": "Короткий край (як у календарі)"
+    "Kurze Kante (wie ein Kalender)": "Короткий край (як у календарі)",
+    "Papierformat": "Формат паперу",
+    "Anpassen": "Припасувати",
+    "Originalgröße (100 %)": "Фактичний розмір (100 %)",
+    "Skalierung": "Масштабування",
+    "Seiten pro Blattseite": "Сторінок на бік аркуша",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Пунктир: область друку. Попередження про поля стосується показаних сторінок.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Увага: вміст може бути обрізаний по краях.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Показані сторінки вміщуються в область друку.",
+    "Druckeinstellungen speichern": "Зберегти налаштування друку",
+    "Druckeinstellungen gespeichert.": "Налаштування друку збережено.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Не вдалося зберегти налаштування друку."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -20412,7 +20566,18 @@
     "Rückwärts": "Αντίστροφη σειρά",
     "Einseitig": "Μονής όψης",
     "Lange Kante (wie ein Buch)": "Μεγάλη πλευρά (σαν βιβλίο)",
-    "Kurze Kante (wie ein Kalender)": "Μικρή πλευρά (σαν ημερολόγιο)"
+    "Kurze Kante (wie ein Kalender)": "Μικρή πλευρά (σαν ημερολόγιο)",
+    "Papierformat": "Μέγεθος χαρτιού",
+    "Anpassen": "Προσαρμογή",
+    "Originalgröße (100 %)": "Πραγματικό μέγεθος (100 %)",
+    "Skalierung": "Κλιμάκωση",
+    "Seiten pro Blattseite": "Σελίδες ανά όψη φύλλου",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "Διακεκομμένες γραμμές: εκτυπώσιμη περιοχή. Η προειδοποίηση περιθωρίων αφορά τις εμφανιζόμενες σελίδες.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "Προσοχή: το περιεχόμενο μπορεί να κοπεί στις άκρες.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "Οι εμφανιζόμενες σελίδες χωρούν στην εκτυπώσιμη περιοχή.",
+    "Druckeinstellungen speichern": "Αποθήκευση ρυθμίσεων εκτύπωσης",
+    "Druckeinstellungen gespeichert.": "Οι ρυθμίσεις εκτύπωσης αποθηκεύτηκαν.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "Δεν ήταν δυνατή η αποθήκευση των ρυθμίσεων εκτύπωσης."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -21773,7 +21938,18 @@
     "Rückwärts": "逆順",
     "Einseitig": "片面",
     "Lange Kante (wie ein Buch)": "長辺とじ（本のように）",
-    "Kurze Kante (wie ein Kalender)": "短辺とじ（カレンダーのように）"
+    "Kurze Kante (wie ein Kalender)": "短辺とじ（カレンダーのように）",
+    "Papierformat": "用紙サイズ",
+    "Anpassen": "用紙に合わせる",
+    "Originalgröße (100 %)": "実際のサイズ（100%）",
+    "Skalierung": "拡大・縮小",
+    "Seiten pro Blattseite": "用紙の片面あたりのページ数",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "破線は印刷可能領域です。余白の警告は表示中のページに適用されます。",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "注意：ページの内容が端で切れる場合があります。",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "表示中のページは印刷可能領域に収まっています。",
+    "Druckeinstellungen speichern": "印刷設定を保存",
+    "Druckeinstellungen gespeichert.": "印刷設定を保存しました。",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "印刷設定を保存できませんでした。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -23134,7 +23310,18 @@
     "Rückwärts": "역순",
     "Einseitig": "단면",
     "Lange Kante (wie ein Buch)": "긴 쪽 넘김 (책처럼)",
-    "Kurze Kante (wie ein Kalender)": "짧은 쪽 넘김 (달력처럼)"
+    "Kurze Kante (wie ein Kalender)": "짧은 쪽 넘김 (달력처럼)",
+    "Papierformat": "용지 크기",
+    "Anpassen": "맞추기",
+    "Originalgröße (100 %)": "실제 크기(100%)",
+    "Skalierung": "배율",
+    "Seiten pro Blattseite": "용지 한 면당 페이지 수",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "점선: 인쇄 가능 영역. 여백 경고는 표시된 페이지에 적용됩니다.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "주의: 페이지 내용이 가장자리에서 잘릴 수 있습니다.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "표시된 페이지가 인쇄 가능 영역에 맞습니다.",
+    "Druckeinstellungen speichern": "인쇄 설정 저장",
+    "Druckeinstellungen gespeichert.": "인쇄 설정을 저장했습니다.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "인쇄 설정을 저장하지 못했습니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -24495,7 +24682,18 @@
     "Rückwärts": "الترتيب العكسي",
     "Einseitig": "وجه واحد",
     "Lange Kante (wie ein Buch)": "الحافة الطويلة (مثل الكتاب)",
-    "Kurze Kante (wie ein Kalender)": "الحافة القصيرة (مثل التقويم)"
+    "Kurze Kante (wie ein Kalender)": "الحافة القصيرة (مثل التقويم)",
+    "Papierformat": "حجم الورق",
+    "Anpassen": "ملاءمة",
+    "Originalgröße (100 %)": "الحجم الفعلي (100٪)",
+    "Skalierung": "التحجيم",
+    "Seiten pro Blattseite": "صفحات لكل وجه ورقة",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "الخطوط المتقطعة: المنطقة القابلة للطباعة. ينطبق تحذير الهوامش على الصفحات المعروضة.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "تنبيه: قد يُقص محتوى الصفحة عند الحواف.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "الصفحات المعروضة تناسب المنطقة القابلة للطباعة.",
+    "Druckeinstellungen speichern": "حفظ إعدادات الطباعة",
+    "Druckeinstellungen gespeichert.": "تم حفظ إعدادات الطباعة.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "تعذر حفظ إعدادات الطباعة."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -25856,6 +26054,17 @@
     "Rückwärts": "סדר הפוך",
     "Einseitig": "חד־צדדי",
     "Lange Kante (wie ein Buch)": "קצה ארוך (כמו ספר)",
-    "Kurze Kante (wie ein Kalender)": "קצה קצר (כמו לוח שנה)"
+    "Kurze Kante (wie ein Kalender)": "קצה קצר (כמו לוח שנה)",
+    "Papierformat": "גודל נייר",
+    "Anpassen": "התאמה",
+    "Originalgröße (100 %)": "גודל מקורי (100%)",
+    "Skalierung": "קנה מידה",
+    "Seiten pro Blattseite": "עמודים לכל צד של גיליון",
+    "Gestrichelte Linien: druckbarer Bereich. Randwarnung gilt für die angezeigten Seiten.": "קווים מקווקווים: האזור הניתן להדפסה. אזהרת השוליים חלה על העמודים המוצגים.",
+    "Achtung: Seiteninhalt kann am Rand abgeschnitten werden.": "אזהרה: תוכן העמוד עלול להיחתך בקצוות.",
+    "Die angezeigten Seiten passen in den druckbaren Bereich.": "העמודים המוצגים נכנסים לאזור הניתן להדפסה.",
+    "Druckeinstellungen speichern": "שמירת הגדרות הדפסה",
+    "Druckeinstellungen gespeichert.": "הגדרות ההדפסה נשמרו.",
+    "Druckeinstellungen konnten nicht gespeichert werden.": "לא ניתן לשמור את הגדרות ההדפסה."
   }
 }

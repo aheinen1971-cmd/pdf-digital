@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Papierformat, Druckvorgaben und mehrere Seiten pro Blatt
+
+- Papierformat und **Anpassen / Originalgröße (100 %)** direkt in der Druckvorschau wählen. Gestrichelte Grenzen zeigen den druckbaren Bereich. Eine Warnung weist auf mögliche Randabschnitte bei den gerade angezeigten Seiten hin; sie ist keine Prüfung aller Dokumentseiten oder ihrer weißen Ränder.
+- **Druckeinstellungen speichern** merkt Format, Ausrichtung, Duplex, Exemplare, Sortierung, Skalierung und Seiten pro Blattseite getrennt je Drucker. Der Seitenbereich wird nicht gespeichert. Nur der ausdrückliche Speicherknopf schreibt die Vorgaben, auch wenn anschließend der Druck abgebrochen wird. Nicht mehr unterstützte Formate und Duplexarten werden nicht übernommen.
+- **1, 2 oder 4 Seiten pro Blattseite**, auch mit Duplex. Vorschau und Ausgabe verwenden dieselbe Anordnung; die gewählte Seitenreihenfolge bleibt erhalten. Bei Originalgröße wird innerhalb des jeweiligen Feldes abgeschnitten, falls die Seite nicht hineinpasst. Anpassen vermeidet dies. Leere Restfelder bleiben leer.
+- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert. Keine physischen Papierausdrucke im automatisierten Test.
+
 ### Neu in 1.74.0: Seitenvorschau direkt beim Drucken
 
 - „Drucken“ öffnet sofort die PDF-Seitenvorschau mit Einstellungen daneben: Drucker, Seitenbereich, gerade/ungerade Seiten, Reihenfolge, Exemplare, Sortierung, Ausrichtung und unterstützte Duplexarten.
