@@ -85,7 +85,11 @@ with TemporaryDirectory() as folder, patch.dict(os.environ, {"LOCALAPPDATA": fol
             raise AssertionError("Ungültige Prüfsumme wurde akzeptiert.")
         assert not invoked
         assert updates.prepared_update((1, 4, 1)) is None
-        assert updates.stage_update(version, checksum, len(data)) == 0
+        progress=[]
+        assert updates.stage_update(version, checksum, len(data), lambda phase, percent=None: progress.append((phase,percent))) == 0
+        assert progress[0]==('signature',None)
+        assert ('download',0) in progress and ('download',100) in progress
+        assert progress[-2:]==[('verify',None),('prepare',None)]
         assert len(invoked) == 1
         result = updates.prepared_update((1, 4, 1))
         assert result and result.name == name

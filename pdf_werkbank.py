@@ -45,7 +45,8 @@ from offline_tools import (PACKAGE_NAME, TOOLS, export_tools, install_tools, pac
                            tool_status)
 from offline_readiness import PROBES, USB, check_invoice, check_ocr, check_pdfa, run_probe
 
-from online_updates import ReleaseCheck
+from online_updates import ReleaseCheck, UpdateWindow
+from PySide6.QtCore import QProcess
 from update_worker import (SIGNER, digest_file, export_usb_update, prepared_update, runtime_ready, stage_usb_update,
                            usb_update_info, verified_launcher, version_tuple)
 
@@ -1087,8 +1088,6 @@ class Window(QMainWindow):
         self.release_check = ReleaseCheck(VERSION, self)
         self.release_check.finished.connect(self.show_online_update)
         self.update_process = None
-        self.update_timer = QTimer(self)
-        self.update_timer.timeout.connect(self.finish_online_update)
         self.resize(1200, 820)
         self.setMinimumSize(820, 500)
         self.setup_favorites()
@@ -10499,6 +10498,10 @@ class Window(QMainWindow):
             self.error(self.ui(str(exc)))
 
     def closeEvent(self, event):
+        if self.update_busy():
+            self.update_panel()
+            event.ignore()
+            return
         active = self.current
         for index in range(len(self.sessions)):
             if not self.confirm_close(index):
@@ -11147,6 +11150,9 @@ class Window(QMainWindow):
 
 
     def usb_update_dialog(self):
+        panel = self.update_panel()
+        if self.update_busy():
+            return
         name, _ = QFileDialog.getOpenFileName(self, self.ui("Signiertes USB-Update wählen"), "", "Windows-Update (*-Windows.zip)")
         if not name:
             return
@@ -11156,37 +11162,36 @@ class Window(QMainWindow):
             if version_tuple(version) <= VERSION:
                 raise ValueError("Das USB-Update ist nicht neuer als die laufende Version.")
             current = ".".join(map(str, VERSION))
-            if QMessageBox.question(self, self.ui("Signiertes USB-Update"),
-                                    self.ui_format('Die Projektsignatur ist gültig. Version {0} vorbereiten?\nDie Werkbank sichert vorher den Arbeitsstand von Version {1}.', version, current),
-                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
-                return
             def prepare():
                 automatic_backup(self.favorite_settings, self.measurement_store(), current, version, refresh=True)
                 return stage_usb_update(package, VERSION)
-
-            installed = self.run_usb_update_job("USB-Update wird vorbereitet …", prepare)
-            QMessageBox.information(self, self.ui("USB-Update bereit"),
-                                    self.ui_format('Version {0} ist bereit. Schließe die Werkbank und öffne sie erneut über deinen bisherigen Starter.', installed))
+            def confirmed():
+                try:
+                    installed = self.run_usb_update_job("USB-Update wird vorbereitet …", prepare)
+                    panel.display(self.ui_format('Version {0} ist bereit. Schließe die Werkbank und öffne sie erneut über deinen bisherigen Starter.', installed))
+                except Exception as exc:
+                    panel.display(self.ui("Das Update konnte nicht vorbereitet werden."), detail=str(exc))
+            panel.display(self.ui_format('Die Projektsignatur ist gültig. Version {0} vorbereiten?\nDie Werkbank sichert vorher den Arbeitsstand von Version {1}.', version, current), confirm=confirmed)
         except Exception as exc:
-            self.error(exc)
+            panel.display(self.ui("Das Update konnte nicht vorbereitet werden."), detail=str(exc))
 
     def usb_update_export(self):
+        panel = self.update_panel()
+        if self.update_busy():
+            return
         folder = QFileDialog.getExistingDirectory(self, self.ui("USB-Stick oder Zielordner auswählen"))
         if not folder:
             return
         try:
             target = self.run_usb_update_job("Signierte Freigabe wird geladen …", lambda: export_usb_update(Path(folder)))
-            QMessageBox.information(self, self.ui("USB-Update gespeichert"), self.ui_format('Signiertes Update gespeichert in:\n{0}', target))
+            panel.display(self.ui_format('Signiertes Update gespeichert in:\n{0}', target))
         except Exception as exc:
-            self.error(exc)
+            panel.display(self.ui("Das Update konnte nicht vorbereitet werden."), detail=str(exc))
 
     def run_usb_update_job(self, title, job):
-        progress = QProgressDialog(title, "", 0, 0, self)
-        progress.setCancelButton(None)
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setMinimumDuration(0)
-        progress.show()
+        progress = self.update_panel()
+        self.usb_update_busy = True
+        progress.display(self.ui(title), busy=True)
         timer = QTimer(progress, interval=100)
         loop = QEventLoop(progress)
         with ThreadPoolExecutor(max_workers=1) as worker:
@@ -11198,9 +11203,25 @@ class Window(QMainWindow):
                 return future.result()
             finally:
                 timer.stop()
-                progress.close()
+                self.usb_update_busy = False
+
+    def update_busy(self):
+        return self.update_process is not None or getattr(self, 'usb_update_busy', False)
+
+    def update_panel(self, show=True):
+        if not hasattr(self, 'single_update_window'):
+            self.single_update_window = UpdateWindow(self)
+            self.single_update_window.display(self.ui("Suche nach Updates …"))
+        if show:
+            self.single_update_window.show()
+            self.single_update_window.raise_()
+            self.single_update_window.activateWindow()
+        return self.single_update_window
 
     def update_info(self):
+        panel = self.update_panel()
+        if self.update_busy():
+            return
         label = ".".join(map(str, VERSION))
         launcher = os.environ.get("PDF_WERKBANK_LAUNCHER")
         status = "Für diese gestartete EXE ist keine Projektsignatur nachgewiesen."
@@ -11214,24 +11235,32 @@ class Window(QMainWindow):
                 status += "\n" + str(exc)
         pending = prepared_update(VERSION)
         check = getattr(self, "update_result", "Noch keine Update-Suche in dieser Sitzung.")
-        QMessageBox.information(self, self.ui("Update-Info"),
+        panel.display(self.ui("Update-Info"), detail=
                                 f"Version {label}\n\n{status}\n\n{check}\n"
                                 + (f"Signiertes Update bereit: {pending.name}\n" if pending else "")
                                 + "\nWindows-Herausgebersignatur und Virenscan sind separate Prüfungen.")
 
 
     def check_online(self):
-        self.statusBar().showMessage(self.ui("Suche nach Updates …"), 6000)
+        panel = self.update_panel()
+        if self.update_busy():
+            return
+        panel.display(self.ui("Suche nach Updates …"), busy=True)
         self.release_check.check(manual=True)
 
     def show_online_update(self, update, success, manual):
+        panel = self.update_panel(show=manual)
+        if self.update_busy() or panel.callback is not None:
+            return
         failure = (self.release_check.error_detail or "Die Update-Suche ist fehlgeschlagen.") + (
             " Versuche es später erneut oder nutze „Info → Update vom USB-Stick“.")
         self.update_result = "Update-Suche abgeschlossen." if success else failure
         if prepared_update(VERSION):
+            panel.display(self.ui("Ein Update ist bereit und startet beim nächsten Öffnen."))
             self.statusBar().showMessage(self.ui("Ein Update ist bereit und startet beim nächsten Öffnen."), 8000)
             return
         if not update:
+            panel.display(self.ui("Du hast die aktuelle Version." if success else "Die Update-Suche ist fehlgeschlagen."), detail="" if success else failure)
             if manual:
                 message = "Du hast die aktuelle Version." if success else failure
                 self.statusBar().showMessage(message, 8000)
@@ -11241,22 +11270,41 @@ class Window(QMainWindow):
             return
         version, digest, size = update
         worker = Path(__file__).with_name("update_worker.py")
-        try:
-            self.update_process = subprocess.Popen(
-                [sys.executable, str(worker), version, digest, str(size)],
-                creationflags=subprocess.CREATE_NO_WINDOW)
-        except OSError:
-            self.statusBar().showMessage(self.ui("Das Update konnte nicht vorbereitet werden."), 8000)
-            return
+        process = QProcess(self)
+        self.update_process = process
+        self.update_output = b""
+        process.readyReadStandardOutput.connect(self.read_update_progress)
+        process.finished.connect(lambda code, status: self.finish_online_update(code if status == QProcess.ExitStatus.NormalExit else 1))
+        process.errorOccurred.connect(lambda error: self.finish_online_update(1) if error == QProcess.ProcessError.FailedToStart else None)
+        panel.display(self.ui_format('Update {0} wird im Hintergrund vorbereitet.', version), busy=True)
+        process.start(sys.executable, [str(worker), version, digest, str(size)])
         self.statusBar().showMessage(self.ui_format('Update {0} wird im Hintergrund vorbereitet.', version), 8000)
-        self.update_timer.start(1000)
 
-    def finish_online_update(self):
-        result = self.update_process.poll()
-        if result is None:
+    def read_update_progress(self):
+        if self.update_process is None:
             return
+        self.update_output += bytes(self.update_process.readAllStandardOutput())
+        labels = {'signature': 'Signatur wird geprüft …', 'download': 'Update wird heruntergeladen …',
+                  'verify': 'Dateien werden geprüft …', 'prepare': 'Update wird eingerichtet …'}
+        while b'\n' in self.update_output:
+            line, self.update_output = self.update_output.split(b'\n', 1)
+            try:
+                value = json.loads(line)
+                phase = value['phase']
+                percent = value.get('percent') if phase == 'download' else None
+                if percent is not None and (type(percent) is not int or not 0 <= percent <= 100):
+                    continue
+                self.update_panel(show=False).display(self.ui(labels[phase]), busy=True, percent=percent)
+            except (ValueError, KeyError, TypeError):
+                continue
+        if len(self.update_output) > 8192:
+            self.update_output = b''
+
+    def finish_online_update(self, result=1):
+        if self.update_process is None:
+            return
+        self.update_process.deleteLater()
         self.update_process = None
-        self.update_timer.stop()
         if result == 0:
             message = "Update bereit. Beim nächsten Öffnen startet die neue Version."
         elif result == 2:
@@ -11268,6 +11316,7 @@ class Window(QMainWindow):
         else:
             message = "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft."
         self.update_result = message
+        self.update_panel(show=False).display(self.ui(message))
         self.statusBar().showMessage(message, 10000)
 
 

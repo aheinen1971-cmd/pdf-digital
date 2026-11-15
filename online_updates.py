@@ -6,6 +6,54 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 
 from update_worker import LATEST, available_release
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QProgressBar, QPushButton, QPlainTextEdit
+
+
+class UpdateWindow(QDialog):
+    """One reusable surface; closing it never interrupts a verified update job."""
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle(parent.ui("Aktualisierung"))
+        self.resize(570, 330)
+        self.setLayoutDirection(parent.layoutDirection())
+        layout = QVBoxLayout(self)
+        self.message = QLabel()
+        self.message.setTextFormat(Qt.TextFormat.PlainText)
+        self.message.setWordWrap(True)
+        layout.addWidget(self.message)
+        self.progress = QProgressBar()
+        layout.addWidget(self.progress)
+        self.details = QPlainTextEdit()
+        self.details.setReadOnly(True)
+        layout.addWidget(self.details)
+        self.action = QPushButton(parent.ui("Vorbereiten"))
+        self.action.hide()
+        layout.addWidget(self.action)
+        self.close_button = QPushButton(parent.ui("Schließen"))
+        self.close_button.clicked.connect(self.hide)
+        layout.addWidget(self.close_button)
+        self.callback = None
+        self.action.clicked.connect(self.confirm)
+
+    def confirm(self):
+        callback, self.callback = self.callback, None
+        self.action.hide()
+        if callback:
+            callback()
+
+    def display(self, text, busy=False, percent=None, detail="", confirm=None):
+        self.message.setText(text)
+        self.details.setPlainText(detail)
+        self.details.setVisible(bool(detail))
+        self.callback = confirm
+        self.action.setVisible(confirm is not None)
+        self.progress.setVisible(busy or percent is not None)
+        self.progress.setRange(0, 100 if percent is not None or not busy else 0)
+        if percent is not None:
+            self.progress.setValue(max(0, min(100, percent)))
+        self.close_button.setText(self.parent().ui("Im Hintergrund weiter" if busy else "Schließen"))
+
 
 class ReleaseCheck(QObject):
     finished = Signal(object, bool, bool)

@@ -255,7 +255,7 @@ def stage_usb_update(package, current):
     return version
 
 
-def stage_update(version, digest, size):
+def stage_update(version, digest, size, progress=lambda phase, percent=None: None):
     import msvcrt
 
     parsed = version_tuple(version)
@@ -273,6 +273,7 @@ def stage_update(version, digest, size):
             return 0
         with tempfile.TemporaryDirectory(dir=root) as folder:
             temp = Path(folder)
+            progress("signature")
             signature = Request(signature_url(version), headers={"User-Agent": "PDF-Werkbank"})
             try:
                 with build_opener(GitHubRedirect()).open(signature, timeout=30) as response:
@@ -286,6 +287,7 @@ def stage_update(version, digest, size):
                 return 4
             package = temp / "update.zip"
             request = Request(package_url(version), headers={"User-Agent": "PDF-Werkbank"})
+            progress("download", 0)
             with build_opener(GitHubRedirect()).open(request, timeout=30) as response, package.open("wb") as output:
                 remaining = size
                 while remaining:
@@ -294,12 +296,15 @@ def stage_update(version, digest, size):
                         break
                     output.write(chunk)
                     remaining -= len(chunk)
+                    progress("download", (size - remaining) * 100 // size)
                 if remaining or response.read(1):
                     raise ValueError("Die Größe des Update-Pakets stimmt nicht.")
+            progress("verify")
             if digest_file(package) != digest:
                 raise ValueError("Die Prüfsumme des Update-Pakets stimmt nicht.")
             name = f"PDF-Werkbank-{version}.exe"
             candidate = temp / name
+            progress("prepare")
             prepare_candidate(package, candidate, version, expected_exe)
             marker = temp / "verified.json"
             marker.write_bytes(signed)
@@ -311,7 +316,8 @@ def stage_update(version, digest, size):
 if __name__ == "__main__":
     try:
         version, digest, size = sys.argv[1:]
-        sys.exit(stage_update(version, digest, int(size)))
+        sys.exit(stage_update(version, digest, int(size),
+                              lambda phase, percent=None: print(json.dumps({'phase': phase, 'percent': percent}), flush=True)))
     except SignatureError:
         sys.exit(3)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
