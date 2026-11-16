@@ -1,10 +1,10 @@
-# PDF Digital 1.83.0 für Windows
+# PDF Digital 1.84.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Werkzeugsuche
+### Neu in 1.84.0: Werkzeugsuche
 
-**Werkzeuge suchen** in der Werkzeugleiste durchsucht den vorhandenen Werkzeugkatalog und gespeicherte Abläufe in der gewählten Oberflächensprache. Mehrere Suchwörter werden gemeinsam berücksichtigt; Groß-/Kleinschreibung und Akzente stören die Suche nicht. Erst eine ausdrückliche Auswahl mit **Öffnen** oder Doppelklick startet das vorhandene Werkzeug. Favoriten und ihre Reihenfolge bleiben erhalten. Alle 20 Sprachen; noch nicht veröffentlicht.
+**Werkzeuge suchen** in der Werkzeugleiste durchsucht den vorhandenen Werkzeugkatalog und gespeicherte Abläufe in der gewählten Oberflächensprache. Mehrere Suchwörter werden gemeinsam berücksichtigt; Groß-/Kleinschreibung und Akzente stören die Suche nicht. Erst eine ausdrückliche Auswahl mit **Öffnen** oder Doppelklick startet das vorhandene Werkzeug. Favoriten und ihre Reihenfolge bleiben erhalten. Alle 20 Sprachen.
 
 ### Neu in 1.83.0: Ein zentraler Update-Knopf
 
@@ -206,7 +206,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.83.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.84.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -216,7 +216,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.83.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.84.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
