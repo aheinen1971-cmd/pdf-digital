@@ -1,13 +1,13 @@
-# PDF Digital 1.79.0 für Windows
+# PDF Digital 1.80.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Ergebnisse öffnen und Druckeinstellungen wiederverwenden
+### Neu in 1.80.0: Ergebnisse öffnen und Druckeinstellungen wiederverwenden
 
 - Nach erfolgreicher Seitenentnahme und nach **Kopie speichern** erscheint eine Ergebnisleiste mit **Ergebnis öffnen** und **Ordner anzeigen**. Sie nennt die gespeicherte Datei und öffnet nichts ungefragt. Das gilt auch für gespeicherte Ergebnisse nach Zusammenfügen und Texterkennung; deren Bearbeitung bleibt zunächst im geöffneten Dokument. Fehlgeschlagenes oder abgebrochenes Speichern bietet kein neues Ergebnis an.
 - Der zuletzt erfolgreich verwendete Drucker und seine Einstellungen werden beim nächsten Drucken wieder angeboten. Seitenbereich, Gerade-/Ungerade-Auswahl, Reihenfolge und einzelne ausgeschlossene Seiten werden nicht übernommen. Nicht verfügbare Drucker fallen auf einen verfügbaren Drucker zurück. Benannte Vorlagen und ausdrücklich gespeicherte Standardvorgaben bleiben erhalten; eine neu gespeicherte Standardvorgabe ersetzt die zuletzt verwendeten Einstellungen dieses Druckers. Auch die neuen Druckpräferenzen sind im Arbeitsstand-Backup enthalten.
 - **Häufige Aufgaben** ist direkt in der Werkzeugleiste erreichbar. Die persönliche Favoritenreihenfolge wird dabei nicht verändert.
-- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert. Kein physischer Papierdruck im Test.
+- Alle 20 Oberflächensprachen. Kein physischer Papierdruck im Test.
 ### Neu in 1.79.0: Einstellungen beim Update, Druckhilfe und häufige Aufgaben
 
 - Die versionsunabhängigen Einstellungen bleiben weiter erhalten. Die automatische Sicherung umfasst zusätzlich Oberflächensprache, Standarddruckvorgaben und benannte Druckvorlagen; Werkzeugleiste und Lesestellen waren bereits enthalten. Auch vor der Online-Updatevorbereitung wird die Sicherung geprüft. Bei einem Sicherungsfehler startet die Vorbereitung nicht. Bestehende Sicherungen bleiben lesbar; eine Wiederherstellung erfolgt ausdrücklich über den vorhandenen Sicherungsdialog.
@@ -187,7 +187,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.79.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.80.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -197,7 +197,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.79.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.80.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
