@@ -2,6 +2,13 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Druckschutz, Ergebnisbeschreibung und Druckwerte zurücksetzen
+
+- Mehrfachsignale während und nach der Druckübergabe erzeugen keinen weiteren Auftrag. Auch ein zweites Druckfenster wird während eines laufenden Druckdialogs verhindert. Nach einem Fehler bleibt eine kurze Doppelklick-Sperre aktiv; danach ist ein bewusster neuer Versuch möglich. Die Übergabe bestätigt keinen tatsächlichen Papierausdruck.
+- Die Ergebnisleiste nennt bei entnommenen Seiten deren tatsächliche Anzahl und bei einer gespeicherten PDF-Kopie deren Seitenzahl. Abbrechen oder Fehler meldet kein neues Ergebnis.
+- **Gemerkte Druckeinstellungen zurücksetzen** entfernt nur die zuletzt verwendeten Werte des gewählten Druckers und lädt dessen ausdrücklich gespeicherte Standardvorgabe beziehungsweise die Treibervorgaben. Seitenauswahl, benannte Vorlagen und Werte anderer Drucker bleiben erhalten.
+- Alle 20 Oberflächensprachen; noch nicht veröffentlicht.
+
 ### Neu in 1.80.0: Ergebnisse öffnen und Druckeinstellungen wiederverwenden
 
 - Nach erfolgreicher Seitenentnahme und nach **Kopie speichern** erscheint eine Ergebnisleiste mit **Ergebnis öffnen** und **Ordner anzeigen**. Sie nennt die gespeicherte Datei und öffnet nichts ungefragt. Das gilt auch für gespeicherte Ergebnisse nach Zusammenfügen und Texterkennung; deren Bearbeitung bleibt zunächst im geöffneten Dokument. Fehlgeschlagenes oder abgebrochenes Speichern bietet kein neues Ergebnis an.

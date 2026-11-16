@@ -1413,7 +1413,12 @@
     "Ergebnis öffnen": "Open result",
     "Ordner anzeigen": "Show folder",
     "Ordner konnte nicht geöffnet werden.": "The folder could not be opened.",
-    "Zuletzt verwendete Druckeinstellungen": "Last used print settings"
+    "Zuletzt verwendete Druckeinstellungen": "Last used print settings",
+    "Seiten entnommen: {0}": "Pages extracted: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF copy saved · Pages: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Reset remembered print settings",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Remembered values reset. Defaults loaded; page selection and named presets are kept.",
+    "Druckauftrag wird übergeben …": "Submitting print job …"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2829,7 +2834,12 @@
     "Ergebnis öffnen": "Ouvrir le résultat",
     "Ordner anzeigen": "Afficher le dossier",
     "Ordner konnte nicht geöffnet werden.": "Impossible d’ouvrir le dossier.",
-    "Zuletzt verwendete Druckeinstellungen": "Derniers paramètres d’impression utilisés"
+    "Zuletzt verwendete Druckeinstellungen": "Derniers paramètres d’impression utilisés",
+    "Seiten entnommen: {0}": "Pages extraites : {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Copie PDF enregistrée · Pages : {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Réinitialiser les paramètres d’impression mémorisés",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valeurs mémorisées réinitialisées. Valeurs par défaut chargées ; sélection des pages et préréglages nommés conservés.",
+    "Druckauftrag wird übergeben …": "Envoi de la tâche d’impression…"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4245,7 +4255,12 @@
     "Ergebnis öffnen": "Abrir resultado",
     "Ordner anzeigen": "Mostrar carpeta",
     "Ordner konnte nicht geöffnet werden.": "No se pudo abrir la carpeta.",
-    "Zuletzt verwendete Druckeinstellungen": "Últimos ajustes de impresión utilizados"
+    "Zuletzt verwendete Druckeinstellungen": "Últimos ajustes de impresión utilizados",
+    "Seiten entnommen: {0}": "Páginas extraídas: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Copia PDF guardada · Páginas: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Restablecer ajustes de impresión recordados",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valores recordados restablecidos. Se cargaron los valores predeterminados; se conservan la selección de páginas y los preajustes con nombre.",
+    "Druckauftrag wird übergeben …": "Enviando trabajo de impresión…"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5661,7 +5676,12 @@
     "Ergebnis öffnen": "Resultaat openen",
     "Ordner anzeigen": "Map tonen",
     "Ordner konnte nicht geöffnet werden.": "De map kon niet worden geopend.",
-    "Zuletzt verwendete Druckeinstellungen": "Laatst gebruikte afdrukinstellingen"
+    "Zuletzt verwendete Druckeinstellungen": "Laatst gebruikte afdrukinstellingen",
+    "Seiten entnommen: {0}": "Pagina’s geëxtraheerd: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopie opgeslagen · Pagina’s: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Onthouden afdrukinstellingen herstellen",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Onthouden waarden gewist. Standaardwaarden geladen; paginaselectie en benoemde voorinstellingen blijven behouden.",
+    "Druckauftrag wird übergeben …": "Afdruktaak wordt verzonden…"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7077,7 +7097,12 @@
     "Ergebnis öffnen": "Apri risultato",
     "Ordner anzeigen": "Mostra cartella",
     "Ordner konnte nicht geöffnet werden.": "Impossibile aprire la cartella.",
-    "Zuletzt verwendete Druckeinstellungen": "Ultime impostazioni di stampa utilizzate"
+    "Zuletzt verwendete Druckeinstellungen": "Ultime impostazioni di stampa utilizzate",
+    "Seiten entnommen: {0}": "Pagine estratte: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Copia PDF salvata · Pagine: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Reimposta le impostazioni di stampa memorizzate",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valori memorizzati reimpostati. Valori predefiniti caricati; selezione delle pagine e preimpostazioni con nome mantenute.",
+    "Druckauftrag wird übergeben …": "Invio del lavoro di stampa…"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8493,7 +8518,12 @@
     "Ergebnis öffnen": "Abrir resultado",
     "Ordner anzeigen": "Mostrar pasta",
     "Ordner konnte nicht geöffnet werden.": "Não foi possível abrir a pasta.",
-    "Zuletzt verwendete Druckeinstellungen": "Últimas definições de impressão utilizadas"
+    "Zuletzt verwendete Druckeinstellungen": "Últimas definições de impressão utilizadas",
+    "Seiten entnommen: {0}": "Páginas extraídas: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Cópia PDF guardada · Páginas: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Repor definições de impressão memorizadas",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valores memorizados repostos. Predefinições carregadas; a seleção de páginas e as predefinições com nome são mantidas.",
+    "Druckauftrag wird übergeben …": "A enviar o trabalho de impressão…"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9909,7 +9939,12 @@
     "Ergebnis öffnen": "Otwórz wynik",
     "Ordner anzeigen": "Pokaż folder",
     "Ordner konnte nicht geöffnet werden.": "Nie można otworzyć folderu.",
-    "Zuletzt verwendete Druckeinstellungen": "Ostatnio używane ustawienia drukowania"
+    "Zuletzt verwendete Druckeinstellungen": "Ostatnio używane ustawienia drukowania",
+    "Seiten entnommen: {0}": "Wyodrębnione strony: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Zapisano kopię PDF · Strony: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Resetuj zapamiętane ustawienia drukowania",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Zapamiętane wartości zresetowano. Wczytano ustawienia domyślne; wybór stron i nazwane szablony pozostają zachowane.",
+    "Druckauftrag wird übergeben …": "Przekazywanie zadania drukowania…"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11325,7 +11360,12 @@
     "Ergebnis öffnen": "Otevřít výsledek",
     "Ordner anzeigen": "Zobrazit složku",
     "Ordner konnte nicht geöffnet werden.": "Složku se nepodařilo otevřít.",
-    "Zuletzt verwendete Druckeinstellungen": "Naposledy použité nastavení tisku"
+    "Zuletzt verwendete Druckeinstellungen": "Naposledy použité nastavení tisku",
+    "Seiten entnommen: {0}": "Vyjmuté stránky: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Kopie PDF uložena · Stránky: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Obnovit zapamatované nastavení tisku",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Zapamatované hodnoty byly obnoveny. Načteny výchozí hodnoty; výběr stránek a pojmenované předvolby zůstávají zachovány.",
+    "Druckauftrag wird übergeben …": "Odesílání tiskové úlohy…"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12741,7 +12781,12 @@
     "Ergebnis öffnen": "Åbn resultat",
     "Ordner anzeigen": "Vis mappe",
     "Ordner konnte nicht geöffnet werden.": "Mappen kunne ikke åbnes.",
-    "Zuletzt verwendete Druckeinstellungen": "Senest anvendte udskriftsindstillinger"
+    "Zuletzt verwendete Druckeinstellungen": "Senest anvendte udskriftsindstillinger",
+    "Seiten entnommen: {0}": "Udtrukne sider: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopi gemt · Sider: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Nulstil huskede udskriftsindstillinger",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Huskede værdier nulstillet. Standardværdier indlæst; sidevalg og navngivne forvalg bevares.",
+    "Druckauftrag wird übergeben …": "Sender udskriftsjob…"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14157,7 +14202,12 @@
     "Ergebnis öffnen": "Öppna resultat",
     "Ordner anzeigen": "Visa mapp",
     "Ordner konnte nicht geöffnet werden.": "Mappen kunde inte öppnas.",
-    "Zuletzt verwendete Druckeinstellungen": "Senast använda utskriftsinställningar"
+    "Zuletzt verwendete Druckeinstellungen": "Senast använda utskriftsinställningar",
+    "Seiten entnommen: {0}": "Extraherade sidor: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopia sparad · Sidor: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Återställ ihågkomna utskriftsinställningar",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Ihågkomna värden återställda. Standardvärden inlästa; sidval och namngivna förval behålls.",
+    "Druckauftrag wird übergeben …": "Skickar utskriftsjobb…"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15573,7 +15623,12 @@
     "Ergebnis öffnen": "Åpne resultat",
     "Ordner anzeigen": "Vis mappe",
     "Ordner konnte nicht geöffnet werden.": "Mappen kunne ikke åpnes.",
-    "Zuletzt verwendete Druckeinstellungen": "Sist brukte utskriftsinnstillinger"
+    "Zuletzt verwendete Druckeinstellungen": "Sist brukte utskriftsinnstillinger",
+    "Seiten entnommen: {0}": "Uthentede sider: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopi lagret · Sider: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Nullstill huskede utskriftsinnstillinger",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Huskede verdier nullstilt. Standardverdier lastet inn; sidevalg og navngitte forvalg beholdes.",
+    "Druckauftrag wird übergeben …": "Sender utskriftsjobb…"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16989,7 +17044,12 @@
     "Ergebnis öffnen": "Avaa tulos",
     "Ordner anzeigen": "Näytä kansio",
     "Ordner konnte nicht geöffnet werden.": "Kansiota ei voitu avata.",
-    "Zuletzt verwendete Druckeinstellungen": "Viimeksi käytetyt tulostusasetukset"
+    "Zuletzt verwendete Druckeinstellungen": "Viimeksi käytetyt tulostusasetukset",
+    "Seiten entnommen: {0}": "Erotettuja sivuja: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopio tallennettu · Sivuja: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Nollaa muistetut tulostusasetukset",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Muistetut arvot nollattu. Oletukset ladattu; sivuvalinta ja nimetyt esiasetukset säilyvät.",
+    "Druckauftrag wird übergeben …": "Lähetetään tulostustyötä…"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18405,7 +18465,12 @@
     "Ergebnis öffnen": "Sonucu aç",
     "Ordner anzeigen": "Klasörü göster",
     "Ordner konnte nicht geöffnet werden.": "Klasör açılamadı.",
-    "Zuletzt verwendete Druckeinstellungen": "Son kullanılan yazdırma ayarları"
+    "Zuletzt verwendete Druckeinstellungen": "Son kullanılan yazdırma ayarları",
+    "Seiten entnommen: {0}": "Çıkarılan sayfalar: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF kopyası kaydedildi · Sayfa: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Hatırlanan yazdırma ayarlarını sıfırla",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Hatırlanan değerler sıfırlandı. Varsayılanlar yüklendi; sayfa seçimi ve adlandırılmış ön ayarlar korunur.",
+    "Druckauftrag wird übergeben …": "Yazdırma işi gönderiliyor…"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19821,7 +19886,12 @@
     "Ergebnis öffnen": "Відкрити результат",
     "Ordner anzeigen": "Показати папку",
     "Ordner konnte nicht geöffnet werden.": "Не вдалося відкрити папку.",
-    "Zuletzt verwendete Druckeinstellungen": "Останні використані параметри друку"
+    "Zuletzt verwendete Druckeinstellungen": "Останні використані параметри друку",
+    "Seiten entnommen: {0}": "Вилучено сторінок: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Копію PDF збережено · Сторінок: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Скинути запам’ятовані параметри друку",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Запам’ятовані значення скинуто. Завантажено типові параметри; вибір сторінок та іменовані шаблони збережено.",
+    "Druckauftrag wird übergeben …": "Передавання завдання друку…"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21237,7 +21307,12 @@
     "Ergebnis öffnen": "Άνοιγμα αποτελέσματος",
     "Ordner anzeigen": "Εμφάνιση φακέλου",
     "Ordner konnte nicht geöffnet werden.": "Δεν ήταν δυνατό το άνοιγμα του φακέλου.",
-    "Zuletzt verwendete Druckeinstellungen": "Ρυθμίσεις εκτύπωσης που χρησιμοποιήθηκαν τελευταία"
+    "Zuletzt verwendete Druckeinstellungen": "Ρυθμίσεις εκτύπωσης που χρησιμοποιήθηκαν τελευταία",
+    "Seiten entnommen: {0}": "Σελίδες που εξήχθησαν: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "Αντίγραφο PDF αποθηκεύτηκε · Σελίδες: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "Επαναφορά απομνημονευμένων ρυθμίσεων εκτύπωσης",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Οι απομνημονευμένες τιμές επαναφέρθηκαν. Φορτώθηκαν προεπιλογές· η επιλογή σελίδων και οι επώνυμες προρυθμίσεις διατηρούνται.",
+    "Druckauftrag wird übergeben …": "Αποστολή εργασίας εκτύπωσης…"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22653,7 +22728,12 @@
     "Ergebnis öffnen": "結果を開く",
     "Ordner anzeigen": "フォルダーを表示",
     "Ordner konnte nicht geöffnet werden.": "フォルダーを開けませんでした。",
-    "Zuletzt verwendete Druckeinstellungen": "前回使用した印刷設定"
+    "Zuletzt verwendete Druckeinstellungen": "前回使用した印刷設定",
+    "Seiten entnommen: {0}": "抽出したページ数：{0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDFコピーを保存 · ページ数：{0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "記憶した印刷設定をリセット",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "記憶した値をリセットし、既定値を読み込みました。ページ選択と名前付きプリセットは保持されます。",
+    "Druckauftrag wird übergeben …": "印刷ジョブを送信中…"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -24069,7 +24149,12 @@
     "Ergebnis öffnen": "결과 열기",
     "Ordner anzeigen": "폴더 표시",
     "Ordner konnte nicht geöffnet werden.": "폴더를 열 수 없습니다.",
-    "Zuletzt verwendete Druckeinstellungen": "마지막으로 사용한 인쇄 설정"
+    "Zuletzt verwendete Druckeinstellungen": "마지막으로 사용한 인쇄 설정",
+    "Seiten entnommen: {0}": "추출한 페이지: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "PDF 사본 저장됨 · 페이지: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "기억된 인쇄 설정 초기화",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "기억된 값을 초기화하고 기본값을 불러왔습니다. 페이지 선택과 이름이 지정된 사전 설정은 유지됩니다.",
+    "Druckauftrag wird übergeben …": "인쇄 작업 전송 중…"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25485,7 +25570,12 @@
     "Ergebnis öffnen": "فتح النتيجة",
     "Ordner anzeigen": "عرض المجلد",
     "Ordner konnte nicht geöffnet werden.": "تعذّر فتح المجلد.",
-    "Zuletzt verwendete Druckeinstellungen": "إعدادات الطباعة المستخدمة مؤخرًا"
+    "Zuletzt verwendete Druckeinstellungen": "إعدادات الطباعة المستخدمة مؤخرًا",
+    "Seiten entnommen: {0}": "الصفحات المستخرجة: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "تم حفظ نسخة PDF · الصفحات: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "إعادة ضبط إعدادات الطباعة المحفوظة",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "أُعيد ضبط القيم المحفوظة وحُمّلت القيم الافتراضية؛ يبقى اختيار الصفحات والقوالب المسماة محفوظًا.",
+    "Druckauftrag wird übergeben …": "جارٍ إرسال مهمة الطباعة…"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -26901,6 +26991,11 @@
     "Ergebnis öffnen": "פתיחת התוצאה",
     "Ordner anzeigen": "הצגת התיקייה",
     "Ordner konnte nicht geöffnet werden.": "לא ניתן לפתוח את התיקייה.",
-    "Zuletzt verwendete Druckeinstellungen": "הגדרות ההדפסה האחרונות שהיו בשימוש"
+    "Zuletzt verwendete Druckeinstellungen": "הגדרות ההדפסה האחרונות שהיו בשימוש",
+    "Seiten entnommen: {0}": "עמודים שחולצו: {0}",
+    "PDF-Kopie gespeichert · Seiten: {0}": "עותק PDF נשמר · עמודים: {0}",
+    "Gemerkte Druckeinstellungen zurücksetzen": "איפוס הגדרות ההדפסה שנזכרו",
+    "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "הערכים שנזכרו אופסו וברירות המחדל נטענו; בחירת העמודים והתבניות בעלות השם נשמרות.",
+    "Druckauftrag wird übergeben …": "שליחת משימת ההדפסה…"
   }
 }

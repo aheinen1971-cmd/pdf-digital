@@ -71,9 +71,12 @@ with TemporaryDirectory() as temp:
   def inspect(d):
    d.show();app.processEvents();copies=d.findChild(QSpinBox,'printCopies');copies.setValue(3)
    button=d.findChild(QPushButton,'printSubmit');button.click()
-   assert d.result()!=QDialog.DialogCode.Accepted and copies.value()==3 and button.isEnabled()
+   assert d.result()!=QDialog.DialogCode.Accepted and copies.value()==3 and not button.isEnabled()
    failure=d.findChild(QLabel,'printFailure');assert 'Synthetic spooler error' in failure.text() and failure.textFormat()==Qt.TextFormat.PlainText
-   QTest.qWait(120);assert 'Synthetic spooler error' in failure.text()
+   for _ in range(40):
+    if button.isEnabled():break
+    QTest.qWait(50)
+   assert 'Synthetic spooler error' in failure.text() and button.isEnabled()
    if lang in ('de','ar','ja'):d.grab().save(str(out/(lang+'-print.png')))
    button.click();assert d.result()==QDialog.DialogCode.Accepted
    return d.result()

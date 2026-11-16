@@ -1767,9 +1767,10 @@ class Window(QMainWindow):
         self.ribbon_scroll.setFixedHeight(self.ribbon.sizeHint().height()
                                           + self.ribbon_scroll.horizontalScrollBar().sizeHint().height())
 
-    def offer_saved_result(self, path):
+    def offer_saved_result(self, path, description=""):
         self.result_path = Path(path).resolve()
-        self.result_label.setText(self.ui_format('Kopie gespeichert: {0}', self.result_path.name))
+        text = self.ui_format('Kopie gespeichert: {0}', self.result_path.name)
+        self.result_label.setText(text + ("\n" + description if description else ""))
         self.result_label.setToolTip(str(self.result_path))
         self.result_bar.show()
 
@@ -9117,7 +9118,7 @@ class Window(QMainWindow):
                 with extract_pages(session.doc, indices) as result:
                     save_copy(result, target)
                 self.statusBar().showMessage(self.ui_format('{0} Seiten gespeichert: {1}', len(indices), target.name), 6500)
-                self.offer_saved_result(target)
+                self.offer_saved_result(target, self.ui_format("Seiten entnommen: {0}", len(indices)))
         except Exception as exc:
             self.error(exc)
 
@@ -10483,7 +10484,7 @@ class Window(QMainWindow):
         for entry in session.history + session.redo_stack:
             entry[2] = True
         self.tabs.setTabText(self.tabs.currentIndex(), session.path.name)
-        self.offer_saved_result(target)
+        self.offer_saved_result(target, self.ui_format("PDF-Kopie gespeichert · Seiten: {0}", len(session.doc)))
         return True
 
     def confirm_close(self, index):
@@ -10722,6 +10723,8 @@ class Window(QMainWindow):
             self.statusBar().showMessage(self.ui("Broschüren-Druckauftrag übergeben."), 6500)
 
     def print_dialog(self, samsung=False):
+        if getattr(self, "print_dialog_active", False):
+            return
         session = self.current
         if not session:
             return
@@ -10754,7 +10757,11 @@ class Window(QMainWindow):
                 selected_printer.setDocName(session.path.name)
                 selected_printer.setPrintRange(QPrinter.PrintRange.AllPages)
                 print_pages(session.doc, selected_printer, indices)
-            result = self.print_preview_setup(session.doc, printer, devices, submit=submit)
+            self.print_dialog_active = True
+            try:
+                result = self.print_preview_setup(session.doc, printer, devices, submit=submit)
+            finally:
+                self.print_dialog_active = False
             if result is None:
                 return
             printer, indices = result
@@ -10882,6 +10889,9 @@ class Window(QMainWindow):
         form.addRow(margin_notice)
         save_settings = QPushButton(self.ui("Druckeinstellungen speichern")); save_settings.setObjectName("printSaveSettings")
         form.addRow(save_settings)
+        reset_remembered = QPushButton(self.ui("Gemerkte Druckeinstellungen zurücksetzen"))
+        reset_remembered.setObjectName("printResetRemembered")
+        form.addRow(reset_remembered)
         saved_notice = QLabel(); saved_notice.setObjectName("printSavedNotice"); saved_notice.setWordWrap(True); form.addRow(saved_notice)
         named = QComboBox(); named.setObjectName("printNamedPresets")
         named.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon); named.setMinimumContentsLength(12)
@@ -10909,6 +10919,11 @@ class Window(QMainWindow):
         excluded = set()
         applied_preset_name, applied_preset_values = "", None
         timer = QTimer(dialog); timer.setSingleShot(True); timer.setInterval(80)
+        sending, submitted = False, False
+        retry_after = 0.0
+        retry_timer = QTimer(dialog); retry_timer.setSingleShot(True)
+        retry_timer.setTimerType(Qt.TimerType.PreciseTimer)
+        driver_defaults = None
 
         def sync_printer():
             current = printer.pageLayout().pageSize()
@@ -10954,7 +10969,7 @@ class Window(QMainWindow):
             previous.setEnabled(position > 0); following.setEnabled(position + 1 < len(sheets))
             count.setText(self.ui_format("Blatt {0} von {1}", position + 1 if sheets else 0, len(sheets)))
             notice.setText(self.ui("Die Auswahl enthält keine Seiten.") if not sheets else (self.ui("Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.") if not devices else ""))
-            go.setEnabled(bool(sheets) and bool(devices))
+            go.setEnabled(bool(sheets) and bool(devices) and not sending and not submitted and time.monotonic() >= retry_after)
             try:
                 clipped = False
                 for side, (panel, heading, image) in enumerate(images):
@@ -10977,12 +10992,13 @@ class Window(QMainWindow):
                 notice.setText(self.ui("Druckvorschau konnte nicht erstellt werden.")); go.setEnabled(False)
 
         def change_printer():
-            nonlocal printer, applied_preset_name, applied_preset_values
+            nonlocal printer, applied_preset_name, applied_preset_values, driver_defaults
             applied_preset_name, applied_preset_values = "", None
             printer = QPrinter(QPrinterInfo.printerInfo(device_choice.currentText()), QPrinter.PrinterMode.HighResolution)
             scaling.setCurrentIndex(0); per_side.setCurrentIndex(0)
             copies.setValue(printer.copyCount()); collate.setChecked(printer.collateCopies())
-            sync_printer(); load_settings(); refresh_named(); saved_notice.clear(); render(True)
+            sync_printer(); driver_defaults = settings_values()
+            load_settings(); refresh_named(); saved_notice.clear(); render(True)
 
         def native_settings():
             nonlocal printer
@@ -11049,6 +11065,22 @@ class Window(QMainWindow):
             self.favorite_settings.setValue(key, json.dumps(value))
             self.favorite_settings.sync()
             saved_notice.setText(self.ui("Druckeinstellungen gespeichert.") if self.favorite_settings.status() == QSettings.Status.NoError else self.ui("Druckeinstellungen konnten nicht gespeichert werden."))
+
+        def reset_recent():
+            nonlocal applied_preset_name, applied_preset_values
+            key = settings_key().replace("print/preset/", "print/recent/")
+            previous = self.favorite_settings.value(key)
+            self.favorite_settings.remove(key)
+            self.favorite_settings.sync()
+            if self.favorite_settings.status() != QSettings.Status.NoError:
+                if previous is not None: self.favorite_settings.setValue(key, previous)
+                self.favorite_settings.sync()
+                saved_notice.setText(self.ui("Druckeinstellungen konnten nicht gespeichert werden."))
+                return
+            applied_preset_name, applied_preset_values = "", None
+            apply_settings(driver_defaults)
+            load_settings(); render()
+            saved_notice.setText(self.ui("Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten."))
 
         def save_preset():
             nonlocal applied_preset_name, applied_preset_values
@@ -11126,17 +11158,32 @@ class Window(QMainWindow):
             position += delta; render()
 
         def submit_print():
+            nonlocal sending, submitted, retry_after
+            if sending or submitted or time.monotonic() < retry_after:
+                return
             render()
             if not go.isEnabled():
                 return
+            sending = True
             go.setEnabled(False)
+            split.setEnabled(False)
+            go.setText(self.ui("Druckauftrag wird übergeben …"))
             try:
                 if submit is not None:
                     submit(printer, selected)
             except Exception as exc:
+                sending = False
+                # A queued second click after an error is not an intentional retry.
+                delay = max(400, QApplication.doubleClickInterval()) + 50
+                retry_after = time.monotonic() + delay / 1000
+                retry_timer.start(delay)
+                split.setEnabled(True)
+                go.setText(self.ui("Jetzt drucken"))
                 failure_detail.setText(self.ui("Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.") + "\n" + str(exc)[:2000])
                 render()
                 return
+            sending, submitted = False, True
+            go.setText(self.ui("Druckauftrag übergeben."))
             if submit is not None:
                 # Remember only an accepted print job, never a failed attempt or page selection.
                 self.favorite_settings.setValue("print/last-printer", printer.printerName())
@@ -11145,7 +11192,10 @@ class Window(QMainWindow):
             dialog.accept()
 
         buttons.accepted.connect(submit_print)
-        sync_printer(); load_settings(); refresh_named()
+        retry_timer.timeout.connect(render)
+        sync_printer(); driver_defaults = settings_values()
+        load_settings(); refresh_named()
+        reset_remembered.clicked.connect(reset_recent); reset_remembered.setEnabled(bool(devices))
         named_save.clicked.connect(save_named); named_save.setEnabled(bool(devices))
         named_load.clicked.connect(load_named); named_delete.clicked.connect(delete_named)
         named.currentTextChanged.connect(preset_name.setText)
@@ -11163,8 +11213,8 @@ class Window(QMainWindow):
         render(True)
         accepted = dialog.exec() == QDialog.DialogCode.Accepted
         # Flush pending edits even when Print is clicked before the debounce expires.
-        render(); timer.stop()
-        result = (printer, selected) if accepted and go.isEnabled() else None
+        render(); timer.stop(); retry_timer.stop()
+        result = (printer, selected) if accepted and (submitted or go.isEnabled()) else None
         dialog.deleteLater()
         return result
 
