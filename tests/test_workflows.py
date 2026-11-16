@@ -94,7 +94,8 @@ with TemporaryDirectory() as temp:
         preview_setup = window.print_preview_setup
         observed = []
 
-        def capture_profile(doc, printer, devices):
+        def capture_profile(doc, printer, devices, *, submit=None):
+            assert callable(submit)  # Inspect the preview only; never submit a paper job.
             assert printer.printerName() == samsung.printerName()
             assert printer.pageLayout().pageSize().id() == QPageSize.PageSizeId.A4
             assert printer.duplex() == QPrinter.DuplexMode.DuplexLongSide

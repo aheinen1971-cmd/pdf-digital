@@ -1423,7 +1423,13 @@
     "Weitere Möglichkeiten": "More options",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Try again later or use “More options → Update from USB”.",
     "Werkzeuge suchen": "Find tools",
-    "Keine passenden Werkzeuge.": "No matching tools."
+    "Keine passenden Werkzeuge.": "No matching tools.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "take out pages separate pages save individual pages",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "merge join combine PDFs",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "reduce file size compress smaller file",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "recognize text text recognition make scans searchable",
+    "Papier ausdrucken Druckvorschau": "paper print out print preview",
+    "Speichern unter Datei kopieren neue Kopie": "save as copy file new copy"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2849,7 +2855,13 @@
     "Weitere Möglichkeiten": "Autres possibilités",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Réessayez plus tard ou utilisez « Autres possibilités → Mise à jour depuis une clé USB ».",
     "Werkzeuge suchen": "Rechercher des outils",
-    "Keine passenden Werkzeuge.": "Aucun outil correspondant."
+    "Keine passenden Werkzeuge.": "Aucun outil correspondant.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "retirer extraire séparer des pages enregistrer les pages séparément",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "fusionner joindre combiner des PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "réduire la taille du fichier compresser fichier plus petit",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "reconnaître le texte reconnaissance de texte rendre un scan consultable",
+    "Papier ausdrucken Druckvorschau": "papier imprimer aperçu avant impression",
+    "Speichern unter Datei kopieren neue Kopie": "enregistrer sous copier le fichier nouvelle copie"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4275,7 +4287,13 @@
     "Weitere Möglichkeiten": "Más opciones",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Inténtalo más tarde o usa « Más opciones → Actualizar desde USB ».",
     "Werkzeuge suchen": "Buscar herramientas",
-    "Keine passenden Werkzeuge.": "No hay herramientas coincidentes."
+    "Keine passenden Werkzeuge.": "No hay herramientas coincidentes.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "sacar separar extraer páginas guardar páginas individuales",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "unir combinar fusionar PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "reducir tamaño del archivo comprimir archivo más pequeño",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "reconocer texto reconocimiento de texto buscar en documentos escaneados",
+    "Papier ausdrucken Druckvorschau": "papel imprimir vista previa de impresión",
+    "Speichern unter Datei kopieren neue Kopie": "guardar como copiar archivo nueva copia"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5701,7 +5719,13 @@
     "Weitere Möglichkeiten": "Meer mogelijkheden",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Probeer het later opnieuw of gebruik “Meer mogelijkheden → Update vanaf USB”.",
     "Werkzeuge suchen": "Gereedschappen zoeken",
-    "Keine passenden Werkzeuge.": "Geen passende gereedschappen."
+    "Keine passenden Werkzeuge.": "Geen passende gereedschappen.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "pagina’s eruit halen uitnemen scheiden losse pagina’s opslaan",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "PDF samenvoegen verbinden combineren",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "bestandsgrootte verkleinen comprimeren kleiner bestand",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "tekst herkennen tekstherkenning scan doorzoekbaar maken",
+    "Papier ausdrucken Druckvorschau": "papier afdrukken afdrukvoorbeeld",
+    "Speichern unter Datei kopieren neue Kopie": "opslaan als bestand kopiëren nieuwe kopie"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7127,7 +7151,13 @@
     "Weitere Möglichkeiten": "Altre opzioni",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Riprova più tardi oppure usa « Altre opzioni → Aggiornamento da USB ».",
     "Werkzeuge suchen": "Cerca strumenti",
-    "Keine passenden Werkzeuge.": "Nessuno strumento corrispondente."
+    "Keine passenden Werkzeuge.": "Nessuno strumento corrispondente.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "togliere estrarre separare pagine salvare pagine singole",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "unire combinare fondere PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "ridurre dimensione file comprimere file più piccolo",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "riconoscere testo riconoscimento testo rendere ricercabile una scansione",
+    "Papier ausdrucken Druckvorschau": "carta stampare anteprima di stampa",
+    "Speichern unter Datei kopieren neue Kopie": "salva con nome copiare file nuova copia"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8553,7 +8583,13 @@
     "Weitere Möglichkeiten": "Mais opções",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Tenta novamente mais tarde ou utiliza « Mais opções → Atualização por USB ».",
     "Werkzeuge suchen": "Procurar ferramentas",
-    "Keine passenden Werkzeuge.": "Nenhuma ferramenta correspondente."
+    "Keine passenden Werkzeuge.": "Nenhuma ferramenta correspondente.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "retirar extrair separar páginas guardar páginas individuais",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "juntar unir combinar PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "reduzir tamanho do ficheiro comprimir ficheiro mais pequeno",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "reconhecer texto reconhecimento de texto tornar digitalização pesquisável",
+    "Papier ausdrucken Druckvorschau": "papel imprimir pré-visualização de impressão",
+    "Speichern unter Datei kopieren neue Kopie": "guardar como copiar ficheiro nova cópia"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9979,7 +10015,13 @@
     "Weitere Möglichkeiten": "Więcej możliwości",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Spróbuj ponownie później lub wybierz „Więcej możliwości → Aktualizacja z USB”.",
     "Werkzeuge suchen": "Szukaj narzędzi",
-    "Keine passenden Werkzeuge.": "Brak pasujących narzędzi."
+    "Keine passenden Werkzeuge.": "Brak pasujących narzędzi.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "wyjąć wyciągnąć oddzielić strony zapisać pojedyncze strony",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "połączyć scalić złączyć PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "zmniejszyć rozmiar pliku kompresować mniejszy plik",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "rozpoznać tekst rozpoznawanie tekstu przeszukiwalny skan",
+    "Papier ausdrucken Druckvorschau": "papier wydrukować podgląd wydruku",
+    "Speichern unter Datei kopieren neue Kopie": "zapisz jako kopiować plik nowa kopia"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11405,7 +11447,13 @@
     "Weitere Möglichkeiten": "Další možnosti",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Zkuste to později nebo použijte „Další možnosti → Aktualizace z USB“.",
     "Werkzeuge suchen": "Hledat nástroje",
-    "Keine passenden Werkzeuge.": "Žádné odpovídající nástroje."
+    "Keine passenden Werkzeuge.": "Žádné odpovídající nástroje.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "vyjmout oddělit vybrat stránky uložit jednotlivé stránky",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "spojit sloučit kombinovat PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "zmenšit velikost souboru komprimovat menší soubor",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "rozpoznat text rozpoznávání textu prohledávat sken",
+    "Papier ausdrucken Druckvorschau": "papír vytisknout náhled tisku",
+    "Speichern unter Datei kopieren neue Kopie": "uložit jako kopírovat soubor nová kopie"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12831,7 +12879,13 @@
     "Weitere Möglichkeiten": "Flere muligheder",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igen senere, eller brug »Flere muligheder → Opdatering fra USB«.",
     "Werkzeuge suchen": "Find værktøjer",
-    "Keine passenden Werkzeuge.": "Ingen matchende værktøjer."
+    "Keine passenden Werkzeuge.": "Ingen matchende værktøjer.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "tage sider ud udtrække adskille gemme enkelte sider",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "samle flette kombinere PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "reducere filstørrelse komprimere mindre fil",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "genkende tekst tekstgenkendelse gøre scanning søgbar",
+    "Papier ausdrucken Druckvorschau": "papir udskrive udskriftsvisning",
+    "Speichern unter Datei kopieren neue Kopie": "gem som kopiere fil ny kopi"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14257,7 +14311,13 @@
     "Weitere Möglichkeiten": "Fler alternativ",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Försök igen senare eller använd ”Fler alternativ → Uppdatering från USB”.",
     "Werkzeuge suchen": "Sök verktyg",
-    "Keine passenden Werkzeuge.": "Inga matchande verktyg."
+    "Keine passenden Werkzeuge.": "Inga matchande verktyg.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "ta ut sidor extrahera separera spara enskilda sidor",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "slå ihop sammanfoga kombinera PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "minska filstorlek komprimera mindre fil",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "känna igen text textigenkänning göra skanning sökbar",
+    "Papier ausdrucken Druckvorschau": "papper skriva ut förhandsgranska utskrift",
+    "Speichern unter Datei kopieren neue Kopie": "spara som kopiera fil ny kopia"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15683,7 +15743,13 @@
     "Weitere Möglichkeiten": "Flere muligheter",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igjen senere eller bruk «Flere muligheter → Oppdatering fra USB».",
     "Werkzeuge suchen": "Finn verktøy",
-    "Keine passenden Werkzeuge.": "Ingen samsvarende verktøy."
+    "Keine passenden Werkzeuge.": "Ingen samsvarende verktøy.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "ta ut sider trekke ut skille lagre enkeltsider",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "slå sammen flette kombinere PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "redusere filstørrelse komprimere mindre fil",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "gjenkjenne tekst tekstgjenkjenning gjøre skanning søkbar",
+    "Papier ausdrucken Druckvorschau": "papir skrive ut forhåndsvisning av utskrift",
+    "Speichern unter Datei kopieren neue Kopie": "lagre som kopiere fil ny kopi"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -17109,7 +17175,13 @@
     "Weitere Möglichkeiten": "Lisää vaihtoehtoja",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Yritä myöhemmin uudelleen tai valitse ”Lisää vaihtoehtoja → Päivitys USB:ltä”.",
     "Werkzeuge suchen": "Etsi työkaluja",
-    "Keine passenden Werkzeuge.": "Ei vastaavia työkaluja."
+    "Keine passenden Werkzeuge.": "Ei vastaavia työkaluja.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "poimi irrota erota sivuja tallenna yksittäiset sivut",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "yhdistä liitä PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "pienennä tiedostokokoa pakkaa pienempi tiedosto",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "tunnista teksti tekstintunnistus tee skannauksesta haettava",
+    "Papier ausdrucken Druckvorschau": "paperi tulosta tulostuksen esikatselu",
+    "Speichern unter Datei kopieren neue Kopie": "tallenna nimellä kopioi tiedosto uusi kopio"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18535,7 +18607,13 @@
     "Weitere Möglichkeiten": "Diğer seçenekler",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Daha sonra tekrar deneyin veya “Diğer seçenekler → USB’den güncelleme” yolunu kullanın.",
     "Werkzeuge suchen": "Araçları ara",
-    "Keine passenden Werkzeuge.": "Eşleşen araç yok."
+    "Keine passenden Werkzeuge.": "Eşleşen araç yok.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "sayfaları çıkar ayır tek tek kaydet",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "PDF birleştir ekle bir araya getir",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "dosya boyutunu küçült sıkıştır daha küçük dosya",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "metin tanı metin tanıma taramayı aranabilir yap",
+    "Papier ausdrucken Druckvorschau": "kağıt yazdır baskı önizleme",
+    "Speichern unter Datei kopieren neue Kopie": "farklı kaydet dosyayı kopyala yeni kopya"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19961,7 +20039,13 @@
     "Weitere Möglichkeiten": "Інші можливості",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Спробуйте пізніше або виберіть «Інші можливості → Оновлення з USB».",
     "Werkzeuge suchen": "Знайти інструменти",
-    "Keine passenden Werkzeuge.": "Відповідних інструментів немає."
+    "Keine passenden Werkzeuge.": "Відповідних інструментів немає.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "витягти вибрати відокремити сторінки зберегти окремі сторінки",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "об’єднати з’єднати поєднати PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "зменшити розмір файлу стиснути менший файл",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "розпізнати текст розпізнавання тексту пошук у сканах",
+    "Papier ausdrucken Druckvorschau": "папір роздрукувати попередній перегляд друку",
+    "Speichern unter Datei kopieren neue Kopie": "зберегти як копіювати файл нова копія"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21387,7 +21471,13 @@
     "Weitere Möglichkeiten": "Περισσότερες επιλογές",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Δοκιμάστε αργότερα ή επιλέξτε «Περισσότερες επιλογές → Ενημέρωση από USB».",
     "Werkzeuge suchen": "Αναζήτηση εργαλείων",
-    "Keine passenden Werkzeuge.": "Δεν βρέθηκαν αντίστοιχα εργαλεία."
+    "Keine passenden Werkzeuge.": "Δεν βρέθηκαν αντίστοιχα εργαλεία.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "εξαγωγή αφαίρεση διαχωρισμός σελίδων αποθήκευση μεμονωμένων σελίδων",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "ένωση συγχώνευση συνδυασμός PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "μείωση μεγέθους αρχείου συμπίεση μικρότερο αρχείο",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "αναγνώριση κειμένου αναζήτηση σε σαρωμένο έγγραφο",
+    "Papier ausdrucken Druckvorschau": "χαρτί εκτύπωση προεπισκόπηση εκτύπωσης",
+    "Speichern unter Datei kopieren neue Kopie": "αποθήκευση ως αντιγραφή αρχείου νέο αντίγραφο"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22813,7 +22903,13 @@
     "Weitere Möglichkeiten": "その他のオプション",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "後でもう一度試すか、「その他のオプション → USBから更新」を使用してください。",
     "Werkzeuge suchen": "ツールを検索",
-    "Keine passenden Werkzeuge.": "一致するツールはありません。"
+    "Keine passenden Werkzeuge.": "一致するツールはありません。",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "ページを取り出す 抜き出す 分ける 個別に保存",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "PDFを結合 まとめる つなげる",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "ファイルサイズを小さく 圧縮 容量を減らす",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "文字を認識 文字認識 スキャンを検索可能に",
+    "Papier ausdrucken Druckvorschau": "紙に印刷 プリント 印刷プレビュー",
+    "Speichern unter Datei kopieren neue Kopie": "名前を付けて保存 ファイルをコピー 別のコピー"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -24239,7 +24335,13 @@
     "Weitere Möglichkeiten": "추가 옵션",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "나중에 다시 시도하거나 “추가 옵션 → USB에서 업데이트”를 사용하세요.",
     "Werkzeuge suchen": "도구 검색",
-    "Keine passenden Werkzeuge.": "일치하는 도구가 없습니다."
+    "Keine passenden Werkzeuge.": "일치하는 도구가 없습니다.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "페이지 꺼내기 추출 분리 개별 저장",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "PDF 합치기 결합 병합",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "파일 크기 줄이기 압축 작은 파일",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "문자 인식 텍스트 인식 스캔 검색 가능하게",
+    "Papier ausdrucken Druckvorschau": "종이 출력 인쇄 미리보기",
+    "Speichern unter Datei kopieren neue Kopie": "다른 이름으로 저장 파일 복사 새 복사본"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25665,7 +25767,13 @@
     "Weitere Möglichkeiten": "خيارات إضافية",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "حاول لاحقًا أو استخدم «خيارات إضافية ← التحديث من USB».",
     "Werkzeuge suchen": "البحث عن أدوات",
-    "Keine passenden Werkzeuge.": "لا توجد أدوات مطابقة."
+    "Keine passenden Werkzeuge.": "لا توجد أدوات مطابقة.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "استخراج صفحات فصل صفحات حفظ صفحات منفردة",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "دمج جمع ربط ملفات PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "تقليل حجم الملف ضغط ملف أصغر",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "التعرف على النص التعرف على الحروف جعل المسح قابلاً للبحث",
+    "Papier ausdrucken Druckvorschau": "ورق طباعة معاينة الطباعة",
+    "Speichern unter Datei kopieren neue Kopie": "حفظ باسم نسخ الملف نسخة جديدة"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -27091,6 +27199,12 @@
     "Weitere Möglichkeiten": "אפשרויות נוספות",
     "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "נסה שוב מאוחר יותר או השתמש ב״אפשרויות נוספות ← עדכון מ־USB״.",
     "Werkzeuge suchen": "חיפוש כלים",
-    "Keine passenden Werkzeuge.": "לא נמצאו כלים מתאימים."
+    "Keine passenden Werkzeuge.": "לא נמצאו כלים מתאימים.",
+    "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern": "הוצאת עמודים חילוץ הפרדת עמודים שמירת עמודים בודדים",
+    "PDF zusammenfügen verbinden kombinieren zusammenführen": "מיזוג חיבור שילוב קובצי PDF",
+    "Dateigröße reduzieren komprimieren kleinere Datei": "הקטנת גודל הקובץ דחיסה קובץ קטן יותר",
+    "Text erkennen Texterkennung Scan durchsuchbar machen": "זיהוי טקסט זיהוי תווים הפיכת סריקה לניתנת לחיפוש",
+    "Papier ausdrucken Druckvorschau": "נייר הדפסה תצוגה מקדימה להדפסה",
+    "Speichern unter Datei kopieren neue Kopie": "שמירה בשם העתקת קובץ עותק חדש"
   }
 }

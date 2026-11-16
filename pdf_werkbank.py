@@ -1467,6 +1467,15 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
         commands = dict(self.favorite_commands)
         commands['update-center'] = ("Update", self.open_update_center)
+        # Localized everyday terms supplement labels; they never run a command.
+        aliases = {
+            "Seiten extrahieren": "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern",
+            "PDF anhängen": "PDF zusammenfügen verbinden kombinieren zusammenführen",
+            "Scan-PDF verkleinern": "Dateigröße reduzieren komprimieren kleinere Datei",
+            "OCR für das Dokument": "Text erkennen Texterkennung Scan durchsuchbar machen",
+            "Drucken": "Papier ausdrucken Druckvorschau",
+            "Kopie speichern": "Speichern unter Datei kopieren neue Kopie",
+        }
         def normalize(value):
             folded = unicodedata.normalize('NFKD', value.casefold()).replace('ı', 'i')
             return ''.join(ch for ch in folded if not unicodedata.combining(ch))
@@ -1475,7 +1484,8 @@ class Window(QMainWindow):
             tokens = normalize(query).split()
             for key, (label, callback) in commands.items():
                 text = (self.ui("Gespeicherte Abläufe") + " · " + key[8:]) if key.startswith('profile:') else self.ui(label)
-                if all(token in normalize(text) for token in tokens):
+                terms = text + ' ' + self.ui(aliases[label]) if label in aliases and not key.startswith('profile:') else text
+                if all(token in normalize(terms) for token in tokens):
                     item = QListWidgetItem(text)
                     item.setData(Qt.ItemDataRole.UserRole, key)
                     rows.addItem(item)

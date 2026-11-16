@@ -2,6 +2,10 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Verständlichere Werkzeugsuche
+
+Zusätzliche Alltagsbegriffe finden Seitenextraktion, PDF-Zusammenführen, Komprimierung, Texterkennung, Drucken und Kopiespeichern in allen 20 Sprachen. Beispielsweise findet „Seiten rausnehmen“ das Werkzeug „Seiten extrahieren“. Die tatsächlichen Werkzeugnamen bleiben sichtbar; erst die ausdrückliche Auswahl startet die Aktion. Favoriten und gespeicherte Abläufe bleiben erhalten. Noch nicht veröffentlicht.
+
 ### Neu in 1.84.0: Werkzeugsuche
 
 **Werkzeuge suchen** in der Werkzeugleiste durchsucht den vorhandenen Werkzeugkatalog und gespeicherte Abläufe in der gewählten Oberflächensprache. Mehrere Suchwörter werden gemeinsam berücksichtigt; Groß-/Kleinschreibung und Akzente stören die Suche nicht. Erst eine ausdrückliche Auswahl mit **Öffnen** oder Doppelklick startet das vorhandene Werkzeug. Favoriten und ihre Reihenfolge bleiben erhalten. Alle 20 Sprachen.
