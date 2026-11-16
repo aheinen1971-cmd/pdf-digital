@@ -42,7 +42,7 @@ PERSONAL_KEYS = {"snippets": "personal/snippets", "reading": "personal/reading",
 
 def validate_update_preferences(values):
     """Only inert, bounded UI preferences; never restore update paths or trust settings."""
-    if not isinstance(values, dict) or len(values) > 201:
+    if not isinstance(values, dict) or len(values) > 302:
         raise ValueError("Ungültige Darstellungseinstellung im Backup.")
     for key, value in values.items():
         if not isinstance(value, str):
@@ -50,8 +50,11 @@ def validate_update_preferences(values):
         if key == "view/language":
             if value not in {"de", "en-US", "fr", "es-ES", "nl", "it", "pt-PT", "pl", "cs", "da", "sv-SE", "nb-NO", "fi", "tr", "uk", "el", "ja", "ko", "ar", "he"}:
                 raise ValueError("Ungültige Darstellungseinstellung im Backup.")
-        elif re.fullmatch(r"print/(?:preset|named)/[a-f0-9]{64}", key):
-            limit = 4096 if key.startswith("print/preset/") else 256 * 1024
+        elif key == "print/last-printer":
+            if len(value) > 1024 or any(ord(char) < 32 for char in value):
+                raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+        elif re.fullmatch(r"print/(?:preset|named|recent)/[a-f0-9]{64}", key):
+            limit = 256 * 1024 if key.startswith("print/named/") else 4096
             if len(value.encode("utf-8")) > limit or not isinstance(json.loads(value), dict):
                 raise ValueError("Ungültige Darstellungseinstellung im Backup.")
         else:
@@ -63,7 +66,7 @@ def validate_update_preferences(values):
 
 def capture_update_preferences(settings):
     return validate_update_preferences({key: settings.value(key, "", str) for key in settings.allKeys()
-        if key == "view/language" or re.fullmatch(r"print/(?:preset|named)/[a-f0-9]{64}", key)})
+        if key in ("view/language", "print/last-printer") or re.fullmatch(r"print/(?:preset|named|recent)/[a-f0-9]{64}", key)})
 
 
 def validate_tabs(records):
@@ -524,7 +527,7 @@ def backup_preview(data, settings, root):
              else "Übernehmen – ersetzt die lokalen Einstellungen dieser Gruppe")
             for key, value in data["settings"].items()]
     extra = validate_update_preferences(data.get("update_preferences", {}))
-    for prefix, label in (("view/language", "Sprache"), ("print/preset/", "Gespeicherte Druckvorgabe"), ("print/named/", "Benannte Druckvorlagen")):
+    for prefix, label in (("view/language", "Sprache"), ("print/preset/", "Gespeicherte Druckvorgabe"), ("print/named/", "Benannte Druckvorlagen"), ("print/recent/", "Zuletzt verwendete Druckeinstellungen"), ("print/last-printer", "Drucker")):
         values = {key: value for key, value in extra.items() if key.startswith(prefix)}
         if values:
             rows.append(("Einstellungen", label, "Bereits gleich" if all(settings.value(key) == value for key, value in values.items())
@@ -585,7 +588,7 @@ def reminder_date(value):
 def backup_check_rows(data):
     rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
     extra = validate_update_preferences(data.get("update_preferences", {}))
-    for prefix, label in (("view/language", "Sprache"), ("print/preset/", "Gespeicherte Druckvorgabe"), ("print/named/", "Benannte Druckvorlagen")):
+    for prefix, label in (("view/language", "Sprache"), ("print/preset/", "Gespeicherte Druckvorgabe"), ("print/named/", "Benannte Druckvorlagen"), ("print/recent/", "Zuletzt verwendete Druckeinstellungen"), ("print/last-printer", "Drucker")):
         if any(key.startswith(prefix) for key in extra):
             rows.append(("Einstellungen", label, "Lesbar"))
     personal = validate_personal(data.get("personal", {}))

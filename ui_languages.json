@@ -1409,7 +1409,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Open page preview and print settings.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "No printer available. Install or connect a printer in Windows and reopen Print.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Printing failed. Check the printer and queue before trying again; some pages may already have printed. Your selection is kept.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Language, toolbar, print presets and reading positions are backed up before switching versions."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Language, toolbar, print presets and reading positions are backed up before switching versions.",
+    "Ergebnis öffnen": "Open result",
+    "Ordner anzeigen": "Show folder",
+    "Ordner konnte nicht geöffnet werden.": "The folder could not be opened.",
+    "Zuletzt verwendete Druckeinstellungen": "Last used print settings"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2821,7 +2825,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Ouvrir l’aperçu des pages et les paramètres d’impression.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Aucune imprimante disponible. Installez ou connectez une imprimante dans Windows et rouvrez Imprimer.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Échec de l’impression. Vérifiez l’imprimante et la file avant de réessayer ; certaines pages ont peut-être déjà été imprimées. Votre sélection est conservée.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "La langue, la barre d’outils, les préréglages d’impression et les positions de lecture sont sauvegardés avant le changement de version."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "La langue, la barre d’outils, les préréglages d’impression et les positions de lecture sont sauvegardés avant le changement de version.",
+    "Ergebnis öffnen": "Ouvrir le résultat",
+    "Ordner anzeigen": "Afficher le dossier",
+    "Ordner konnte nicht geöffnet werden.": "Impossible d’ouvrir le dossier.",
+    "Zuletzt verwendete Druckeinstellungen": "Derniers paramètres d’impression utilisés"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4233,7 +4241,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Abrir la vista previa y los ajustes de impresión.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "No hay ninguna impresora disponible. Instala o conecta una impresora en Windows y vuelve a abrir Imprimir.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Error de impresión. Comprueba la impresora y la cola antes de reintentar; puede que algunas páginas ya se hayan impreso. Se conserva tu selección.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "El idioma, la barra de herramientas, los ajustes de impresión y los puntos de lectura se guardan antes de cambiar de versión."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "El idioma, la barra de herramientas, los ajustes de impresión y los puntos de lectura se guardan antes de cambiar de versión.",
+    "Ergebnis öffnen": "Abrir resultado",
+    "Ordner anzeigen": "Mostrar carpeta",
+    "Ordner konnte nicht geöffnet werden.": "No se pudo abrir la carpeta.",
+    "Zuletzt verwendete Druckeinstellungen": "Últimos ajustes de impresión utilizados"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5645,7 +5657,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Paginavoorbeeld en afdrukinstellingen openen.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Geen printer beschikbaar. Installeer of verbind een printer in Windows en open Afdrukken opnieuw.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Afdrukken mislukt. Controleer de printer en wachtrij voordat je het opnieuw probeert; er kunnen al pagina’s zijn afgedrukt. Je selectie blijft behouden.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Taal, werkbalk, afdrukvoorinstellingen en leesposities worden vóór de versiewissel opgeslagen in een reservekopie."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Taal, werkbalk, afdrukvoorinstellingen en leesposities worden vóór de versiewissel opgeslagen in een reservekopie.",
+    "Ergebnis öffnen": "Resultaat openen",
+    "Ordner anzeigen": "Map tonen",
+    "Ordner konnte nicht geöffnet werden.": "De map kon niet worden geopend.",
+    "Zuletzt verwendete Druckeinstellungen": "Laatst gebruikte afdrukinstellingen"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7057,7 +7073,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Aprire l’anteprima delle pagine e le impostazioni di stampa.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Nessuna stampante disponibile. Installa o collega una stampante in Windows e riapri Stampa.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Stampa non riuscita. Controlla la stampante e la coda prima di riprovare; alcune pagine potrebbero essere già state stampate. La selezione viene mantenuta.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Lingua, barra degli strumenti, preimpostazioni di stampa e posizioni di lettura vengono salvate prima del cambio di versione."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Lingua, barra degli strumenti, preimpostazioni di stampa e posizioni di lettura vengono salvate prima del cambio di versione.",
+    "Ergebnis öffnen": "Apri risultato",
+    "Ordner anzeigen": "Mostra cartella",
+    "Ordner konnte nicht geöffnet werden.": "Impossibile aprire la cartella.",
+    "Zuletzt verwendete Druckeinstellungen": "Ultime impostazioni di stampa utilizzate"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8469,7 +8489,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Abrir a pré-visualização e as definições de impressão.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Nenhuma impressora disponível. Instala ou liga uma impressora no Windows e volta a abrir Imprimir.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "A impressão falhou. Verifica a impressora e a fila antes de tentar novamente; algumas páginas poderão já ter sido impressas. A tua seleção é mantida.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "O idioma, a barra de ferramentas, as predefinições de impressão e as posições de leitura são guardados antes da mudança de versão."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "O idioma, a barra de ferramentas, as predefinições de impressão e as posições de leitura são guardados antes da mudança de versão.",
+    "Ergebnis öffnen": "Abrir resultado",
+    "Ordner anzeigen": "Mostrar pasta",
+    "Ordner konnte nicht geöffnet werden.": "Não foi possível abrir a pasta.",
+    "Zuletzt verwendete Druckeinstellungen": "Últimas definições de impressão utilizadas"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9881,7 +9905,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Otwórz podgląd stron i ustawienia drukowania.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Brak dostępnej drukarki. Zainstaluj lub podłącz drukarkę w Windows i ponownie otwórz Drukuj.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Drukowanie nie powiodło się. Sprawdź drukarkę i kolejkę przed ponowną próbą; niektóre strony mogły już zostać wydrukowane. Wybór zostaje zachowany.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Przed zmianą wersji tworzona jest kopia języka, paska narzędzi, ustawień drukowania i miejsc czytania."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Przed zmianą wersji tworzona jest kopia języka, paska narzędzi, ustawień drukowania i miejsc czytania.",
+    "Ergebnis öffnen": "Otwórz wynik",
+    "Ordner anzeigen": "Pokaż folder",
+    "Ordner konnte nicht geöffnet werden.": "Nie można otworzyć folderu.",
+    "Zuletzt verwendete Druckeinstellungen": "Ostatnio używane ustawienia drukowania"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11293,7 +11321,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Otevřít náhled stránek a nastavení tisku.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Není dostupná tiskárna. Nainstalujte nebo připojte tiskárnu ve Windows a znovu otevřete Tisk.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Tisk se nezdařil. Před dalším pokusem zkontrolujte tiskárnu a frontu; některé stránky již mohly být vytištěny. Výběr zůstane zachován.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Před změnou verze se zálohují jazyk, panel nástrojů, tiskové předvolby a místa čtení."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Před změnou verze se zálohují jazyk, panel nástrojů, tiskové předvolby a místa čtení.",
+    "Ergebnis öffnen": "Otevřít výsledek",
+    "Ordner anzeigen": "Zobrazit složku",
+    "Ordner konnte nicht geöffnet werden.": "Složku se nepodařilo otevřít.",
+    "Zuletzt verwendete Druckeinstellungen": "Naposledy použité nastavení tisku"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12705,7 +12737,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Åbn sidevisning og udskriftsindstillinger.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen printer tilgængelig. Installer eller tilslut en printer i Windows, og åbn Udskriv igen.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Udskrivning mislykkedes. Kontroller printeren og køen før et nyt forsøg; nogle sider kan allerede være udskrevet. Dit valg bevares.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Sprog, værktøjslinje, udskriftsforvalg og læsesteder sikkerhedskopieres før versionsskiftet."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Sprog, værktøjslinje, udskriftsforvalg og læsesteder sikkerhedskopieres før versionsskiftet.",
+    "Ergebnis öffnen": "Åbn resultat",
+    "Ordner anzeigen": "Vis mappe",
+    "Ordner konnte nicht geöffnet werden.": "Mappen kunne ikke åbnes.",
+    "Zuletzt verwendete Druckeinstellungen": "Senest anvendte udskriftsindstillinger"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14117,7 +14153,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Öppna sidförhandsvisning och utskriftsinställningar.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen skrivare tillgänglig. Installera eller anslut en skrivare i Windows och öppna Skriv ut igen.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Utskriften misslyckades. Kontrollera skrivaren och kön innan du försöker igen; vissa sidor kan redan ha skrivits ut. Ditt val behålls.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Språk, verktygsfält, utskriftsförval och läspositioner säkerhetskopieras före versionsbytet."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Språk, verktygsfält, utskriftsförval och läspositioner säkerhetskopieras före versionsbytet.",
+    "Ergebnis öffnen": "Öppna resultat",
+    "Ordner anzeigen": "Visa mapp",
+    "Ordner konnte nicht geöffnet werden.": "Mappen kunde inte öppnas.",
+    "Zuletzt verwendete Druckeinstellungen": "Senast använda utskriftsinställningar"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15529,7 +15569,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Åpne sideforhåndsvisning og utskriftsinnstillinger.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen skriver tilgjengelig. Installer eller koble til en skriver i Windows og åpne Skriv ut på nytt.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Utskriften mislyktes. Kontroller skriveren og køen før du prøver igjen; noen sider kan allerede være skrevet ut. Valget ditt beholdes.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Språk, verktøylinje, utskriftsforvalg og lesesteder sikkerhetskopieres før versjonsbyttet."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Språk, verktøylinje, utskriftsforvalg og lesesteder sikkerhetskopieres før versjonsbyttet.",
+    "Ergebnis öffnen": "Åpne resultat",
+    "Ordner anzeigen": "Vis mappe",
+    "Ordner konnte nicht geöffnet werden.": "Mappen kunne ikke åpnes.",
+    "Zuletzt verwendete Druckeinstellungen": "Sist brukte utskriftsinnstillinger"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16941,7 +16985,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Avaa sivujen esikatselu ja tulostusasetukset.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Tulostinta ei ole käytettävissä. Asenna tai yhdistä tulostin Windowsissa ja avaa Tulosta uudelleen.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Tulostus epäonnistui. Tarkista tulostin ja jono ennen uutta yritystä; joitakin sivuja on ehkä jo tulostettu. Valintasi säilyy.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Kieli, työkalurivi, tulostuksen esiasetukset ja lukukohdat varmuuskopioidaan ennen version vaihtoa."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Kieli, työkalurivi, tulostuksen esiasetukset ja lukukohdat varmuuskopioidaan ennen version vaihtoa.",
+    "Ergebnis öffnen": "Avaa tulos",
+    "Ordner anzeigen": "Näytä kansio",
+    "Ordner konnte nicht geöffnet werden.": "Kansiota ei voitu avata.",
+    "Zuletzt verwendete Druckeinstellungen": "Viimeksi käytetyt tulostusasetukset"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18353,7 +18401,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Sayfa önizlemesini ve yazdırma ayarlarını aç.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Kullanılabilir yazıcı yok. Windows’ta bir yazıcı kur veya bağla ve Yazdır’ı yeniden aç.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Yazdırma başarısız. Yeniden denemeden önce yazıcıyı ve kuyruğu kontrol et; bazı sayfalar zaten yazdırılmış olabilir. Seçimin korunur.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Sürüm değiştirilmeden önce dil, araç çubuğu, yazdırma ön ayarları ve okuma konumları yedeklenir."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Sürüm değiştirilmeden önce dil, araç çubuğu, yazdırma ön ayarları ve okuma konumları yedeklenir.",
+    "Ergebnis öffnen": "Sonucu aç",
+    "Ordner anzeigen": "Klasörü göster",
+    "Ordner konnte nicht geöffnet werden.": "Klasör açılamadı.",
+    "Zuletzt verwendete Druckeinstellungen": "Son kullanılan yazdırma ayarları"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19765,7 +19817,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Відкрити попередній перегляд сторінок і параметри друку.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Немає доступного принтера. Установіть або підключіть принтер у Windows і знову відкрийте Друк.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Друк не вдався. Перед повторною спробою перевірте принтер і чергу; деякі сторінки вже могли бути надруковані. Ваш вибір зберігається.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Перед зміною версії створюється резервна копія мови, панелі інструментів, шаблонів друку та місць читання."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Перед зміною версії створюється резервна копія мови, панелі інструментів, шаблонів друку та місць читання.",
+    "Ergebnis öffnen": "Відкрити результат",
+    "Ordner anzeigen": "Показати папку",
+    "Ordner konnte nicht geöffnet werden.": "Не вдалося відкрити папку.",
+    "Zuletzt verwendete Druckeinstellungen": "Останні використані параметри друку"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21177,7 +21233,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "Άνοιγμα προεπισκόπησης σελίδων και ρυθμίσεων εκτύπωσης.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Δεν υπάρχει διαθέσιμος εκτυπωτής. Εγκατάστησε ή σύνδεσε έναν εκτυπωτή στα Windows και άνοιξε ξανά την Εκτύπωση.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Η εκτύπωση απέτυχε. Έλεγξε τον εκτυπωτή και την ουρά πριν ξαναδοκιμάσεις· ορισμένες σελίδες ίσως έχουν ήδη εκτυπωθεί. Η επιλογή σου διατηρείται.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Η γλώσσα, η γραμμή εργαλείων, οι προεπιλογές εκτύπωσης και οι θέσεις ανάγνωσης αποθηκεύονται σε αντίγραφο ασφαλείας πριν από την αλλαγή έκδοσης."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Η γλώσσα, η γραμμή εργαλείων, οι προεπιλογές εκτύπωσης και οι θέσεις ανάγνωσης αποθηκεύονται σε αντίγραφο ασφαλείας πριν από την αλλαγή έκδοσης.",
+    "Ergebnis öffnen": "Άνοιγμα αποτελέσματος",
+    "Ordner anzeigen": "Εμφάνιση φακέλου",
+    "Ordner konnte nicht geöffnet werden.": "Δεν ήταν δυνατό το άνοιγμα του φακέλου.",
+    "Zuletzt verwendete Druckeinstellungen": "Ρυθμίσεις εκτύπωσης που χρησιμοποιήθηκαν τελευταία"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22589,7 +22649,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "ページのプレビューと印刷設定を開きます。",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "利用できるプリンターがありません。Windowsでプリンターをインストールまたは接続し、印刷を開き直してください。",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "印刷に失敗しました。再試行する前にプリンターと印刷キューを確認してください。一部のページはすでに印刷されている可能性があります。選択内容は保持されます。",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "バージョンの切り替え前に、言語、ツールバー、印刷プリセット、読書位置をバックアップします。"
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "バージョンの切り替え前に、言語、ツールバー、印刷プリセット、読書位置をバックアップします。",
+    "Ergebnis öffnen": "結果を開く",
+    "Ordner anzeigen": "フォルダーを表示",
+    "Ordner konnte nicht geöffnet werden.": "フォルダーを開けませんでした。",
+    "Zuletzt verwendete Druckeinstellungen": "前回使用した印刷設定"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -24001,7 +24065,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "페이지 미리보기와 인쇄 설정을 엽니다.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "사용 가능한 프린터가 없습니다. Windows에서 프린터를 설치하거나 연결한 후 인쇄를 다시 여세요.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "인쇄에 실패했습니다. 다시 시도하기 전에 프린터와 대기열을 확인하세요. 일부 페이지는 이미 인쇄되었을 수 있습니다. 선택 내용은 유지됩니다.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "버전 전환 전에 언어, 도구 모음, 인쇄 사전 설정 및 읽기 위치를 백업합니다."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "버전 전환 전에 언어, 도구 모음, 인쇄 사전 설정 및 읽기 위치를 백업합니다.",
+    "Ergebnis öffnen": "결과 열기",
+    "Ordner anzeigen": "폴더 표시",
+    "Ordner konnte nicht geöffnet werden.": "폴더를 열 수 없습니다.",
+    "Zuletzt verwendete Druckeinstellungen": "마지막으로 사용한 인쇄 설정"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25413,7 +25481,11 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "فتح معاينة الصفحات وإعدادات الطباعة.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "لا توجد طابعة متاحة. ثبّت طابعة أو صِلها في Windows ثم افتح الطباعة مجددًا.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "فشلت الطباعة. تحقّق من الطابعة وقائمة الانتظار قبل المحاولة مجددًا؛ ربما طُبعت بعض الصفحات بالفعل. سيُحتفظ باختيارك.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "تُحفظ نسخة احتياطية من اللغة وشريط الأدوات وقوالب الطباعة ومواضع القراءة قبل تبديل الإصدار."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "تُحفظ نسخة احتياطية من اللغة وشريط الأدوات وقوالب الطباعة ومواضع القراءة قبل تبديل الإصدار.",
+    "Ergebnis öffnen": "فتح النتيجة",
+    "Ordner anzeigen": "عرض المجلد",
+    "Ordner konnte nicht geöffnet werden.": "تعذّر فتح المجلد.",
+    "Zuletzt verwendete Druckeinstellungen": "إعدادات الطباعة المستخدمة مؤخرًا"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -26825,6 +26897,10 @@
     "Seitenvorschau und Druckeinstellungen öffnen.": "פתיחת תצוגה מקדימה של עמודים והגדרות הדפסה.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "אין מדפסת זמינה. יש להתקין או לחבר מדפסת ב-Windows ולפתוח שוב את ההדפסה.",
     "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "ההדפסה נכשלה. לפני ניסיון נוסף יש לבדוק את המדפסת ואת התור; ייתכן שחלק מהעמודים כבר הודפסו. הבחירה נשמרת.",
-    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "השפה, סרגל הכלים, הגדרות ההדפסה ומיקומי הקריאה מגובים לפני החלפת הגרסה."
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "השפה, סרגל הכלים, הגדרות ההדפסה ומיקומי הקריאה מגובים לפני החלפת הגרסה.",
+    "Ergebnis öffnen": "פתיחת התוצאה",
+    "Ordner anzeigen": "הצגת התיקייה",
+    "Ordner konnte nicht geöffnet werden.": "לא ניתן לפתוח את התיקייה.",
+    "Zuletzt verwendete Druckeinstellungen": "הגדרות ההדפסה האחרונות שהיו בשימוש"
   }
 }

@@ -2,6 +2,12 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Ergebnisse öffnen und Druckeinstellungen wiederverwenden
+
+- Nach erfolgreicher Seitenentnahme und nach **Kopie speichern** erscheint eine Ergebnisleiste mit **Ergebnis öffnen** und **Ordner anzeigen**. Sie nennt die gespeicherte Datei und öffnet nichts ungefragt. Das gilt auch für gespeicherte Ergebnisse nach Zusammenfügen und Texterkennung; deren Bearbeitung bleibt zunächst im geöffneten Dokument. Fehlgeschlagenes oder abgebrochenes Speichern bietet kein neues Ergebnis an.
+- Der zuletzt erfolgreich verwendete Drucker und seine Einstellungen werden beim nächsten Drucken wieder angeboten. Seitenbereich, Gerade-/Ungerade-Auswahl, Reihenfolge und einzelne ausgeschlossene Seiten werden nicht übernommen. Nicht verfügbare Drucker fallen auf einen verfügbaren Drucker zurück. Benannte Vorlagen und ausdrücklich gespeicherte Standardvorgaben bleiben erhalten; eine neu gespeicherte Standardvorgabe ersetzt die zuletzt verwendeten Einstellungen dieses Druckers. Auch die neuen Druckpräferenzen sind im Arbeitsstand-Backup enthalten.
+- **Häufige Aufgaben** ist direkt in der Werkzeugleiste erreichbar. Die persönliche Favoritenreihenfolge wird dabei nicht verändert.
+- Alle 20 Oberflächensprachen. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert. Kein physischer Papierdruck im Test.
 ### Neu in 1.79.0: Einstellungen beim Update, Druckhilfe und häufige Aufgaben
 
 - Die versionsunabhängigen Einstellungen bleiben weiter erhalten. Die automatische Sicherung umfasst zusätzlich Oberflächensprache, Standarddruckvorgaben und benannte Druckvorlagen; Werkzeugleiste und Lesestellen waren bereits enthalten. Auch vor der Online-Updatevorbereitung wird die Sicherung geprüft. Bei einem Sicherungsfehler startet die Vorbereitung nicht. Bestehende Sicherungen bleiben lesbar; eine Wiederherstellung erfolgt ausdrücklich über den vorhandenen Sicherungsdialog.

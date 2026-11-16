@@ -104,6 +104,8 @@ RENDER_BUDGET = 64 * 1024 * 1024
 
 STYLE = """
 QMainWindow, QWidget#shell { background: #f4f7fb; color: #182b40; }
+QWidget#savedResult QLabel, QToolBar#favorites QToolButton { color: #182b40; }
+QToolBar#favorites { background: #f4f7fb; }
 QTabBar::tab { padding: 8px 15px; color: #36516d; background: #e9eff6; }
 QTabBar::tab:selected { background: white; color: #135da0; }
 QWidget#ribbon { background: white; border-bottom: 1px solid #cfdbe9; }
@@ -121,6 +123,8 @@ QStatusBar { background: #f4f7fb; color: #36516d; }
 
 DARK_STYLE = """
 QMainWindow, QWidget#shell, QDialog { background: #181d25; color: #edf3fa; }
+QWidget#savedResult QLabel, QToolBar#favorites QToolButton { color: #edf3fa; }
+QToolBar#favorites { background: #181d25; }
 QTabBar::tab { padding: 8px 15px; color: #c2d0de; background: #222b36; }
 QTabBar::tab:selected { background: #303f51; color: #cbe6ff; }
 QWidget#ribbon { background: #222b36; border-bottom: 1px solid #45546a; }
@@ -1098,6 +1102,21 @@ class Window(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        self.result_path = None
+        self.result_bar = QWidget(objectName="savedResult")
+        result_layout = QHBoxLayout(self.result_bar)
+        self.result_label = QLabel(); self.result_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.result_label.setWordWrap(True)
+        result_layout.addWidget(self.result_label, 1)
+        self.result_open = QPushButton(self.ui("Ergebnis öffnen")); self.result_open.setObjectName("openSavedResult")
+        self.result_folder = QPushButton(self.ui("Ordner anzeigen")); self.result_folder.setObjectName("showResultFolder")
+        result_close = QPushButton(self.ui("Schließen"))
+        self.result_open.clicked.connect(self.open_saved_result)
+        self.result_folder.clicked.connect(lambda: self.open_saved_result(folder=True))
+        result_close.clicked.connect(self.result_bar.hide)
+        for button in (self.result_open, self.result_folder, result_close): result_layout.addWidget(button)
+        layout.addWidget(self.result_bar); self.result_bar.hide()
+
         self.tools = QTabBar()
         self.tools.setDrawBase(False)
         self.tools.setExpanding(False)
@@ -1362,6 +1381,9 @@ class Window(QMainWindow):
         self.favorite_menu = QMenu(button)
         button.setMenu(self.favorite_menu)
         self.favorite_toolbar.addWidget(button)
+        self.common_tasks_action = self.favorite_toolbar.addAction(self.ui("Häufige Aufgaben"))
+        self.common_tasks_action.setObjectName("commonTasksShortcut")
+        self.common_tasks_action.triggered.connect(self.common_tasks)
         self.populate_favorite_menu()
         self.refresh_favorites()
 
@@ -1744,6 +1766,25 @@ class Window(QMainWindow):
         self.ribbon.addStretch()
         self.ribbon_scroll.setFixedHeight(self.ribbon.sizeHint().height()
                                           + self.ribbon_scroll.horizontalScrollBar().sizeHint().height())
+
+    def offer_saved_result(self, path):
+        self.result_path = Path(path).resolve()
+        self.result_label.setText(self.ui_format('Kopie gespeichert: {0}', self.result_path.name))
+        self.result_label.setToolTip(str(self.result_path))
+        self.result_bar.show()
+
+    def open_saved_result(self, checked=False, folder=False):
+        path = self.result_path
+        if path is None:
+            return
+        if not path.is_file():
+            self.error(self.ui("Datei fehlt"))
+            return
+        if folder:
+            if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.parent))):
+                self.error(self.ui("Ordner konnte nicht geöffnet werden."))
+        else:
+            self.open_path(str(path))
 
     def common_tasks(self):
         dialog = QDialog(self)
@@ -9076,6 +9117,7 @@ class Window(QMainWindow):
                 with extract_pages(session.doc, indices) as result:
                     save_copy(result, target)
                 self.statusBar().showMessage(self.ui_format('{0} Seiten gespeichert: {1}', len(indices), target.name), 6500)
+                self.offer_saved_result(target)
         except Exception as exc:
             self.error(exc)
 
@@ -10441,6 +10483,7 @@ class Window(QMainWindow):
         for entry in session.history + session.redo_stack:
             entry[2] = True
         self.tabs.setTabText(self.tabs.currentIndex(), session.path.name)
+        self.offer_saved_result(target)
         return True
 
     def confirm_close(self, index):
@@ -10684,6 +10727,10 @@ class Window(QMainWindow):
             return
         devices = QPrinterInfo.availablePrinters()
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        last_printer = self.favorite_settings.value("print/last-printer", "", str)
+        remembered = next((device for device in devices if device.printerName() == last_printer), None)
+        if remembered is not None and not samsung:
+            printer = QPrinter(remembered, QPrinter.PrinterMode.HighResolution)
         if devices and printer.printerName() not in [d.printerName() for d in devices]:
             printer = QPrinter(devices[0], QPrinter.PrinterMode.HighResolution)
         if samsung:
@@ -10974,16 +11021,19 @@ class Window(QMainWindow):
 
         def load_settings():
             nonlocal applied_preset_name, applied_preset_values
-            try:
-                raw = self.favorite_settings.value(settings_key(), "", str)
-                if len(raw) <= 4096:
+            for recent in (True, False):
+                key = settings_key().replace("print/preset/", "print/recent/") if recent else settings_key()
+                try:
+                    raw = self.favorite_settings.value(key, "", str)
+                    if len(raw) > 4096: continue
                     values = json.loads(raw)
+                    if not isinstance(values, dict) or values.get('version') != 1: continue
                     apply_settings(values)
-                    if isinstance(values, dict) and values.get('version') == 1:
-                        applied_preset_name = self.ui("Gespeicherte Druckvorgabe")
-                        applied_preset_values = settings_values()
-            except (ValueError, TypeError, AttributeError):
-                pass
+                    applied_preset_name = self.ui("Zuletzt verwendete Druckeinstellungen" if recent else "Gespeicherte Druckvorgabe")
+                    applied_preset_values = settings_values()
+                    break
+                except (ValueError, TypeError, AttributeError):
+                    continue
 
         def current_settings():
             render()
@@ -11004,6 +11054,7 @@ class Window(QMainWindow):
             nonlocal applied_preset_name, applied_preset_values
             write_settings(settings_key(), current_settings())
             if self.favorite_settings.status() == QSettings.Status.NoError:
+                self.favorite_settings.remove(settings_key().replace("print/preset/", "print/recent/"))
                 applied_preset_name = self.ui("Gespeicherte Druckvorgabe")
                 applied_preset_values = settings_values(); render()
 
@@ -11086,6 +11137,11 @@ class Window(QMainWindow):
                 failure_detail.setText(self.ui("Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.") + "\n" + str(exc)[:2000])
                 render()
                 return
+            if submit is not None:
+                # Remember only an accepted print job, never a failed attempt or page selection.
+                self.favorite_settings.setValue("print/last-printer", printer.printerName())
+                self.favorite_settings.setValue(settings_key().replace("print/preset/", "print/recent/"), json.dumps(settings_values()))
+                self.favorite_settings.sync()
             dialog.accept()
 
         buttons.accepted.connect(submit_print)
