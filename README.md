@@ -1,13 +1,13 @@
-# PDF Digital 1.80.0 für Windows
+# PDF Digital 1.81.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Druckschutz, Ergebnisbeschreibung und Druckwerte zurücksetzen
+### Neu in 1.81.0: Druckschutz, Ergebnisbeschreibung und Druckwerte zurücksetzen
 
 - Mehrfachsignale während und nach der Druckübergabe erzeugen keinen weiteren Auftrag. Auch ein zweites Druckfenster wird während eines laufenden Druckdialogs verhindert. Nach einem Fehler bleibt eine kurze Doppelklick-Sperre aktiv; danach ist ein bewusster neuer Versuch möglich. Die Übergabe bestätigt keinen tatsächlichen Papierausdruck.
 - Die Ergebnisleiste nennt bei entnommenen Seiten deren tatsächliche Anzahl und bei einer gespeicherten PDF-Kopie deren Seitenzahl. Abbrechen oder Fehler meldet kein neues Ergebnis.
 - **Gemerkte Druckeinstellungen zurücksetzen** entfernt nur die zuletzt verwendeten Werte des gewählten Druckers und lädt dessen ausdrücklich gespeicherte Standardvorgabe beziehungsweise die Treibervorgaben. Seitenauswahl, benannte Vorlagen und Werte anderer Drucker bleiben erhalten.
-- Alle 20 Oberflächensprachen; noch nicht veröffentlicht.
+- Alle 20 Oberflächensprachen.
 
 ### Neu in 1.80.0: Ergebnisse öffnen und Druckeinstellungen wiederverwenden
 
@@ -194,7 +194,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.80.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.81.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -204,7 +204,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.80.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.81.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
