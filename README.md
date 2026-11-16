@@ -1,10 +1,10 @@
-# PDF Digital 1.82.0 für Windows
+# PDF Digital 1.83.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Ein zentraler Update-Knopf
+### Neu in 1.83.0: Ein zentraler Update-Knopf
 
-Im Info-Reiter öffnet **Update** das bestehende gemeinsame Updatefenster. Es zeigt installierte/verfügbare Version, Updatesuche, Fortschritt und Ergebnis. **Weitere Möglichkeiten** ist zunächst eingeklappt und enthält USB-Import, USB-Export, Update-Info mit technischen Prüfdetails sowie den Update-Ordner. Die bisherigen separaten Updateeinträge in Einstellungen und Programminfo entfallen. Laufende Vorgänge behalten beim erneuten Öffnen ihren Zustand; konkurrierende Aktionen sind während Suche, Vorbereitung und offener Bestätigung gesperrt. Alle 20 Oberflächensprachen. Noch nicht veröffentlicht.
+Im Info-Reiter öffnet **Update** das bestehende gemeinsame Updatefenster. Es zeigt installierte/verfügbare Version, Updatesuche, Fortschritt und Ergebnis. **Weitere Möglichkeiten** ist zunächst eingeklappt und enthält USB-Import, USB-Export, Update-Info mit technischen Prüfdetails sowie den Update-Ordner. Die bisherigen separaten Updateeinträge in Einstellungen und Programminfo entfallen. Laufende Vorgänge behalten beim erneuten Öffnen ihren Zustand; konkurrierende Aktionen sind während Suche, Vorbereitung und offener Bestätigung gesperrt. Alle 20 Oberflächensprachen.
 
 ### Neu in 1.82.0: Aufgeräumter Info-Reiter
 
@@ -202,7 +202,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.82.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.83.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -212,7 +212,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.82.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.83.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
