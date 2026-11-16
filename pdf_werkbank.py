@@ -1759,7 +1759,15 @@ class Window(QMainWindow):
         group, commands = self.groups[index]
         if group == "Info":
             self.ribbon.addWidget(QLabel(f"{APP_TITLE} · {self.ui(APP_SLOGAN)}"))
-        for name, callback in commands:
+            button = QPushButton(self.ui("Info"))
+            button.setObjectName("infoMenuButton")
+            menu = QMenu(button)
+            for name, callback in commands:
+                action = menu.addAction(self.ui(name))
+                action.triggered.connect(lambda checked=False, run=callback: run())
+            button.setMenu(menu)
+            self.ribbon.addWidget(button)
+        for name, callback in ([] if group == "Info" else commands):
             button = QPushButton(self.ui(name))
             button.clicked.connect(lambda checked=False, run=callback: run())
             self.ribbon.addWidget(button)

@@ -2,6 +2,10 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Aufgeräumter Info-Reiter
+
+Ein einzelner **Info**-Knopf öffnet die fünf bisherigen Einträge als Menü: Programminfo, Update-Info, Offline-Bereitschaft, Update vom USB-Stick und Update für USB speichern. Alle bestehenden Funktionen und Übersetzungen bleiben erhalten. Noch nicht veröffentlicht.
+
 ### Neu in 1.81.0: Druckschutz, Ergebnisbeschreibung und Druckwerte zurücksetzen
 
 - Mehrfachsignale während und nach der Druckübergabe erzeugen keinen weiteren Auftrag. Auch ein zweites Druckfenster wird während eines laufenden Druckdialogs verhindert. Nach einem Fehler bleibt eine kurze Doppelklick-Sperre aktiv; danach ist ein bewusster neuer Versuch möglich. Die Übergabe bestätigt keinen tatsächlichen Papierausdruck.
