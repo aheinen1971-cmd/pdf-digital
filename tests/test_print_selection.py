@@ -47,6 +47,7 @@ with TemporaryDirectory() as tmp,pdf.open() as doc:
    f=lambda c,n:d.findChild(c,n)
    d.show();app.processEvents();assert d.layoutDirection()==w.layoutDirection()
    assert f(QLabel,'printSummary').text()==w.ui_format(summary,12,1,12)
+   assert w.ui('Eigene Einstellungen') in f(QLabel,'printPresetSummary').text()
    f(QComboBox,'printPerSide').setCurrentIndex(1);f(QComboBox,'printDuplex').setCurrentIndex(1);f(QSpinBox,'printCopies').setValue(2)
    QTest.qWait(250);assert f(QLabel,'printSummary').text()==w.ui_format(summary,12,2,6)
    f(QPushButton,'printChoosePages').click();app.processEvents()
@@ -59,13 +60,19 @@ with TemporaryDirectory() as tmp,pdf.open() as doc:
    assert '1, 2' not in f(QLabel,'printHeading0').text()
    f(QLineEdit,'printPresetName').setText('Entwurf 日本語 🌹');f(QPushButton,'printNamedSave').click()
    data=json.loads(settings.value(key));assert len(data)==1
+   assert 'Entwurf 日本語 🌹' in f(QLabel,'printPresetSummary').text()
    assert data['Entwurf 日本語 🌹']['pages']==2 and not settings.contains(default)
    assert 'excluded' not in str(data)
    f(QComboBox,'printPerSide').setCurrentIndex(2);f(QLineEdit,'printPresetName').setText('Vier');f(QPushButton,'printNamedSave').click()
    f(QComboBox,'printNamedPresets').setCurrentText('Entwurf 日本語 🌹');f(QPushButton,'printNamedLoad').click()
+   assert 'Entwurf 日本語 🌹' in f(QLabel,'printPresetSummary').text()
+   f(QComboBox,'printNamedPresets').setCurrentText('Vier')
+   assert 'Entwurf 日本語 🌹' in f(QLabel,'printPresetSummary').text(), 'Selecting a name must not claim it is applied'
+   f(QComboBox,'printNamedPresets').setCurrentText('Entwurf 日本語 🌹')
    assert f(QComboBox,'printPerSide').currentData()==2
    assert choices.item(0).checkState()==Qt.CheckState.Unchecked
    f(QSpinBox,'printCopies').setValue(3)
+   QTest.qWait(150);assert w.ui('Eigene Einstellungen') in f(QLabel,'printPresetSummary').text()
    with patch.object(QMessageBox,'exec',return_value=QMessageBox.StandardButton.Cancel):f(QPushButton,'printNamedSave').click()
    assert json.loads(settings.value(key))['Entwurf 日本語 🌹']['copies']==2
    with patch.object(QMessageBox,'exec',return_value=QMessageBox.StandardButton.Yes):f(QPushButton,'printNamedSave').click()

@@ -10730,6 +10730,9 @@ class Window(QMainWindow):
         view.addLayout(nav)
         summary = QLabel(); summary.setObjectName("printSummary"); summary.setWordWrap(True)
         view.addWidget(summary)
+        preset_summary = QLabel(); preset_summary.setObjectName("printPresetSummary"); preset_summary.setWordWrap(True)
+        preset_summary.setTextFormat(Qt.TextFormat.PlainText)
+        view.addWidget(preset_summary)
         summary_note = QLabel(self.ui("Papierbedarf ohne Drucker-Trennblätter.")); summary_note.setWordWrap(True)
         view.addWidget(summary_note)
         choose_pages = QPushButton(self.ui("Einzelne Seiten auswählen")); choose_pages.setCheckable(True); choose_pages.setObjectName("printChoosePages")
@@ -10825,6 +10828,7 @@ class Window(QMainWindow):
         buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject)
         position, selected = 0, []
         excluded = set()
+        applied_preset_name, applied_preset_values = "", None
         timer = QTimer(dialog); timer.setSingleShot(True); timer.setInterval(80)
 
         def sync_printer():
@@ -10865,6 +10869,8 @@ class Window(QMainWindow):
             sheets = print_sheets(print_sides(selected, printer), printer.duplex() != QPrinter.DuplexMode.DuplexNone)
             _, total_sheets = print_totals(len(selected), per_side.currentData(), printer.duplex() != QPrinter.DuplexMode.DuplexNone, copies.value())
             summary.setText(self.ui_format("PDF-Seiten: {0} · Exemplare: {1} · Blatt gesamt: {2}", len(selected), copies.value(), total_sheets))
+            used = applied_preset_name if applied_preset_values == settings_values() else self.ui("Eigene Einstellungen")
+            preset_summary.setText(self.ui_format("Drucker: {0}\nDruckvorlage: {1}", printer.printerName(), used))
             position = 0 if reset else min(position, max(0, len(sheets) - 1))
             previous.setEnabled(position > 0); following.setEnabled(position + 1 < len(sheets))
             count.setText(self.ui_format("Blatt {0} von {1}", position + 1 if sheets else 0, len(sheets)))
@@ -10892,7 +10898,8 @@ class Window(QMainWindow):
                 notice.setText(self.ui("Druckvorschau konnte nicht erstellt werden.")); go.setEnabled(False)
 
         def change_printer():
-            nonlocal printer
+            nonlocal printer, applied_preset_name, applied_preset_values
+            applied_preset_name, applied_preset_values = "", None
             printer = QPrinter(QPrinterInfo.printerInfo(device_choice.currentText()), QPrinter.PrinterMode.HighResolution)
             scaling.setCurrentIndex(0); per_side.setCurrentIndex(0)
             copies.setValue(printer.copyCount()); collate.setChecked(printer.collateCopies())
@@ -10934,18 +10941,27 @@ class Window(QMainWindow):
             if type(values.get("collate")) is bool: collate.setChecked(values["collate"])
 
         def load_settings():
+            nonlocal applied_preset_name, applied_preset_values
             try:
                 raw = self.favorite_settings.value(settings_key(), "", str)
-                if len(raw) <= 4096: apply_settings(json.loads(raw))
+                if len(raw) <= 4096:
+                    values = json.loads(raw)
+                    apply_settings(values)
+                    if isinstance(values, dict) and values.get('version') == 1:
+                        applied_preset_name = self.ui("Gespeicherte Druckvorgabe")
+                        applied_preset_values = settings_values()
             except (ValueError, TypeError, AttributeError):
                 pass
 
         def current_settings():
             render()
-            size = printer.pageLayout().pageSize()
+            return settings_values()
+
+        def settings_values():
+            size = paper.currentData() or printer.pageLayout().pageSize()
             return dict(version=1, scale=scaling.currentData(), pages=per_side.currentData(),
-                        paper=size.id().value, paperName=size.name(), orientation=printer.pageLayout().orientation().value,
-                        duplex=printer.duplex().value, copies=copies.value(), collate=collate.isChecked())
+                        paper=size.id().value, paperName=size.name(), orientation=orientation.currentData().value,
+                        duplex=duplex.currentData().value, copies=copies.value(), collate=collate.isChecked())
 
         def write_settings(key, value):
             self.favorite_settings.setValue(key, json.dumps(value))
@@ -10953,7 +10969,11 @@ class Window(QMainWindow):
             saved_notice.setText(self.ui("Druckeinstellungen gespeichert.") if self.favorite_settings.status() == QSettings.Status.NoError else self.ui("Druckeinstellungen konnten nicht gespeichert werden."))
 
         def save_preset():
+            nonlocal applied_preset_name, applied_preset_values
             write_settings(settings_key(), current_settings())
+            if self.favorite_settings.status() == QSettings.Status.NoError:
+                applied_preset_name = self.ui("Gespeicherte Druckvorgabe")
+                applied_preset_values = settings_values(); render()
 
         def named_key():
             return settings_key().replace("print/preset/", "print/named/")
@@ -10986,14 +11006,21 @@ class Window(QMainWindow):
             return box.exec() == QMessageBox.StandardButton.Yes
 
         def save_named():
+            nonlocal applied_preset_name, applied_preset_values
             name = preset_name.text().strip(); data = read_named()
             if not name or any(ord(c) < 32 for c in name) or len(name) > 80 or (name not in data and len(data) >= 20):
                 saved_notice.setText(self.ui("Name: 1–80 Zeichen. Höchstens 20 Vorlagen je Drucker.")); return
             if name in data and not confirm_named("Vorlage „{0}“ ersetzen?", name): return
             data[name] = current_settings(); write_settings(named_key(), data); refresh_named(name)
+            if self.favorite_settings.status() == QSettings.Status.NoError:
+                applied_preset_name, applied_preset_values = name, settings_values(); render()
 
         def load_named():
-            apply_settings(read_named().get(named.currentText())); render(True)
+            nonlocal applied_preset_name, applied_preset_values
+            values = read_named().get(named.currentText())
+            if values is None: return
+            apply_settings(values)
+            applied_preset_name, applied_preset_values = named.currentText(), settings_values(); render(True)
 
         def delete_named():
             name = named.currentText(); data = read_named()
@@ -11162,6 +11189,7 @@ class Window(QMainWindow):
             if version_tuple(version) <= VERSION:
                 raise ValueError("Das USB-Update ist nicht neuer als die laufende Version.")
             current = ".".join(map(str, VERSION))
+            panel.set_versions(current, version)
             def prepare():
                 automatic_backup(self.favorite_settings, self.measurement_store(), current, version, refresh=True)
                 return stage_usb_update(package, VERSION)
@@ -11211,6 +11239,7 @@ class Window(QMainWindow):
     def update_panel(self, show=True):
         if not hasattr(self, 'single_update_window'):
             self.single_update_window = UpdateWindow(self)
+            self.single_update_window.set_versions('.'.join(map(str, VERSION)))
             self.single_update_window.display(self.ui("Suche nach Updates …"))
         if show:
             self.single_update_window.show()
@@ -11245,6 +11274,7 @@ class Window(QMainWindow):
         panel = self.update_panel()
         if self.update_busy():
             return
+        panel.set_versions('.'.join(map(str, VERSION)))
         panel.display(self.ui("Suche nach Updates …"), busy=True)
         self.release_check.check(manual=True)
 
@@ -11252,6 +11282,8 @@ class Window(QMainWindow):
         panel = self.update_panel(show=manual)
         if self.update_busy() or panel.callback is not None:
             return
+        panel.set_versions('.'.join(map(str, VERSION)), self.release_check.latest_version if success else None,
+                           self.release_check.release_notes if success else '')
         failure = (self.release_check.error_detail or "Die Update-Suche ist fehlgeschlagen.") + (
             " Versuche es später erneut oder nutze „Info → Update vom USB-Stick“.")
         self.update_result = "Update-Suche abgeschlossen." if success else failure

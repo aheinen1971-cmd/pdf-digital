@@ -23,10 +23,21 @@ with TemporaryDirectory() as temp:
     w.check_online();p=w.single_update_window
     assert p.isVisible() and p.progress.maximum()==0
     w.check_online();assert w.single_update_window is p
+   p.set_versions('1.77.0','1.78.0','<script>literal</script>\nNew update')
+   assert '1.77.0' in p.versions.text() and '1.78.0' in p.versions.text()
+   p.news_button.click();assert p.news.isVisible() and '<script>literal</script>' in p.news.toPlainText()
+   p.news_button.click();assert not p.news.isVisible()
+   p.set_versions('1.77.0',None)
+   assert w.ui('Noch nicht geprüft') in p.versions.text()
+   assert p.news.toPlainText()==w.ui('Keine Versionshinweise verfügbar.')
+   current='.'.join(map(str,m.VERSION))
+   w.release_check.latest_version=current;w.release_check.release_notes='Known release notes'
    w.show_online_update(None,True,True)
+   assert p.versions.text().count(current)==2
    assert p.message.text()==w.ui('Du hast die aktuelle Version.') and not p.progress.isVisible()
    w.release_check.error_detail='HTTP 503 <b>offline</b>'
    w.show_online_update(None,False,True)
+   assert w.ui('Noch nicht geprüft') in p.versions.text() and 'Known release notes' not in p.news.toPlainText()
    assert '<b>offline</b>' in p.details.toPlainText()
    # Progress is actual downloaded bytes, never an installation time prediction.
    process=QProcess(w);w.update_process=process;w.update_output=b''
@@ -75,8 +86,10 @@ with TemporaryDirectory() as temp:
    assert len(w.findChildren(UpdateWindow))==1
    assert p.layoutDirection()==w.layoutDirection()
    if code!='de':
-    for key in ['Aktualisierung','Vorbereiten','Im Hintergrund weiter','Signatur wird geprüft …','Update wird heruntergeladen …','Update wird eingerichtet …','Du hast die aktuelle Version.','Die Update-Suche ist fehlgeschlagen.']:
+    for key in ['Aktualisierung','Vorbereiten','Im Hintergrund weiter','Signatur wird geprüft …','Update wird heruntergeladen …','Update wird eingerichtet …','Du hast die aktuelle Version.','Die Update-Suche ist fehlgeschlagen.','Installiert: {0}','Verfügbar: {0}','Noch nicht geprüft','Was ist neu?','Keine Versionshinweise verfügbar.','Eigene Einstellungen','Gespeicherte Druckvorgabe','Drucker: {0}\nDruckvorlage: {1}']:
      assert catalog[code][key]!=key,(code,key)
-   if code in ('de','ar','ja'):p.grab().save(str(out/(code+'.png')))
+   if code in ('de','ar','ja'):
+    p.set_versions(current,current,w.ui('Was ist neu?')+'\n'+w.ui('Keine Versionshinweise verfügbar.'))
+    p.news_button.setChecked(True);app.processEvents();p.grab().save(str(out/(code+'.png')))
    p.hide();w.close();w.deleteLater();app.processEvents()
 print('PASS single window: 20 languages/RTL, download progress, failure codes, safe close/reopen, USB confirmation/success/error, info, no extra popups.')

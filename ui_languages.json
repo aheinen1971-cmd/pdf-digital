@@ -1392,7 +1392,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Another window is already preparing the update.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Update rejected. The project signature is missing or invalid.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Update skipped. This release previously failed to start.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "The update could not be prepared. It will be checked again at the next start."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "The update could not be prepared. It will be checked again at the next start.",
+    "Installiert: {0}": "Installed: {0}",
+    "Verfügbar: {0}": "Available: {0}",
+    "Noch nicht geprüft": "Not checked yet",
+    "Was ist neu?": "What’s new?",
+    "Keine Versionshinweise verfügbar.": "No release notes available.",
+    "Eigene Einstellungen": "Custom settings",
+    "Gespeicherte Druckvorgabe": "Saved print settings",
+    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nPrint preset: {1}"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2787,7 +2795,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Une autre fenêtre prépare déjà la mise à jour.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Mise à jour refusée : signature du projet absente ou invalide.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Mise à jour ignorée : cette version a déjà échoué au démarrage.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "La mise à jour n’a pas pu être préparée. Nouvelle vérification au prochain démarrage."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "La mise à jour n’a pas pu être préparée. Nouvelle vérification au prochain démarrage.",
+    "Installiert: {0}": "Installée : {0}",
+    "Verfügbar: {0}": "Disponible : {0}",
+    "Noch nicht geprüft": "Pas encore vérifié",
+    "Was ist neu?": "Quoi de neuf ?",
+    "Keine Versionshinweise verfügbar.": "Aucune note de version disponible.",
+    "Eigene Einstellungen": "Paramètres personnalisés",
+    "Gespeicherte Druckvorgabe": "Paramètres d’impression enregistrés",
+    "Drucker: {0}\nDruckvorlage: {1}": "Imprimante : {0}\nPréréglage : {1}"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4182,7 +4198,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Otra ventana ya está preparando la actualización.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Actualización rechazada: falta la firma del proyecto o no es válida.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Actualización omitida: esta versión ya falló al iniciarse.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "No se pudo preparar la actualización. Se comprobará de nuevo en el próximo inicio."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "No se pudo preparar la actualización. Se comprobará de nuevo en el próximo inicio.",
+    "Installiert: {0}": "Instalada: {0}",
+    "Verfügbar: {0}": "Disponible: {0}",
+    "Noch nicht geprüft": "Sin comprobar",
+    "Was ist neu?": "¿Qué hay de nuevo?",
+    "Keine Versionshinweise verfügbar.": "No hay notas de versión disponibles.",
+    "Eigene Einstellungen": "Ajustes personalizados",
+    "Gespeicherte Druckvorgabe": "Ajustes de impresión guardados",
+    "Drucker: {0}\nDruckvorlage: {1}": "Impresora: {0}\nPreajuste: {1}"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5577,7 +5601,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Een ander venster bereidt de update al voor.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Update geweigerd. De projecthandtekening ontbreekt of is ongeldig.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Update overgeslagen. Deze versie kon eerder niet starten.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "De update kon niet worden voorbereid. Bij de volgende start wordt opnieuw gecontroleerd."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "De update kon niet worden voorbereid. Bij de volgende start wordt opnieuw gecontroleerd.",
+    "Installiert: {0}": "Geïnstalleerd: {0}",
+    "Verfügbar: {0}": "Beschikbaar: {0}",
+    "Noch nicht geprüft": "Nog niet gecontroleerd",
+    "Was ist neu?": "Wat is er nieuw?",
+    "Keine Versionshinweise verfügbar.": "Geen releaseopmerkingen beschikbaar.",
+    "Eigene Einstellungen": "Eigen instellingen",
+    "Gespeicherte Druckvorgabe": "Opgeslagen afdrukinstellingen",
+    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nVoorinstelling: {1}"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -6972,7 +7004,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Un’altra finestra sta già preparando l’aggiornamento.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Aggiornamento rifiutato: firma del progetto assente o non valida.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Aggiornamento ignorato: questa versione non si è avviata in precedenza.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Impossibile preparare l’aggiornamento. Nuovo controllo al prossimo avvio."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Impossibile preparare l’aggiornamento. Nuovo controllo al prossimo avvio.",
+    "Installiert: {0}": "Installata: {0}",
+    "Verfügbar: {0}": "Disponibile: {0}",
+    "Noch nicht geprüft": "Non ancora verificato",
+    "Was ist neu?": "Novità",
+    "Keine Versionshinweise verfügbar.": "Note di versione non disponibili.",
+    "Eigene Einstellungen": "Impostazioni personalizzate",
+    "Gespeicherte Druckvorgabe": "Impostazioni di stampa salvate",
+    "Drucker: {0}\nDruckvorlage: {1}": "Stampante: {0}\nPreimpostazione: {1}"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8367,7 +8407,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Outra janela já está a preparar a atualização.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Atualização rejeitada: assinatura do projeto em falta ou inválida.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Atualização ignorada: esta versão já falhou ao iniciar.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Não foi possível preparar a atualização. Será verificada novamente no próximo arranque."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Não foi possível preparar a atualização. Será verificada novamente no próximo arranque.",
+    "Installiert: {0}": "Instalada: {0}",
+    "Verfügbar: {0}": "Disponível: {0}",
+    "Noch nicht geprüft": "Ainda não verificado",
+    "Was ist neu?": "Novidades",
+    "Keine Versionshinweise verfügbar.": "Sem notas de versão disponíveis.",
+    "Eigene Einstellungen": "Definições personalizadas",
+    "Gespeicherte Druckvorgabe": "Definições de impressão guardadas",
+    "Drucker: {0}\nDruckvorlage: {1}": "Impressora: {0}\nPredefinição: {1}"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9762,7 +9810,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Inne okno już przygotowuje aktualizację.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Aktualizacja odrzucona. Brak podpisu projektu lub podpis jest nieprawidłowy.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Pominięto aktualizację. Ta wersja wcześniej nie uruchomiła się.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Nie udało się przygotować aktualizacji. Zostanie sprawdzona ponownie przy następnym uruchomieniu."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Nie udało się przygotować aktualizacji. Zostanie sprawdzona ponownie przy następnym uruchomieniu.",
+    "Installiert: {0}": "Zainstalowana: {0}",
+    "Verfügbar: {0}": "Dostępna: {0}",
+    "Noch nicht geprüft": "Jeszcze nie sprawdzono",
+    "Was ist neu?": "Co nowego?",
+    "Keine Versionshinweise verfügbar.": "Brak informacji o wydaniu.",
+    "Eigene Einstellungen": "Ustawienia własne",
+    "Gespeicherte Druckvorgabe": "Zapisane ustawienia drukowania",
+    "Drucker: {0}\nDruckvorlage: {1}": "Drukarka: {0}\nSzablon druku: {1}"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11157,7 +11213,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Aktualizaci již připravuje jiné okno.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Aktualizace odmítnuta. Podpis projektu chybí nebo je neplatný.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Aktualizace přeskočena. Tuto verzi se již dříve nepodařilo spustit.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Aktualizaci se nepodařilo připravit. Kontrola se zopakuje při příštím spuštění."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Aktualizaci se nepodařilo připravit. Kontrola se zopakuje při příštím spuštění.",
+    "Installiert: {0}": "Nainstalováno: {0}",
+    "Verfügbar: {0}": "Dostupné: {0}",
+    "Noch nicht geprüft": "Dosud nezkontrolováno",
+    "Was ist neu?": "Co je nového?",
+    "Keine Versionshinweise verfügbar.": "Poznámky k vydání nejsou k dispozici.",
+    "Eigene Einstellungen": "Vlastní nastavení",
+    "Gespeicherte Druckvorgabe": "Uložené nastavení tisku",
+    "Drucker: {0}\nDruckvorlage: {1}": "Tiskárna: {0}\nPředvolba: {1}"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12552,7 +12616,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Et andet vindue klargør allerede opdateringen.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Opdatering afvist. Projektsignaturen mangler eller er ugyldig.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Opdatering sprunget over. Denne version kunne tidligere ikke starte.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Opdateringen kunne ikke klargøres. Der søges igen ved næste start."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Opdateringen kunne ikke klargøres. Der søges igen ved næste start.",
+    "Installiert: {0}": "Installeret: {0}",
+    "Verfügbar: {0}": "Tilgængelig: {0}",
+    "Noch nicht geprüft": "Ikke kontrolleret endnu",
+    "Was ist neu?": "Hvad er nyt?",
+    "Keine Versionshinweise verfügbar.": "Ingen versionsnoter tilgængelige.",
+    "Eigene Einstellungen": "Egne indstillinger",
+    "Gespeicherte Druckvorgabe": "Gemte udskriftsindstillinger",
+    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nForvalg: {1}"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -13947,7 +14019,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Ett annat fönster förbereder redan uppdateringen.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Uppdateringen avvisades. Projektsignaturen saknas eller är ogiltig.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Uppdateringen hoppades över. Den här versionen har tidigare inte kunnat starta.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Uppdateringen kunde inte förberedas. En ny kontroll görs vid nästa start."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Uppdateringen kunde inte förberedas. En ny kontroll görs vid nästa start.",
+    "Installiert: {0}": "Installerad: {0}",
+    "Verfügbar: {0}": "Tillgänglig: {0}",
+    "Noch nicht geprüft": "Inte kontrollerat ännu",
+    "Was ist neu?": "Vad är nytt?",
+    "Keine Versionshinweise verfügbar.": "Inga versionsanteckningar tillgängliga.",
+    "Eigene Einstellungen": "Egna inställningar",
+    "Gespeicherte Druckvorgabe": "Sparade utskriftsinställningar",
+    "Drucker: {0}\nDruckvorlage: {1}": "Skrivare: {0}\nFörval: {1}"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15342,7 +15422,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Et annet vindu klargjør allerede oppdateringen.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Oppdateringen ble avvist. Prosjektsignaturen mangler eller er ugyldig.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Oppdateringen ble hoppet over. Denne versjonen har tidligere ikke startet.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Oppdateringen kunne ikke klargjøres. Den kontrolleres igjen ved neste start."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Oppdateringen kunne ikke klargjøres. Den kontrolleres igjen ved neste start.",
+    "Installiert: {0}": "Installert: {0}",
+    "Verfügbar: {0}": "Tilgjengelig: {0}",
+    "Noch nicht geprüft": "Ikke kontrollert ennå",
+    "Was ist neu?": "Hva er nytt?",
+    "Keine Versionshinweise verfügbar.": "Ingen versjonsnotater tilgjengelige.",
+    "Eigene Einstellungen": "Egne innstillinger",
+    "Gespeicherte Druckvorgabe": "Lagrede utskriftsinnstillinger",
+    "Drucker: {0}\nDruckvorlage: {1}": "Skriver: {0}\nForvalg: {1}"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16737,7 +16825,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Toinen ikkuna valmistelee jo päivitystä.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Päivitys hylättiin. Projektin allekirjoitus puuttuu tai on virheellinen.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Päivitys ohitettiin. Tämä versio ei aiemmin käynnistynyt.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Päivitystä ei voitu valmistella. Se tarkistetaan uudelleen seuraavalla käynnistyskerralla."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Päivitystä ei voitu valmistella. Se tarkistetaan uudelleen seuraavalla käynnistyskerralla.",
+    "Installiert: {0}": "Asennettu: {0}",
+    "Verfügbar: {0}": "Saatavilla: {0}",
+    "Noch nicht geprüft": "Ei vielä tarkistettu",
+    "Was ist neu?": "Mitä uutta?",
+    "Keine Versionshinweise verfügbar.": "Julkaisutietoja ei ole saatavilla.",
+    "Eigene Einstellungen": "Omat asetukset",
+    "Gespeicherte Druckvorgabe": "Tallennetut tulostusasetukset",
+    "Drucker: {0}\nDruckvorlage: {1}": "Tulostin: {0}\nEsiasetus: {1}"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18132,7 +18228,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Başka bir pencere güncellemeyi zaten hazırlıyor.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Güncelleme reddedildi. Proje imzası eksik veya geçersiz.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Güncelleme atlandı. Bu sürüm daha önce başlatılamadı.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Güncelleme hazırlanamadı. Sonraki başlangıçta yeniden denetlenecek."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Güncelleme hazırlanamadı. Sonraki başlangıçta yeniden denetlenecek.",
+    "Installiert: {0}": "Yüklü: {0}",
+    "Verfügbar: {0}": "Kullanılabilir: {0}",
+    "Noch nicht geprüft": "Henüz denetlenmedi",
+    "Was ist neu?": "Yenilikler",
+    "Keine Versionshinweise verfügbar.": "Sürüm notları yok.",
+    "Eigene Einstellungen": "Özel ayarlar",
+    "Gespeicherte Druckvorgabe": "Kaydedilmiş yazdırma ayarları",
+    "Drucker: {0}\nDruckvorlage: {1}": "Yazıcı: {0}\nÖn ayar: {1}"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19527,7 +19631,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Інше вікно вже готує оновлення.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Оновлення відхилено. Підпис проєкту відсутній або недійсний.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Оновлення пропущено. Ця версія раніше не запустилася.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Не вдалося підготувати оновлення. Перевірку буде повторено під час наступного запуску."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Не вдалося підготувати оновлення. Перевірку буде повторено під час наступного запуску.",
+    "Installiert: {0}": "Встановлено: {0}",
+    "Verfügbar: {0}": "Доступно: {0}",
+    "Noch nicht geprüft": "Ще не перевірено",
+    "Was ist neu?": "Що нового?",
+    "Keine Versionshinweise verfügbar.": "Примітки до випуску недоступні.",
+    "Eigene Einstellungen": "Власні налаштування",
+    "Gespeicherte Druckvorgabe": "Збережені налаштування друку",
+    "Drucker: {0}\nDruckvorlage: {1}": "Принтер: {0}\nШаблон друку: {1}"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -20922,7 +21034,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "Ένα άλλο παράθυρο προετοιμάζει ήδη την ενημέρωση.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "Η ενημέρωση απορρίφθηκε. Η υπογραφή του έργου λείπει ή δεν είναι έγκυρη.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "Η ενημέρωση παραλείφθηκε. Αυτή η έκδοση είχε αποτύχει κατά την εκκίνηση.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Δεν ήταν δυνατή η προετοιμασία της ενημέρωσης. Θα ελεγχθεί ξανά στην επόμενη εκκίνηση."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "Δεν ήταν δυνατή η προετοιμασία της ενημέρωσης. Θα ελεγχθεί ξανά στην επόμενη εκκίνηση.",
+    "Installiert: {0}": "Εγκατεστημένη: {0}",
+    "Verfügbar: {0}": "Διαθέσιμη: {0}",
+    "Noch nicht geprüft": "Δεν ελέγχθηκε ακόμη",
+    "Was ist neu?": "Τι νέο υπάρχει;",
+    "Keine Versionshinweise verfügbar.": "Δεν υπάρχουν σημειώσεις έκδοσης.",
+    "Eigene Einstellungen": "Προσαρμοσμένες ρυθμίσεις",
+    "Gespeicherte Druckvorgabe": "Αποθηκευμένες ρυθμίσεις εκτύπωσης",
+    "Drucker: {0}\nDruckvorlage: {1}": "Εκτυπωτής: {0}\nΠρορύθμιση: {1}"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22317,7 +22437,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "別のウィンドウで更新を準備しています。",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "更新を拒否しました。プロジェクトの署名がないか無効です。",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "以前起動に失敗したバージョンのため、更新をスキップしました。",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "更新を準備できませんでした。次回起動時に再確認します。"
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "更新を準備できませんでした。次回起動時に再確認します。",
+    "Installiert: {0}": "インストール済み：{0}",
+    "Verfügbar: {0}": "利用可能：{0}",
+    "Noch nicht geprüft": "未確認",
+    "Was ist neu?": "新機能",
+    "Keine Versionshinweise verfügbar.": "リリースノートはありません。",
+    "Eigene Einstellungen": "カスタム設定",
+    "Gespeicherte Druckvorgabe": "保存済みの印刷設定",
+    "Drucker: {0}\nDruckvorlage: {1}": "プリンター：{0}\n印刷プリセット：{1}"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -23712,7 +23840,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "다른 창에서 이미 업데이트를 준비하고 있습니다.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "업데이트가 거부되었습니다. 프로젝트 서명이 없거나 유효하지 않습니다.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "이전에 시작하지 못한 버전이므로 업데이트를 건너뛰었습니다.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "업데이트를 준비하지 못했습니다. 다음 시작 시 다시 확인합니다."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "업데이트를 준비하지 못했습니다. 다음 시작 시 다시 확인합니다.",
+    "Installiert: {0}": "설치된 버전: {0}",
+    "Verfügbar: {0}": "사용 가능한 버전: {0}",
+    "Noch nicht geprüft": "아직 확인하지 않음",
+    "Was ist neu?": "새로운 기능",
+    "Keine Versionshinweise verfügbar.": "릴리스 노트가 없습니다.",
+    "Eigene Einstellungen": "사용자 설정",
+    "Gespeicherte Druckvorgabe": "저장된 인쇄 설정",
+    "Drucker: {0}\nDruckvorlage: {1}": "프린터: {0}\n인쇄 프리셋: {1}"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25107,7 +25243,15 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "تقوم نافذة أخرى بتجهيز التحديث بالفعل.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "رُفض التحديث. توقيع المشروع مفقود أو غير صالح.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "تم تخطي التحديث. سبق أن فشل هذا الإصدار في بدء التشغيل.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "تعذر تجهيز التحديث. ستتم إعادة التحقق عند بدء التشغيل التالي."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "تعذر تجهيز التحديث. ستتم إعادة التحقق عند بدء التشغيل التالي.",
+    "Installiert: {0}": "المثبت: {0}",
+    "Verfügbar: {0}": "المتاح: {0}",
+    "Noch nicht geprüft": "لم يُفحص بعد",
+    "Was ist neu?": "ما الجديد؟",
+    "Keine Versionshinweise verfügbar.": "لا توجد ملاحظات إصدار.",
+    "Eigene Einstellungen": "إعدادات مخصصة",
+    "Gespeicherte Druckvorgabe": "إعدادات الطباعة المحفوظة",
+    "Drucker: {0}\nDruckvorlage: {1}": "الطابعة: {0}\nإعداد الطباعة: {1}"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -26502,6 +26646,14 @@
     "Ein anderes Fenster bereitet das Update bereits vor.": "חלון אחר כבר מכין את העדכון.",
     "Update abgelehnt. Die Projektsignatur fehlt oder ist ungültig.": "העדכון נדחה. חתימת הפרויקט חסרה או לא תקינה.",
     "Update übersprungen. Diese Freigabe ist beim Start bereits fehlgeschlagen.": "העדכון דולג. גרסה זו כבר נכשלה בהפעלה בעבר.",
-    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "לא ניתן להכין את העדכון. הוא ייבדק שוב בהפעלה הבאה."
+    "Update konnte nicht vorbereitet werden. Beim nächsten Start wird erneut geprüft.": "לא ניתן להכין את העדכון. הוא ייבדק שוב בהפעלה הבאה.",
+    "Installiert: {0}": "מותקנת: {0}",
+    "Verfügbar: {0}": "זמינה: {0}",
+    "Noch nicht geprüft": "טרם נבדק",
+    "Was ist neu?": "מה חדש?",
+    "Keine Versionshinweise verfügbar.": "אין הערות גרסה זמינות.",
+    "Eigene Einstellungen": "הגדרות מותאמות",
+    "Gespeicherte Druckvorgabe": "הגדרות הדפסה שמורות",
+    "Drucker: {0}\nDruckvorlage: {1}": "מדפסת: {0}\nתבנית הדפסה: {1}"
   }
 }

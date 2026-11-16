@@ -2,6 +2,12 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Versionsvergleich und Druckübersicht
+
+- Das gemeinsame Updatefenster zeigt installierte und verfügbare Version direkt an. „Was ist neu?“ klappt die Original-Versionshinweise im selben Fenster auf; externe Inhalte werden als begrenzter Klartext ohne aktive Links angezeigt. Fehlende Hinweise und fehlgeschlagene Prüfungen bleiben ausdrücklich erkennbar.
+- Die Druckvorschau zeigt zusätzlich den Drucker und die tatsächlich geladenen Druckvorgaben. Nach Änderungen steht „Eigene Einstellungen“; eine bloße Auswahl in der Vorlagenliste gilt noch nicht als Laden. Seitenzahl, Exemplare und Papierbedarf bleiben in derselben Übersicht.
+- Alle 20 Oberflächensprachen; Versionshinweise werden in der vom Herausgeber gelieferten Sprache angezeigt. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert.
+
 ### Neu in 1.77.0: Ein gemeinsames Updatefenster
 
 - Online-Suche, Download, Signatur- und Dateiprüfung, Vorbereitung und Ergebnis erscheinen im selben Fenster. Auch Update-Info und USB-Update-Bestätigung, Fortschritt und Fehler verwenden dieses Fenster.

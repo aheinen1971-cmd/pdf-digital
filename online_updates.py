@@ -18,6 +18,19 @@ class UpdateWindow(QDialog):
         self.resize(570, 330)
         self.setLayoutDirection(parent.layoutDirection())
         layout = QVBoxLayout(self)
+        self.versions = QLabel()
+        self.versions.setTextFormat(Qt.TextFormat.PlainText)
+        self.versions.setWordWrap(True)
+        layout.addWidget(self.versions)
+        self.news_button = QPushButton(parent.ui("Was ist neu?"))
+        self.news_button.setCheckable(True)
+        layout.addWidget(self.news_button)
+        self.news = QPlainTextEdit()
+        self.news.setReadOnly(True)
+        self.news.setMaximumHeight(180)
+        self.news.hide()
+        self.news_button.toggled.connect(self.news.setVisible)
+        layout.addWidget(self.news)
         self.message = QLabel()
         self.message.setTextFormat(Qt.TextFormat.PlainText)
         self.message.setWordWrap(True)
@@ -35,6 +48,12 @@ class UpdateWindow(QDialog):
         layout.addWidget(self.close_button)
         self.callback = None
         self.action.clicked.connect(self.confirm)
+
+    def set_versions(self, installed, available=None, notes=""):
+        parent = self.parent()
+        self.versions.setText(parent.ui_format("Installiert: {0}", installed) + "\n" +
+                              parent.ui_format("Verfügbar: {0}", available or parent.ui("Noch nicht geprüft")))
+        self.news.setPlainText(notes[:24000] if isinstance(notes, str) and notes.strip() else parent.ui("Keine Versionshinweise verfügbar."))
 
     def confirm(self):
         callback, self.callback = self.callback, None
@@ -66,6 +85,8 @@ class ReleaseCheck(QObject):
         self.manual = False
         self.attempt = 0
         self.error_detail = ""
+        self.latest_version = None
+        self.release_notes = ""
         self.retry = QTimer(self, singleShot=True, interval=1500)
         self.retry.timeout.connect(self.request_release)
 
@@ -99,6 +120,10 @@ class ReleaseCheck(QObject):
                 if not isinstance(data, dict) or not isinstance(data.get("tag_name"), str) or not isinstance(data.get("assets"), list):
                     raise ValueError("Unerwartete Release-Antwort")
                 update = available_release(data, self.version)
+                latest = available_release(data, (0, 0, 0))
+                self.latest_version = latest[0] if latest else None
+                body = data.get('body')
+                self.release_notes = body[:24000] if latest and isinstance(body, str) else ""
             except (ValueError, UnicodeError):
                 success = False
                 self.error_detail = "GitHub hat keine gültigen Freigabedaten geliefert."
@@ -112,5 +137,8 @@ class ReleaseCheck(QObject):
             return
         if success:
             self.error_detail = ""
+        else:
+            self.latest_version = None
+            self.release_notes = ""
         manual, self.manual = self.manual, False
         self.finished.emit(update, success, manual)
