@@ -7,7 +7,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 from update_worker import LATEST, available_release
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QProgressBar, QPushButton, QPlainTextEdit
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QProgressBar, QPushButton, QPlainTextEdit, QWidget
 
 
 class UpdateWindow(QDialog):
@@ -22,6 +22,9 @@ class UpdateWindow(QDialog):
         self.versions.setTextFormat(Qt.TextFormat.PlainText)
         self.versions.setWordWrap(True)
         layout.addWidget(self.versions)
+        self.check_button = QPushButton(parent.ui("Online-Update suchen"))
+        self.check_button.clicked.connect(parent.check_online)
+        layout.addWidget(self.check_button)
         self.preservation = QLabel(parent.ui("Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert."))
         self.preservation.setWordWrap(True)
         layout.addWidget(self.preservation)
@@ -46,6 +49,24 @@ class UpdateWindow(QDialog):
         self.action = QPushButton(parent.ui("Vorbereiten"))
         self.action.hide()
         layout.addWidget(self.action)
+        self.more_button = QPushButton(parent.ui("Weitere Möglichkeiten"))
+        self.more_button.setCheckable(True)
+        layout.addWidget(self.more_button)
+        self.more = QWidget()
+        extra = QVBoxLayout(self.more)
+        extra.setContentsMargins(0, 0, 0, 0)
+        self.extra_buttons = []
+        for text, callback in (("Update vom USB-Stick", parent.usb_update_dialog),
+                               ("Update für USB speichern", parent.usb_update_export),
+                               ("Update-Info", parent.update_info),
+                               ("Update-Ordner", parent.choose_update_folder)):
+            button = QPushButton(parent.ui(text))
+            button.clicked.connect(callback)
+            extra.addWidget(button)
+            self.extra_buttons.append(button)
+        self.more.hide()
+        self.more_button.toggled.connect(self.more.setVisible)
+        layout.addWidget(self.more)
         self.close_button = QPushButton(parent.ui("Schließen"))
         self.close_button.clicked.connect(self.hide)
         layout.addWidget(self.close_button)
@@ -69,6 +90,10 @@ class UpdateWindow(QDialog):
         self.details.setPlainText(detail)
         self.details.setVisible(bool(detail))
         self.callback = confirm
+        locked = busy or confirm is not None
+        self.check_button.setEnabled(not locked)
+        for button in self.extra_buttons:
+            button.setEnabled(not locked)
         self.action.setVisible(confirm is not None)
         self.progress.setVisible(busy or percent is not None)
         self.progress.setRange(0, 100 if percent is not None or not busy else 0)

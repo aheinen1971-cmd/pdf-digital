@@ -1418,7 +1418,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF copy saved · Pages: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Reset remembered print settings",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Remembered values reset. Defaults loaded; page selection and named presets are kept.",
-    "Druckauftrag wird übergeben …": "Submitting print job …"
+    "Druckauftrag wird übergeben …": "Submitting print job …",
+    "Update": "Update",
+    "Weitere Möglichkeiten": "More options",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Try again later or use “More options → Update from USB”."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2839,7 +2842,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Copie PDF enregistrée · Pages : {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Réinitialiser les paramètres d’impression mémorisés",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valeurs mémorisées réinitialisées. Valeurs par défaut chargées ; sélection des pages et préréglages nommés conservés.",
-    "Druckauftrag wird übergeben …": "Envoi de la tâche d’impression…"
+    "Druckauftrag wird übergeben …": "Envoi de la tâche d’impression…",
+    "Update": "Mise à jour",
+    "Weitere Möglichkeiten": "Autres possibilités",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Réessayez plus tard ou utilisez « Autres possibilités → Mise à jour depuis une clé USB »."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4260,7 +4266,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Copia PDF guardada · Páginas: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Restablecer ajustes de impresión recordados",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valores recordados restablecidos. Se cargaron los valores predeterminados; se conservan la selección de páginas y los preajustes con nombre.",
-    "Druckauftrag wird übergeben …": "Enviando trabajo de impresión…"
+    "Druckauftrag wird übergeben …": "Enviando trabajo de impresión…",
+    "Update": "Actualizar",
+    "Weitere Möglichkeiten": "Más opciones",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Inténtalo más tarde o usa « Más opciones → Actualizar desde USB »."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5681,7 +5690,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopie opgeslagen · Pagina’s: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Onthouden afdrukinstellingen herstellen",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Onthouden waarden gewist. Standaardwaarden geladen; paginaselectie en benoemde voorinstellingen blijven behouden.",
-    "Druckauftrag wird übergeben …": "Afdruktaak wordt verzonden…"
+    "Druckauftrag wird übergeben …": "Afdruktaak wordt verzonden…",
+    "Update": "Update",
+    "Weitere Möglichkeiten": "Meer mogelijkheden",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Probeer het later opnieuw of gebruik “Meer mogelijkheden → Update vanaf USB”."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7102,7 +7114,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Copia PDF salvata · Pagine: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Reimposta le impostazioni di stampa memorizzate",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valori memorizzati reimpostati. Valori predefiniti caricati; selezione delle pagine e preimpostazioni con nome mantenute.",
-    "Druckauftrag wird übergeben …": "Invio del lavoro di stampa…"
+    "Druckauftrag wird übergeben …": "Invio del lavoro di stampa…",
+    "Update": "Aggiornamento",
+    "Weitere Möglichkeiten": "Altre opzioni",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Riprova più tardi oppure usa « Altre opzioni → Aggiornamento da USB »."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8523,7 +8538,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Cópia PDF guardada · Páginas: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Repor definições de impressão memorizadas",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Valores memorizados repostos. Predefinições carregadas; a seleção de páginas e as predefinições com nome são mantidas.",
-    "Druckauftrag wird übergeben …": "A enviar o trabalho de impressão…"
+    "Druckauftrag wird übergeben …": "A enviar o trabalho de impressão…",
+    "Update": "Atualização",
+    "Weitere Möglichkeiten": "Mais opções",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Tenta novamente mais tarde ou utiliza « Mais opções → Atualização por USB »."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9944,7 +9962,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Zapisano kopię PDF · Strony: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Resetuj zapamiętane ustawienia drukowania",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Zapamiętane wartości zresetowano. Wczytano ustawienia domyślne; wybór stron i nazwane szablony pozostają zachowane.",
-    "Druckauftrag wird übergeben …": "Przekazywanie zadania drukowania…"
+    "Druckauftrag wird übergeben …": "Przekazywanie zadania drukowania…",
+    "Update": "Aktualizacja",
+    "Weitere Möglichkeiten": "Więcej możliwości",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Spróbuj ponownie później lub wybierz „Więcej możliwości → Aktualizacja z USB”."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11365,7 +11386,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Kopie PDF uložena · Stránky: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Obnovit zapamatované nastavení tisku",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Zapamatované hodnoty byly obnoveny. Načteny výchozí hodnoty; výběr stránek a pojmenované předvolby zůstávají zachovány.",
-    "Druckauftrag wird übergeben …": "Odesílání tiskové úlohy…"
+    "Druckauftrag wird übergeben …": "Odesílání tiskové úlohy…",
+    "Update": "Aktualizace",
+    "Weitere Möglichkeiten": "Další možnosti",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Zkuste to později nebo použijte „Další možnosti → Aktualizace z USB“."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12786,7 +12810,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopi gemt · Sider: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Nulstil huskede udskriftsindstillinger",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Huskede værdier nulstillet. Standardværdier indlæst; sidevalg og navngivne forvalg bevares.",
-    "Druckauftrag wird übergeben …": "Sender udskriftsjob…"
+    "Druckauftrag wird übergeben …": "Sender udskriftsjob…",
+    "Update": "Opdatering",
+    "Weitere Möglichkeiten": "Flere muligheder",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igen senere, eller brug »Flere muligheder → Opdatering fra USB«."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14207,7 +14234,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopia sparad · Sidor: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Återställ ihågkomna utskriftsinställningar",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Ihågkomna värden återställda. Standardvärden inlästa; sidval och namngivna förval behålls.",
-    "Druckauftrag wird übergeben …": "Skickar utskriftsjobb…"
+    "Druckauftrag wird übergeben …": "Skickar utskriftsjobb…",
+    "Update": "Uppdatering",
+    "Weitere Möglichkeiten": "Fler alternativ",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Försök igen senare eller använd ”Fler alternativ → Uppdatering från USB”."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15628,7 +15658,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopi lagret · Sider: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Nullstill huskede utskriftsinnstillinger",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Huskede verdier nullstilt. Standardverdier lastet inn; sidevalg og navngitte forvalg beholdes.",
-    "Druckauftrag wird übergeben …": "Sender utskriftsjobb…"
+    "Druckauftrag wird übergeben …": "Sender utskriftsjobb…",
+    "Update": "Oppdatering",
+    "Weitere Möglichkeiten": "Flere muligheter",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igjen senere eller bruk «Flere muligheter → Oppdatering fra USB»."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -17049,7 +17082,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF-kopio tallennettu · Sivuja: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Nollaa muistetut tulostusasetukset",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Muistetut arvot nollattu. Oletukset ladattu; sivuvalinta ja nimetyt esiasetukset säilyvät.",
-    "Druckauftrag wird übergeben …": "Lähetetään tulostustyötä…"
+    "Druckauftrag wird übergeben …": "Lähetetään tulostustyötä…",
+    "Update": "Päivitys",
+    "Weitere Möglichkeiten": "Lisää vaihtoehtoja",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Yritä myöhemmin uudelleen tai valitse ”Lisää vaihtoehtoja → Päivitys USB:ltä”."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18470,7 +18506,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF kopyası kaydedildi · Sayfa: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Hatırlanan yazdırma ayarlarını sıfırla",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Hatırlanan değerler sıfırlandı. Varsayılanlar yüklendi; sayfa seçimi ve adlandırılmış ön ayarlar korunur.",
-    "Druckauftrag wird übergeben …": "Yazdırma işi gönderiliyor…"
+    "Druckauftrag wird übergeben …": "Yazdırma işi gönderiliyor…",
+    "Update": "Güncelleme",
+    "Weitere Möglichkeiten": "Diğer seçenekler",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Daha sonra tekrar deneyin veya “Diğer seçenekler → USB’den güncelleme” yolunu kullanın."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19891,7 +19930,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Копію PDF збережено · Сторінок: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Скинути запам’ятовані параметри друку",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Запам’ятовані значення скинуто. Завантажено типові параметри; вибір сторінок та іменовані шаблони збережено.",
-    "Druckauftrag wird übergeben …": "Передавання завдання друку…"
+    "Druckauftrag wird übergeben …": "Передавання завдання друку…",
+    "Update": "Оновлення",
+    "Weitere Möglichkeiten": "Інші можливості",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Спробуйте пізніше або виберіть «Інші можливості → Оновлення з USB»."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21312,7 +21354,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "Αντίγραφο PDF αποθηκεύτηκε · Σελίδες: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "Επαναφορά απομνημονευμένων ρυθμίσεων εκτύπωσης",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "Οι απομνημονευμένες τιμές επαναφέρθηκαν. Φορτώθηκαν προεπιλογές· η επιλογή σελίδων και οι επώνυμες προρυθμίσεις διατηρούνται.",
-    "Druckauftrag wird übergeben …": "Αποστολή εργασίας εκτύπωσης…"
+    "Druckauftrag wird übergeben …": "Αποστολή εργασίας εκτύπωσης…",
+    "Update": "Ενημέρωση",
+    "Weitere Möglichkeiten": "Περισσότερες επιλογές",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Δοκιμάστε αργότερα ή επιλέξτε «Περισσότερες επιλογές → Ενημέρωση από USB»."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22733,7 +22778,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDFコピーを保存 · ページ数：{0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "記憶した印刷設定をリセット",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "記憶した値をリセットし、既定値を読み込みました。ページ選択と名前付きプリセットは保持されます。",
-    "Druckauftrag wird übergeben …": "印刷ジョブを送信中…"
+    "Druckauftrag wird übergeben …": "印刷ジョブを送信中…",
+    "Update": "更新",
+    "Weitere Möglichkeiten": "その他のオプション",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "後でもう一度試すか、「その他のオプション → USBから更新」を使用してください。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -24154,7 +24202,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "PDF 사본 저장됨 · 페이지: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "기억된 인쇄 설정 초기화",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "기억된 값을 초기화하고 기본값을 불러왔습니다. 페이지 선택과 이름이 지정된 사전 설정은 유지됩니다.",
-    "Druckauftrag wird übergeben …": "인쇄 작업 전송 중…"
+    "Druckauftrag wird übergeben …": "인쇄 작업 전송 중…",
+    "Update": "업데이트",
+    "Weitere Möglichkeiten": "추가 옵션",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "나중에 다시 시도하거나 “추가 옵션 → USB에서 업데이트”를 사용하세요."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25575,7 +25626,10 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "تم حفظ نسخة PDF · الصفحات: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "إعادة ضبط إعدادات الطباعة المحفوظة",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "أُعيد ضبط القيم المحفوظة وحُمّلت القيم الافتراضية؛ يبقى اختيار الصفحات والقوالب المسماة محفوظًا.",
-    "Druckauftrag wird übergeben …": "جارٍ إرسال مهمة الطباعة…"
+    "Druckauftrag wird übergeben …": "جارٍ إرسال مهمة الطباعة…",
+    "Update": "تحديث",
+    "Weitere Möglichkeiten": "خيارات إضافية",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "حاول لاحقًا أو استخدم «خيارات إضافية ← التحديث من USB»."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -26996,6 +27050,9 @@
     "PDF-Kopie gespeichert · Seiten: {0}": "עותק PDF נשמר · עמודים: {0}",
     "Gemerkte Druckeinstellungen zurücksetzen": "איפוס הגדרות ההדפסה שנזכרו",
     "Gemerkte Werte zurückgesetzt. Standardvorgaben geladen; Seitenauswahl und benannte Vorlagen bleiben erhalten.": "הערכים שנזכרו אופסו וברירות המחדל נטענו; בחירת העמודים והתבניות בעלות השם נשמרות.",
-    "Druckauftrag wird übergeben …": "שליחת משימת ההדפסה…"
+    "Druckauftrag wird übergeben …": "שליחת משימת ההדפסה…",
+    "Update": "עדכון",
+    "Weitere Möglichkeiten": "אפשרויות נוספות",
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "נסה שוב מאוחר יותר או השתמש ב״אפשרויות נוספות ← עדכון מ־USB״."
   }
 }

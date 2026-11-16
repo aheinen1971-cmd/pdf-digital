@@ -2,6 +2,10 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Ein zentraler Update-Knopf
+
+Im Info-Reiter öffnet **Update** das bestehende gemeinsame Updatefenster. Es zeigt installierte/verfügbare Version, Updatesuche, Fortschritt und Ergebnis. **Weitere Möglichkeiten** ist zunächst eingeklappt und enthält USB-Import, USB-Export, Update-Info mit technischen Prüfdetails sowie den Update-Ordner. Die bisherigen separaten Updateeinträge in Einstellungen und Programminfo entfallen. Laufende Vorgänge behalten beim erneuten Öffnen ihren Zustand; konkurrierende Aktionen sind während Suche, Vorbereitung und offener Bestätigung gesperrt. Alle 20 Oberflächensprachen. Noch nicht veröffentlicht.
+
 ### Neu in 1.82.0: Aufgeräumter Info-Reiter
 
 Ein einzelner **Info**-Knopf öffnet die fünf bisherigen Einträge als Menü: Programminfo, Update-Info, Offline-Bereitschaft, Update vom USB-Stick und Update für USB speichern. Alle bestehenden Funktionen und Übersetzungen bleiben erhalten.

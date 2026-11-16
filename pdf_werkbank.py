@@ -1128,7 +1128,7 @@ class Window(QMainWindow):
                        ("USB-Stick vorbereiten", self.offline_tools_dialog),
                        ("Broschürendruck", self.booklet_dialog),
                        ("Arbeitsmappe speichern", self.save_workspace), ("Arbeitsmappe öffnen", self.open_workspace),
-                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("Online-Update suchen", self.check_online), ("Update-Info", self.update_info), ("Update-Ordner", self.choose_update_folder), ("PDF-Standard", self.register_pdf_app)]),
+                       ("Samsung-Profil", lambda: self.print_dialog(samsung=True)), ("PDF-Standard", self.register_pdf_app)]),
             ("Start", [("Offene Arbeiten", self.show_open_work), ("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Rückgängig", self.undo),
                        ("Wiederholen", self.redo), ("Änderungsverlauf", self.edit_history),
                        ("Suchen", self.search), ("Ordner durchsuchen", self.search_folder), ("Drucken", self.print_dialog)]),
@@ -1190,9 +1190,8 @@ class Window(QMainWindow):
                           ("Formularlauf fortsetzen", self.resume_form_fill),
                           ("Excel-Eingabevorlage erstellen", self.create_form_entry),
                           ("Feld ausfüllen", lambda: self.set_mode("Formular")), ("Lesen", lambda: self.set_mode("Lesen"))]),
-            ("Info", [(f"Info zu {APP_TITLE}", self.show_program_info), ("Update-Info", self.update_info),
-                      ("Offline-Bereitschaft prüfen", self.offline_readiness_dialog),
-                      ("Update vom USB-Stick", self.usb_update_dialog), ("Update für USB speichern", self.usb_update_export)]),
+            ("Info", [(f"Info zu {APP_TITLE}", self.show_program_info),
+                      ("Offline-Bereitschaft prüfen", self.offline_readiness_dialog)]),
         ]
         self.extend_favorite_commands()
         for name, _ in self.groups:
@@ -1767,6 +1766,10 @@ class Window(QMainWindow):
                 action.triggered.connect(lambda checked=False, run=callback: run())
             button.setMenu(menu)
             self.ribbon.addWidget(button)
+            update = QPushButton(self.ui("Update"))
+            update.setObjectName("singleUpdateButton")
+            update.clicked.connect(self.open_update_center)
+            self.ribbon.addWidget(update)
         for name, callback in ([] if group == "Info" else commands):
             button = QPushButton(self.ui(name))
             button.clicked.connect(lambda checked=False, run=callback: run())
@@ -11306,7 +11309,6 @@ class Window(QMainWindow):
         layout.addWidget(details)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.button(QDialogButtonBox.StandardButton.Close).setText(self.ui("Schließen"))
-        buttons.addButton(self.ui("Update-Info"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(self.update_info)
         buttons.addButton(self.ui("Lizenz anzeigen"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
             lambda: self.show_program_license(dialog))
         buttons.addButton(self.ui("Projekt auf GitHub"), QDialogButtonBox.ButtonRole.ActionRole).clicked.connect(
@@ -11397,11 +11399,14 @@ class Window(QMainWindow):
     def update_busy(self):
         return self.update_process is not None or getattr(self, 'usb_update_busy', False)
 
+    def open_update_center(self):
+        self.update_panel()
+
     def update_panel(self, show=True):
         if not hasattr(self, 'single_update_window'):
             self.single_update_window = UpdateWindow(self)
             self.single_update_window.set_versions('.'.join(map(str, VERSION)))
-            self.single_update_window.display(self.ui("Suche nach Updates …"))
+            self.single_update_window.display(self.ui("Noch nicht geprüft"))
         if show:
             self.single_update_window.show()
             self.single_update_window.raise_()
@@ -11445,8 +11450,8 @@ class Window(QMainWindow):
             return
         panel.set_versions('.'.join(map(str, VERSION)), self.release_check.latest_version if success else None,
                            self.release_check.release_notes if success else '')
-        failure = (self.release_check.error_detail or "Die Update-Suche ist fehlgeschlagen.") + (
-            " Versuche es später erneut oder nutze „Info → Update vom USB-Stick“.")
+        failure = (self.release_check.error_detail or "Die Update-Suche ist fehlgeschlagen.") + "\n" + self.ui(
+            "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.")
         self.update_result = "Update-Suche abgeschlossen." if success else failure
         if prepared_update(VERSION):
             panel.display(self.ui("Ein Update ist bereit und startet beim nächsten Öffnen."))
