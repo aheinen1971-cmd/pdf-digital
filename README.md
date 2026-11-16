@@ -1,12 +1,12 @@
-# PDF Digital 1.77.0 für Windows
+# PDF Digital 1.78.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Versionsvergleich und Druckübersicht
+### Neu in 1.78.0: Versionsvergleich und Druckübersicht
 
 - Das gemeinsame Updatefenster zeigt installierte und verfügbare Version direkt an. „Was ist neu?“ klappt die Original-Versionshinweise im selben Fenster auf; externe Inhalte werden als begrenzter Klartext ohne aktive Links angezeigt. Fehlende Hinweise und fehlgeschlagene Prüfungen bleiben ausdrücklich erkennbar.
 - Die Druckvorschau zeigt zusätzlich den Drucker und die tatsächlich geladenen Druckvorgaben. Nach Änderungen steht „Eigene Einstellungen“; eine bloße Auswahl in der Vorlagenliste gilt noch nicht als Laden. Seitenzahl, Exemplare und Papierbedarf bleiben in derselben Übersicht.
-- Alle 20 Oberflächensprachen; Versionshinweise werden in der vom Herausgeber gelieferten Sprache angezeigt. Lokal vorbereitet, noch nicht veröffentlicht oder persönlich installiert.
+- Alle 20 Oberflächensprachen; Versionshinweise werden in der vom Herausgeber gelieferten Sprache angezeigt.
 
 ### Neu in 1.77.0: Ein gemeinsames Updatefenster
 
@@ -175,7 +175,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.77.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.78.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -185,7 +185,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.77.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.78.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
