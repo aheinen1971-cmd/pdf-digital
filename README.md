@@ -1,10 +1,10 @@
-# PDF Digital 1.81.0 für Windows
+# PDF Digital 1.82.0 für Windows
 
 **Alles finden und bearbeiten**
 
-### Vorbereitet: Aufgeräumter Info-Reiter
+### Neu in 1.82.0: Aufgeräumter Info-Reiter
 
-Ein einzelner **Info**-Knopf öffnet die fünf bisherigen Einträge als Menü: Programminfo, Update-Info, Offline-Bereitschaft, Update vom USB-Stick und Update für USB speichern. Alle bestehenden Funktionen und Übersetzungen bleiben erhalten. Noch nicht veröffentlicht.
+Ein einzelner **Info**-Knopf öffnet die fünf bisherigen Einträge als Menü: Programminfo, Update-Info, Offline-Bereitschaft, Update vom USB-Stick und Update für USB speichern. Alle bestehenden Funktionen und Übersetzungen bleiben erhalten.
 
 ### Neu in 1.81.0: Druckschutz, Ergebnisbeschreibung und Druckwerte zurücksetzen
 
@@ -198,7 +198,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 ## Starten
 
-1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.81.0.exe` starten.
+1. Windows-ZIP vollständig entpacken und `PDF-Werkbank-1.82.0.exe` starten.
 2. Beim ersten Start den Download der Laufzeitpakete bestätigen. Der
    Starter lädt rund 200 MB aus den in `DEPENDENCIES.tsv` dokumentierten
    Originalquellen und prüft jede Datei mit SHA-256. Die Einrichtung
@@ -208,7 +208,7 @@ speichert und druckt ohne Demo-Wasserzeichen.
 
 Voraussetzungen sind ein 64-Bit-Windows-PC (x86-64), .NET Framework 4.8
 und eine Internetverbindung bei der ersten Einrichtung. Die Dateien liegen
-standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.81.0`.
+standardmäßig unter `%LOCALAPPDATA%\PDF Werkbank\GitHub\1.82.0`.
 Eine eigene Python- oder Qt-Installation ist nicht nötig.
 
 Für **Verbessern → KI-Textvorschläge** lädt die App nach eigener Bestätigung
