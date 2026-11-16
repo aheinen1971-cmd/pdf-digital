@@ -1421,7 +1421,9 @@
     "Druckauftrag wird übergeben …": "Submitting print job …",
     "Update": "Update",
     "Weitere Möglichkeiten": "More options",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Try again later or use “More options → Update from USB”."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Try again later or use “More options → Update from USB”.",
+    "Werkzeuge suchen": "Find tools",
+    "Keine passenden Werkzeuge.": "No matching tools."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2845,7 +2847,9 @@
     "Druckauftrag wird übergeben …": "Envoi de la tâche d’impression…",
     "Update": "Mise à jour",
     "Weitere Möglichkeiten": "Autres possibilités",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Réessayez plus tard ou utilisez « Autres possibilités → Mise à jour depuis une clé USB »."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Réessayez plus tard ou utilisez « Autres possibilités → Mise à jour depuis une clé USB ».",
+    "Werkzeuge suchen": "Rechercher des outils",
+    "Keine passenden Werkzeuge.": "Aucun outil correspondant."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4269,7 +4273,9 @@
     "Druckauftrag wird übergeben …": "Enviando trabajo de impresión…",
     "Update": "Actualizar",
     "Weitere Möglichkeiten": "Más opciones",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Inténtalo más tarde o usa « Más opciones → Actualizar desde USB »."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Inténtalo más tarde o usa « Más opciones → Actualizar desde USB ».",
+    "Werkzeuge suchen": "Buscar herramientas",
+    "Keine passenden Werkzeuge.": "No hay herramientas coincidentes."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5693,7 +5699,9 @@
     "Druckauftrag wird übergeben …": "Afdruktaak wordt verzonden…",
     "Update": "Update",
     "Weitere Möglichkeiten": "Meer mogelijkheden",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Probeer het later opnieuw of gebruik “Meer mogelijkheden → Update vanaf USB”."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Probeer het later opnieuw of gebruik “Meer mogelijkheden → Update vanaf USB”.",
+    "Werkzeuge suchen": "Gereedschappen zoeken",
+    "Keine passenden Werkzeuge.": "Geen passende gereedschappen."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7117,7 +7125,9 @@
     "Druckauftrag wird übergeben …": "Invio del lavoro di stampa…",
     "Update": "Aggiornamento",
     "Weitere Möglichkeiten": "Altre opzioni",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Riprova più tardi oppure usa « Altre opzioni → Aggiornamento da USB »."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Riprova più tardi oppure usa « Altre opzioni → Aggiornamento da USB ».",
+    "Werkzeuge suchen": "Cerca strumenti",
+    "Keine passenden Werkzeuge.": "Nessuno strumento corrispondente."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8541,7 +8551,9 @@
     "Druckauftrag wird übergeben …": "A enviar o trabalho de impressão…",
     "Update": "Atualização",
     "Weitere Möglichkeiten": "Mais opções",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Tenta novamente mais tarde ou utiliza « Mais opções → Atualização por USB »."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Tenta novamente mais tarde ou utiliza « Mais opções → Atualização por USB ».",
+    "Werkzeuge suchen": "Procurar ferramentas",
+    "Keine passenden Werkzeuge.": "Nenhuma ferramenta correspondente."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9965,7 +9977,9 @@
     "Druckauftrag wird übergeben …": "Przekazywanie zadania drukowania…",
     "Update": "Aktualizacja",
     "Weitere Möglichkeiten": "Więcej możliwości",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Spróbuj ponownie później lub wybierz „Więcej możliwości → Aktualizacja z USB”."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Spróbuj ponownie później lub wybierz „Więcej możliwości → Aktualizacja z USB”.",
+    "Werkzeuge suchen": "Szukaj narzędzi",
+    "Keine passenden Werkzeuge.": "Brak pasujących narzędzi."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11389,7 +11403,9 @@
     "Druckauftrag wird übergeben …": "Odesílání tiskové úlohy…",
     "Update": "Aktualizace",
     "Weitere Möglichkeiten": "Další možnosti",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Zkuste to později nebo použijte „Další možnosti → Aktualizace z USB“."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Zkuste to později nebo použijte „Další možnosti → Aktualizace z USB“.",
+    "Werkzeuge suchen": "Hledat nástroje",
+    "Keine passenden Werkzeuge.": "Žádné odpovídající nástroje."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12813,7 +12829,9 @@
     "Druckauftrag wird übergeben …": "Sender udskriftsjob…",
     "Update": "Opdatering",
     "Weitere Möglichkeiten": "Flere muligheder",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igen senere, eller brug »Flere muligheder → Opdatering fra USB«."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igen senere, eller brug »Flere muligheder → Opdatering fra USB«.",
+    "Werkzeuge suchen": "Find værktøjer",
+    "Keine passenden Werkzeuge.": "Ingen matchende værktøjer."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14237,7 +14255,9 @@
     "Druckauftrag wird übergeben …": "Skickar utskriftsjobb…",
     "Update": "Uppdatering",
     "Weitere Möglichkeiten": "Fler alternativ",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Försök igen senare eller använd ”Fler alternativ → Uppdatering från USB”."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Försök igen senare eller använd ”Fler alternativ → Uppdatering från USB”.",
+    "Werkzeuge suchen": "Sök verktyg",
+    "Keine passenden Werkzeuge.": "Inga matchande verktyg."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15661,7 +15681,9 @@
     "Druckauftrag wird übergeben …": "Sender utskriftsjobb…",
     "Update": "Oppdatering",
     "Weitere Möglichkeiten": "Flere muligheter",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igjen senere eller bruk «Flere muligheter → Oppdatering fra USB»."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Prøv igjen senere eller bruk «Flere muligheter → Oppdatering fra USB».",
+    "Werkzeuge suchen": "Finn verktøy",
+    "Keine passenden Werkzeuge.": "Ingen samsvarende verktøy."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -17085,7 +17107,9 @@
     "Druckauftrag wird übergeben …": "Lähetetään tulostustyötä…",
     "Update": "Päivitys",
     "Weitere Möglichkeiten": "Lisää vaihtoehtoja",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Yritä myöhemmin uudelleen tai valitse ”Lisää vaihtoehtoja → Päivitys USB:ltä”."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Yritä myöhemmin uudelleen tai valitse ”Lisää vaihtoehtoja → Päivitys USB:ltä”.",
+    "Werkzeuge suchen": "Etsi työkaluja",
+    "Keine passenden Werkzeuge.": "Ei vastaavia työkaluja."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18509,7 +18533,9 @@
     "Druckauftrag wird übergeben …": "Yazdırma işi gönderiliyor…",
     "Update": "Güncelleme",
     "Weitere Möglichkeiten": "Diğer seçenekler",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Daha sonra tekrar deneyin veya “Diğer seçenekler → USB’den güncelleme” yolunu kullanın."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Daha sonra tekrar deneyin veya “Diğer seçenekler → USB’den güncelleme” yolunu kullanın.",
+    "Werkzeuge suchen": "Araçları ara",
+    "Keine passenden Werkzeuge.": "Eşleşen araç yok."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19933,7 +19959,9 @@
     "Druckauftrag wird übergeben …": "Передавання завдання друку…",
     "Update": "Оновлення",
     "Weitere Möglichkeiten": "Інші можливості",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Спробуйте пізніше або виберіть «Інші можливості → Оновлення з USB»."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Спробуйте пізніше або виберіть «Інші можливості → Оновлення з USB».",
+    "Werkzeuge suchen": "Знайти інструменти",
+    "Keine passenden Werkzeuge.": "Відповідних інструментів немає."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21357,7 +21385,9 @@
     "Druckauftrag wird übergeben …": "Αποστολή εργασίας εκτύπωσης…",
     "Update": "Ενημέρωση",
     "Weitere Möglichkeiten": "Περισσότερες επιλογές",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Δοκιμάστε αργότερα ή επιλέξτε «Περισσότερες επιλογές → Ενημέρωση από USB»."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "Δοκιμάστε αργότερα ή επιλέξτε «Περισσότερες επιλογές → Ενημέρωση από USB».",
+    "Werkzeuge suchen": "Αναζήτηση εργαλείων",
+    "Keine passenden Werkzeuge.": "Δεν βρέθηκαν αντίστοιχα εργαλεία."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22781,7 +22811,9 @@
     "Druckauftrag wird übergeben …": "印刷ジョブを送信中…",
     "Update": "更新",
     "Weitere Möglichkeiten": "その他のオプション",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "後でもう一度試すか、「その他のオプション → USBから更新」を使用してください。"
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "後でもう一度試すか、「その他のオプション → USBから更新」を使用してください。",
+    "Werkzeuge suchen": "ツールを検索",
+    "Keine passenden Werkzeuge.": "一致するツールはありません。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -24205,7 +24237,9 @@
     "Druckauftrag wird übergeben …": "인쇄 작업 전송 중…",
     "Update": "업데이트",
     "Weitere Möglichkeiten": "추가 옵션",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "나중에 다시 시도하거나 “추가 옵션 → USB에서 업데이트”를 사용하세요."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "나중에 다시 시도하거나 “추가 옵션 → USB에서 업데이트”를 사용하세요.",
+    "Werkzeuge suchen": "도구 검색",
+    "Keine passenden Werkzeuge.": "일치하는 도구가 없습니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25629,7 +25663,9 @@
     "Druckauftrag wird übergeben …": "جارٍ إرسال مهمة الطباعة…",
     "Update": "تحديث",
     "Weitere Möglichkeiten": "خيارات إضافية",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "حاول لاحقًا أو استخدم «خيارات إضافية ← التحديث من USB»."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "حاول لاحقًا أو استخدم «خيارات إضافية ← التحديث من USB».",
+    "Werkzeuge suchen": "البحث عن أدوات",
+    "Keine passenden Werkzeuge.": "لا توجد أدوات مطابقة."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -27053,6 +27089,8 @@
     "Druckauftrag wird übergeben …": "שליחת משימת ההדפסה…",
     "Update": "עדכון",
     "Weitere Möglichkeiten": "אפשרויות נוספות",
-    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "נסה שוב מאוחר יותר או השתמש ב״אפשרויות נוספות ← עדכון מ־USB״."
+    "Versuche es später erneut oder nutze „Weitere Möglichkeiten → Update vom USB-Stick“.": "נסה שוב מאוחר יותר או השתמש ב״אפשרויות נוספות ← עדכון מ־USB״.",
+    "Werkzeuge suchen": "חיפוש כלים",
+    "Keine passenden Werkzeuge.": "לא נמצאו כלים מתאימים."
   }
 }

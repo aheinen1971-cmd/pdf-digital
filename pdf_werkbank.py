@@ -1383,6 +1383,8 @@ class Window(QMainWindow):
         self.common_tasks_action = self.favorite_toolbar.addAction(self.ui("Häufige Aufgaben"))
         self.common_tasks_action.setObjectName("commonTasksShortcut")
         self.common_tasks_action.triggered.connect(self.common_tasks)
+        self.tool_search_action = self.favorite_toolbar.addAction(self.ui("Werkzeuge suchen"))
+        self.tool_search_action.triggered.connect(self.search_tools)
         self.populate_favorite_menu()
         self.refresh_favorites()
 
@@ -1441,6 +1443,57 @@ class Window(QMainWindow):
             raise OSError(self.ui("Die Einträge konnten nicht gespeichert werden."))
         self.favorite_keys = list(keys)
         self.refresh_favorites()
+
+    def search_tools(self):
+        self.profile_commands()
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.ui("Werkzeuge suchen"))
+        dialog.setLayoutDirection(self.layoutDirection())
+        layout = QVBoxLayout(dialog)
+        search = QLineEdit()
+        search.setObjectName("toolSearchQuery")
+        search.setPlaceholderText(self.ui("Suchen"))
+        search.setAccessibleName(self.ui("Werkzeuge suchen"))
+        search.setClearButtonEnabled(True)
+        layout.addWidget(search)
+        rows = QListWidget()
+        rows.setObjectName("toolSearchResults")
+        layout.addWidget(rows)
+        empty = QLabel(self.ui("Keine passenden Werkzeuge."))
+        layout.addWidget(empty)
+        buttons = QDialogButtonBox()
+        run = buttons.addButton(self.ui("Öffnen"), QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.addButton(self.ui("Abbrechen"), QDialogButtonBox.ButtonRole.RejectRole)
+        layout.addWidget(buttons)
+        commands = dict(self.favorite_commands)
+        commands['update-center'] = ("Update", self.open_update_center)
+        def normalize(value):
+            folded = unicodedata.normalize('NFKD', value.casefold()).replace('ı', 'i')
+            return ''.join(ch for ch in folded if not unicodedata.combining(ch))
+        def fill(query):
+            rows.clear()
+            tokens = normalize(query).split()
+            for key, (label, callback) in commands.items():
+                text = (self.ui("Gespeicherte Abläufe") + " · " + key[8:]) if key.startswith('profile:') else self.ui(label)
+                if all(token in normalize(text) for token in tokens):
+                    item = QListWidgetItem(text)
+                    item.setData(Qt.ItemDataRole.UserRole, key)
+                    rows.addItem(item)
+            rows.setCurrentRow(-1)
+            run.setEnabled(False)
+            empty.setVisible(rows.count() == 0)
+        rows.currentItemChanged.connect(lambda current, previous: run.setEnabled(current is not None))
+        rows.itemDoubleClicked.connect(lambda item: dialog.accept())
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        search.textChanged.connect(fill)
+        fill("")
+        dialog.resize(580, 520)
+        search.setFocus()
+        if dialog.exec() == QDialog.DialogCode.Accepted and rows.currentItem():
+            callback = commands[rows.currentItem().data(Qt.ItemDataRole.UserRole)][1]
+            dialog.hide()
+            callback()
 
     def customize_toolbar(self):
         self.profile_commands()

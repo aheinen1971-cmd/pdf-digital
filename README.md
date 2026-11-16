@@ -2,6 +2,10 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Werkzeugsuche
+
+**Werkzeuge suchen** in der Werkzeugleiste durchsucht den vorhandenen Werkzeugkatalog und gespeicherte Abläufe in der gewählten Oberflächensprache. Mehrere Suchwörter werden gemeinsam berücksichtigt; Groß-/Kleinschreibung und Akzente stören die Suche nicht. Erst eine ausdrückliche Auswahl mit **Öffnen** oder Doppelklick startet das vorhandene Werkzeug. Favoriten und ihre Reihenfolge bleiben erhalten. Alle 20 Sprachen; noch nicht veröffentlicht.
+
 ### Neu in 1.83.0: Ein zentraler Update-Knopf
 
 Im Info-Reiter öffnet **Update** das bestehende gemeinsame Updatefenster. Es zeigt installierte/verfügbare Version, Updatesuche, Fortschritt und Ergebnis. **Weitere Möglichkeiten** ist zunächst eingeklappt und enthält USB-Import, USB-Export, Update-Info mit technischen Prüfdetails sowie den Update-Ordner. Die bisherigen separaten Updateeinträge in Einstellungen und Programminfo entfallen. Laufende Vorgänge behalten beim erneuten Öffnen ihren Zustand; konkurrierende Aktionen sind während Suche, Vorbereitung und offener Bestätigung gesperrt. Alle 20 Oberflächensprachen.
