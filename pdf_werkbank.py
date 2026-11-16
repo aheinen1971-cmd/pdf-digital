@@ -1102,7 +1102,7 @@ class Window(QMainWindow):
         self.tools.setDrawBase(False)
         self.tools.setExpanding(False)
         self.groups = [
-            ("Datei", [("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
+            ("Datei", [("Häufige Aufgaben", self.common_tasks), ("Öffnen", self.open_files), ("Kopie speichern", self.save), ("Drucken", self.print_dialog),
                        ("Vergleichen und speichern", self.compare_and_save),
                        ("Einstellungen übertragen", self.transfer_preferences), ("Arbeitsstand sichern", self.work_backup), ("Explorer-Befehle einrichten", self.configure_explorer),
                        ("Umzugsassistent", self.project_move_dialog),
@@ -1744,6 +1744,34 @@ class Window(QMainWindow):
         self.ribbon.addStretch()
         self.ribbon_scroll.setFixedHeight(self.ribbon.sizeHint().height()
                                           + self.ribbon_scroll.horizontalScrollBar().sizeHint().height())
+
+    def common_tasks(self):
+        dialog = QDialog(self)
+        dialog.setObjectName("commonTasks")
+        dialog.setWindowTitle(self.ui("Häufige Aufgaben"))
+        dialog.setLayoutDirection(self.layoutDirection())
+        layout = QVBoxLayout(dialog)
+        hint = QLabel(self.ui("Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF."))
+        hint.setWordWrap(True); layout.addWidget(hint)
+        tasks = [("PDF anhängen", "Eine weitere PDF an das geöffnete Dokument anhängen.", self.append),
+                 ("Seiten extrahieren", "Ausgewählte Seiten als eigene PDF speichern.", self.extract),
+                 ("OCR für das Dokument", "Scans durch Texterkennung durchsuchbar machen.", lambda: self.ocr(True)),
+                 ("Drucken", "Seitenvorschau und Druckeinstellungen öffnen.", self.print_dialog)]
+        chosen = []
+        for index, (title, description, action) in enumerate(tasks):
+            button = QPushButton(self.ui(title)); button.setObjectName("commonTask" + str(index))
+            layout.addWidget(button)
+            label = QLabel(self.ui(description)); label.setWordWrap(True); layout.addWidget(label)
+            button.clicked.connect(lambda checked=False, run=action: (chosen.append(run), dialog.accept()))
+        close = QPushButton(self.ui("Abbrechen")); close.clicked.connect(dialog.reject); layout.addWidget(close)
+        dialog.resize(520, 470)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        dialog.deleteLater()
+        if accepted and chosen:
+            if not self.current:
+                self.open_files()
+            if self.current:
+                chosen[0]()
 
     def open_files(self):
         paths, _ = QFileDialog.getOpenFileNames(self, self.ui("PDF öffnen"), "", self.ui("PDF-Dateien (*.pdf)"))
@@ -10675,13 +10703,14 @@ class Window(QMainWindow):
             printer.setDuplex(QPrinter.DuplexMode.DuplexLongSide)
         printer.setDocName(session.path.name)
         try:
-            result = self.print_preview_setup(session.doc, printer, devices)
+            def submit(selected_printer, indices):
+                selected_printer.setDocName(session.path.name)
+                selected_printer.setPrintRange(QPrinter.PrintRange.AllPages)
+                print_pages(session.doc, selected_printer, indices)
+            result = self.print_preview_setup(session.doc, printer, devices, submit=submit)
             if result is None:
                 return
             printer, indices = result
-            printer.setDocName(session.path.name)
-            printer.setPrintRange(QPrinter.PrintRange.AllPages)
-            print_pages(session.doc, printer, indices)
         except Exception as exc:
             self.error(exc)
             return
@@ -10689,7 +10718,7 @@ class Window(QMainWindow):
             self.favorite_settings.setValue("samsung_printer", printer.printerName())
         self.statusBar().showMessage(self.ui("Druckauftrag übergeben."), 6500)
 
-    def print_preview_setup(self, doc, printer, devices):
+    def print_preview_setup(self, doc, printer, devices, submit=None):
         """Preview first; no printer output until the explicit final confirmation."""
         dialog = QDialog(self)
         dialog.setObjectName("printSetup")
@@ -10819,13 +10848,16 @@ class Window(QMainWindow):
         for button in (named_save, named_load, named_delete): named_row.addWidget(button)
         form.addRow(named_buttons)
         notice = QLabel(); notice.setObjectName("printNotice"); notice.setWordWrap(True)
-        form.addRow(notice)
+        outer.addWidget(notice)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         go = buttons.button(QDialogButtonBox.StandardButton.Ok)
         go.setObjectName("printSubmit"); go.setText(self.ui("Jetzt drucken"))
         buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(self.ui("Abbrechen"))
         outer.addWidget(buttons)
-        buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject)
+        buttons.rejected.connect(dialog.reject)
+        failure_detail = QLabel(); failure_detail.setObjectName("printFailure")
+        failure_detail.setTextFormat(Qt.TextFormat.PlainText); failure_detail.setWordWrap(True)
+        outer.insertWidget(outer.indexOf(buttons), failure_detail)
         position, selected = 0, []
         excluded = set()
         applied_preset_name, applied_preset_values = "", None
@@ -10874,7 +10906,7 @@ class Window(QMainWindow):
             position = 0 if reset else min(position, max(0, len(sheets) - 1))
             previous.setEnabled(position > 0); following.setEnabled(position + 1 < len(sheets))
             count.setText(self.ui_format("Blatt {0} von {1}", position + 1 if sheets else 0, len(sheets)))
-            notice.setText(self.ui("Die Auswahl enthält keine Seiten.") if not sheets else (self.ui("Windows meldet keinen installierten Drucker.") if not devices else ""))
+            notice.setText(self.ui("Die Auswahl enthält keine Seiten.") if not sheets else (self.ui("Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.") if not devices else ""))
             go.setEnabled(bool(sheets) and bool(devices))
             try:
                 clipped = False
@@ -11042,6 +11074,21 @@ class Window(QMainWindow):
             nonlocal position
             position += delta; render()
 
+        def submit_print():
+            render()
+            if not go.isEnabled():
+                return
+            go.setEnabled(False)
+            try:
+                if submit is not None:
+                    submit(printer, selected)
+            except Exception as exc:
+                failure_detail.setText(self.ui("Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.") + "\n" + str(exc)[:2000])
+                render()
+                return
+            dialog.accept()
+
+        buttons.accepted.connect(submit_print)
         sync_printer(); load_settings(); refresh_named()
         named_save.clicked.connect(save_named); named_save.setEnabled(bool(devices))
         named_load.clicked.connect(load_named); named_delete.clicked.connect(delete_named)
@@ -11301,6 +11348,11 @@ class Window(QMainWindow):
             self.statusBar().showMessage(self.ui("Ein Update wird bereits vorbereitet."), 8000)
             return
         version, digest, size = update
+        try:
+            automatic_backup(self.favorite_settings, self.measurement_store(), '.'.join(map(str, VERSION)), version, refresh=True)
+        except Exception as exc:
+            panel.display(self.ui("Das Update konnte nicht vorbereitet werden."), detail=str(exc))
+            return
         worker = Path(__file__).with_name("update_worker.py")
         process = QProcess(self)
         self.update_process = process

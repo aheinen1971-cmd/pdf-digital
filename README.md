@@ -2,6 +2,12 @@
 
 **Alles finden und bearbeiten**
 
+### Vorbereitet: Einstellungen beim Update, Druckhilfe und häufige Aufgaben
+
+- Die versionsunabhängigen Einstellungen bleiben weiter erhalten. Die automatische Sicherung umfasst zusätzlich Oberflächensprache, Standarddruckvorgaben und benannte Druckvorlagen; Werkzeugleiste und Lesestellen waren bereits enthalten. Auch vor der Online-Updatevorbereitung wird die Sicherung geprüft. Bei einem Sicherungsfehler startet die Vorbereitung nicht. Bestehende Sicherungen bleiben lesbar; eine Wiederherstellung erfolgt ausdrücklich über den vorhandenen Sicherungsdialog.
+- Druckfehler erscheinen direkt im offenen Druckfenster. Auswahl und Einstellungen bleiben für einen bewussten erneuten Versuch erhalten. Der Hinweis fordert zur Prüfung von Drucker und Warteschlange auf, weil nach einem Fehler bereits einzelne Seiten gedruckt sein können. Fehlende Drucker werden mit einem konkreten nächsten Schritt erklärt.
+- **Datei → Häufige Aufgaben** bündelt PDF anhängen, Seiten extrahieren, Texterkennung und Drucken mit kurzen Beschreibungen. Ohne geöffnetes Dokument wird zuerst eine PDF ausgewählt; Abbrechen führt keine Aufgabe aus.
+- Alle 20 Oberflächensprachen. Lokal vorbereitet; noch nicht veröffentlicht oder persönlich installiert. Kein physischer Papierdruck im Test.
 ### Neu in 1.78.0: Versionsvergleich und Druckübersicht
 
 - Das gemeinsame Updatefenster zeigt installierte und verfügbare Version direkt an. „Was ist neu?“ klappt die Original-Versionshinweise im selben Fenster auf; externe Inhalte werden als begrenzter Klartext ohne aktive Links angezeigt. Fehlende Hinweise und fehlgeschlagene Prüfungen bleiben ausdrücklich erkennbar.

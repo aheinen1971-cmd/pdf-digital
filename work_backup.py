@@ -40,6 +40,32 @@ HEX = r"[a-f0-9]{64}"
 PERSONAL_KEYS = {"snippets": "personal/snippets", "reading": "personal/reading", "workspaces": "workspace/maps"}
 
 
+def validate_update_preferences(values):
+    """Only inert, bounded UI preferences; never restore update paths or trust settings."""
+    if not isinstance(values, dict) or len(values) > 201:
+        raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+    for key, value in values.items():
+        if not isinstance(value, str):
+            raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+        if key == "view/language":
+            if value not in {"de", "en-US", "fr", "es-ES", "nl", "it", "pt-PT", "pl", "cs", "da", "sv-SE", "nb-NO", "fi", "tr", "uk", "el", "ja", "ko", "ar", "he"}:
+                raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+        elif re.fullmatch(r"print/(?:preset|named)/[a-f0-9]{64}", key):
+            limit = 4096 if key.startswith("print/preset/") else 256 * 1024
+            if len(value.encode("utf-8")) > limit or not isinstance(json.loads(value), dict):
+                raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+        else:
+            raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+    if len(json.dumps(values).encode("utf-8")) > 2 * 1024 * 1024:
+        raise ValueError("Ungültige Darstellungseinstellung im Backup.")
+    return values
+
+
+def capture_update_preferences(settings):
+    return validate_update_preferences({key: settings.value(key, "", str) for key in settings.allKeys()
+        if key == "view/language" or re.fullmatch(r"print/(?:preset|named)/[a-f0-9]{64}", key)})
+
+
 def validate_tabs(records):
     if not isinstance(records, list) or len(records) > 100:
         raise ValueError("Ungültige persönliche Sicherungsdaten.")
@@ -284,6 +310,7 @@ def write_backup(target, settings, root, password=None):
                                       "form_templates": form_templates(settings),
                                       "scan_form_templates": scan_form_templates(settings),
                                       "dark_mode": settings.value("view/dark-mode", False, bool),
+                                      "update_preferences": capture_update_preferences(settings),
                                       "locations": capture_locations(settings),
                                       "archive_root": settings.value("invoice-watch/archive", "", str)},
                                      ensure_ascii=False).encode("utf-8")
@@ -393,9 +420,11 @@ def read_backup_zip(source):
             raise ValueError("Ungültige Darstellungseinstellung im Backup.")
         locations = validate_locations(metadata.get("locations", {}))
         personal = validate_personal(metadata.get("personal", {}))
+        update_preferences = validate_update_preferences(metadata.get("update_preferences", {}))
     return {"settings": groups, "plans": plans, "archive": history, "plan_times": times,
             "archive_root": archive_root, "form_templates": templates, "scan_form_templates": scan_templates,
-            "locations": locations, "dark_mode": dark_mode, "personal": personal}
+            "locations": locations, "dark_mode": dark_mode, "personal": personal,
+            "update_preferences": update_preferences}
 
 
 def restore_backup(data, selection, settings, root, mapped=None):
@@ -412,6 +441,7 @@ def restore_backup(data, selection, settings, root, mapped=None):
             settings.sync()
             raise OSError("Die Einträge konnten nicht gespeichert werden.")
     if "settings" in selection:
+        update_preferences = validate_update_preferences(data.get("update_preferences", {}))
         templates = data.get("form_templates")
         scan_templates = data.get("scan_form_templates")
         merged_scan = validate_scan_templates({**scan_form_templates(settings), **scan_templates}) if scan_templates else None
@@ -422,6 +452,8 @@ def restore_backup(data, selection, settings, root, mapped=None):
             settings.setValue(SCAN_FORM_TEMPLATES, json.dumps(merged_scan, ensure_ascii=False))
         if data.get("dark_mode") is not None:
             settings.setValue("view/dark-mode", data["dark_mode"])
+        for key, value in update_preferences.items():
+            settings.setValue(key, value)
         import_groups(settings, data["settings"])
     if "archive" in selection:
         for key, value in data["archive"].items():
@@ -491,6 +523,12 @@ def backup_preview(data, settings, root):
     rows = [("Einstellungen", GROUPS[key], "Bereits gleich" if value == local_groups.get(key)
              else "Übernehmen – ersetzt die lokalen Einstellungen dieser Gruppe")
             for key, value in data["settings"].items()]
+    extra = validate_update_preferences(data.get("update_preferences", {}))
+    for prefix, label in (("view/language", "Sprache"), ("print/preset/", "Gespeicherte Druckvorgabe"), ("print/named/", "Benannte Druckvorlagen")):
+        values = {key: value for key, value in extra.items() if key.startswith(prefix)}
+        if values:
+            rows.append(("Einstellungen", label, "Bereits gleich" if all(settings.value(key) == value for key, value in values.items())
+                         else "Übernehmen – ersetzt die lokalen Einstellungen dieser Gruppe"))
     local = capture_personal(settings)
     incoming = validate_personal(data.get("personal", {}))
     for key, label in (("snippets", "Textbausteine"), ("reading", "Lesestellen"), ("workspaces", "Arbeitsmappen")):
@@ -546,6 +584,10 @@ def reminder_date(value):
 
 def backup_check_rows(data):
     rows = [("Einstellungen", GROUPS[key], "Lesbar") for key in data["settings"]]
+    extra = validate_update_preferences(data.get("update_preferences", {}))
+    for prefix, label in (("view/language", "Sprache"), ("print/preset/", "Gespeicherte Druckvorgabe"), ("print/named/", "Benannte Druckvorlagen")):
+        if any(key.startswith(prefix) for key in extra):
+            rows.append(("Einstellungen", label, "Lesbar"))
     personal = validate_personal(data.get("personal", {}))
     rows.extend(("Textbausteine", item["name"], "Lesbar") for item in personal["snippets"])
     rows.extend(("Arbeitsmappen", name, "Lesbar") for name in personal["workspaces"])

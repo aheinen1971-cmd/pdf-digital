@@ -1400,7 +1400,16 @@
     "Keine Versionshinweise verfügbar.": "No release notes available.",
     "Eigene Einstellungen": "Custom settings",
     "Gespeicherte Druckvorgabe": "Saved print settings",
-    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nPrint preset: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nPrint preset: {1}",
+    "Häufige Aufgaben": "Common tasks",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Choose a task. If no document is open, choose a PDF first.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Append another PDF to the open document.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Save selected pages as a separate PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Make scans searchable with text recognition.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Open page preview and print settings.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "No printer available. Install or connect a printer in Windows and reopen Print.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Printing failed. Check the printer and queue before trying again; some pages may already have printed. Your selection is kept.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Language, toolbar, print presets and reading positions are backed up before switching versions."
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2803,7 +2812,16 @@
     "Keine Versionshinweise verfügbar.": "Aucune note de version disponible.",
     "Eigene Einstellungen": "Paramètres personnalisés",
     "Gespeicherte Druckvorgabe": "Paramètres d’impression enregistrés",
-    "Drucker: {0}\nDruckvorlage: {1}": "Imprimante : {0}\nPréréglage : {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Imprimante : {0}\nPréréglage : {1}",
+    "Häufige Aufgaben": "Tâches courantes",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Choisissez une tâche. Si aucun document n’est ouvert, choisissez d’abord un PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Ajouter un autre PDF au document ouvert.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Enregistrer les pages sélectionnées dans un PDF séparé.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Rendre les scans consultables par reconnaissance de texte.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Ouvrir l’aperçu des pages et les paramètres d’impression.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Aucune imprimante disponible. Installez ou connectez une imprimante dans Windows et rouvrez Imprimer.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Échec de l’impression. Vérifiez l’imprimante et la file avant de réessayer ; certaines pages ont peut-être déjà été imprimées. Votre sélection est conservée.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "La langue, la barre d’outils, les préréglages d’impression et les positions de lecture sont sauvegardés avant le changement de version."
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4206,7 +4224,16 @@
     "Keine Versionshinweise verfügbar.": "No hay notas de versión disponibles.",
     "Eigene Einstellungen": "Ajustes personalizados",
     "Gespeicherte Druckvorgabe": "Ajustes de impresión guardados",
-    "Drucker: {0}\nDruckvorlage: {1}": "Impresora: {0}\nPreajuste: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Impresora: {0}\nPreajuste: {1}",
+    "Häufige Aufgaben": "Tareas frecuentes",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Elige una tarea. Si no hay ningún documento abierto, selecciona primero un PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Añadir otro PDF al documento abierto.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Guardar las páginas seleccionadas como un PDF independiente.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Permitir búsquedas en escaneos mediante reconocimiento de texto.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Abrir la vista previa y los ajustes de impresión.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "No hay ninguna impresora disponible. Instala o conecta una impresora en Windows y vuelve a abrir Imprimir.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Error de impresión. Comprueba la impresora y la cola antes de reintentar; puede que algunas páginas ya se hayan impreso. Se conserva tu selección.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "El idioma, la barra de herramientas, los ajustes de impresión y los puntos de lectura se guardan antes de cambiar de versión."
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5609,7 +5636,16 @@
     "Keine Versionshinweise verfügbar.": "Geen releaseopmerkingen beschikbaar.",
     "Eigene Einstellungen": "Eigen instellingen",
     "Gespeicherte Druckvorgabe": "Opgeslagen afdrukinstellingen",
-    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nVoorinstelling: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nVoorinstelling: {1}",
+    "Häufige Aufgaben": "Veelgebruikte taken",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Kies een taak. Als er geen document open is, kies je eerst een PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Een andere PDF aan het geopende document toevoegen.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Geselecteerde pagina’s als afzonderlijke PDF opslaan.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Scans doorzoekbaar maken met tekstherkenning.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Paginavoorbeeld en afdrukinstellingen openen.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Geen printer beschikbaar. Installeer of verbind een printer in Windows en open Afdrukken opnieuw.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Afdrukken mislukt. Controleer de printer en wachtrij voordat je het opnieuw probeert; er kunnen al pagina’s zijn afgedrukt. Je selectie blijft behouden.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Taal, werkbalk, afdrukvoorinstellingen en leesposities worden vóór de versiewissel opgeslagen in een reservekopie."
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7012,7 +7048,16 @@
     "Keine Versionshinweise verfügbar.": "Note di versione non disponibili.",
     "Eigene Einstellungen": "Impostazioni personalizzate",
     "Gespeicherte Druckvorgabe": "Impostazioni di stampa salvate",
-    "Drucker: {0}\nDruckvorlage: {1}": "Stampante: {0}\nPreimpostazione: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Stampante: {0}\nPreimpostazione: {1}",
+    "Häufige Aufgaben": "Attività frequenti",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Scegli un’attività. Se non ci sono documenti aperti, scegli prima un PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Aggiungere un altro PDF al documento aperto.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Salvare le pagine selezionate come PDF separato.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Rendere ricercabili le scansioni con il riconoscimento del testo.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Aprire l’anteprima delle pagine e le impostazioni di stampa.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Nessuna stampante disponibile. Installa o collega una stampante in Windows e riapri Stampa.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Stampa non riuscita. Controlla la stampante e la coda prima di riprovare; alcune pagine potrebbero essere già state stampate. La selezione viene mantenuta.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Lingua, barra degli strumenti, preimpostazioni di stampa e posizioni di lettura vengono salvate prima del cambio di versione."
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8415,7 +8460,16 @@
     "Keine Versionshinweise verfügbar.": "Sem notas de versão disponíveis.",
     "Eigene Einstellungen": "Definições personalizadas",
     "Gespeicherte Druckvorgabe": "Definições de impressão guardadas",
-    "Drucker: {0}\nDruckvorlage: {1}": "Impressora: {0}\nPredefinição: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Impressora: {0}\nPredefinição: {1}",
+    "Häufige Aufgaben": "Tarefas frequentes",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Escolhe uma tarefa. Se não houver um documento aberto, escolhe primeiro um PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Acrescentar outro PDF ao documento aberto.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Guardar as páginas selecionadas num PDF separado.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Permitir pesquisas em digitalizações com reconhecimento de texto.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Abrir a pré-visualização e as definições de impressão.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Nenhuma impressora disponível. Instala ou liga uma impressora no Windows e volta a abrir Imprimir.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "A impressão falhou. Verifica a impressora e a fila antes de tentar novamente; algumas páginas poderão já ter sido impressas. A tua seleção é mantida.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "O idioma, a barra de ferramentas, as predefinições de impressão e as posições de leitura são guardados antes da mudança de versão."
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9818,7 +9872,16 @@
     "Keine Versionshinweise verfügbar.": "Brak informacji o wydaniu.",
     "Eigene Einstellungen": "Ustawienia własne",
     "Gespeicherte Druckvorgabe": "Zapisane ustawienia drukowania",
-    "Drucker: {0}\nDruckvorlage: {1}": "Drukarka: {0}\nSzablon druku: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Drukarka: {0}\nSzablon druku: {1}",
+    "Häufige Aufgaben": "Częste zadania",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Wybierz zadanie. Jeśli nie ma otwartego dokumentu, najpierw wybierz PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Dołącz kolejny PDF do otwartego dokumentu.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Zapisz wybrane strony jako osobny PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Umożliw wyszukiwanie w skanach dzięki rozpoznawaniu tekstu.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Otwórz podgląd stron i ustawienia drukowania.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Brak dostępnej drukarki. Zainstaluj lub podłącz drukarkę w Windows i ponownie otwórz Drukuj.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Drukowanie nie powiodło się. Sprawdź drukarkę i kolejkę przed ponowną próbą; niektóre strony mogły już zostać wydrukowane. Wybór zostaje zachowany.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Przed zmianą wersji tworzona jest kopia języka, paska narzędzi, ustawień drukowania i miejsc czytania."
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11221,7 +11284,16 @@
     "Keine Versionshinweise verfügbar.": "Poznámky k vydání nejsou k dispozici.",
     "Eigene Einstellungen": "Vlastní nastavení",
     "Gespeicherte Druckvorgabe": "Uložené nastavení tisku",
-    "Drucker: {0}\nDruckvorlage: {1}": "Tiskárna: {0}\nPředvolba: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Tiskárna: {0}\nPředvolba: {1}",
+    "Häufige Aufgaben": "Časté úlohy",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Vyberte úlohu. Pokud není otevřen dokument, nejprve vyberte PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Připojit další PDF k otevřenému dokumentu.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Uložit vybrané stránky jako samostatné PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Umožnit hledání ve skenech pomocí rozpoznávání textu.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Otevřít náhled stránek a nastavení tisku.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Není dostupná tiskárna. Nainstalujte nebo připojte tiskárnu ve Windows a znovu otevřete Tisk.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Tisk se nezdařil. Před dalším pokusem zkontrolujte tiskárnu a frontu; některé stránky již mohly být vytištěny. Výběr zůstane zachován.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Před změnou verze se zálohují jazyk, panel nástrojů, tiskové předvolby a místa čtení."
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12624,7 +12696,16 @@
     "Keine Versionshinweise verfügbar.": "Ingen versionsnoter tilgængelige.",
     "Eigene Einstellungen": "Egne indstillinger",
     "Gespeicherte Druckvorgabe": "Gemte udskriftsindstillinger",
-    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nForvalg: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Printer: {0}\nForvalg: {1}",
+    "Häufige Aufgaben": "Hyppige opgaver",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Vælg en opgave. Hvis intet dokument er åbent, skal du først vælge en PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Føj en anden PDF til det åbne dokument.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Gem valgte sider som en separat PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Gør scanninger søgbare med tekstgenkendelse.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Åbn sidevisning og udskriftsindstillinger.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen printer tilgængelig. Installer eller tilslut en printer i Windows, og åbn Udskriv igen.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Udskrivning mislykkedes. Kontroller printeren og køen før et nyt forsøg; nogle sider kan allerede være udskrevet. Dit valg bevares.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Sprog, værktøjslinje, udskriftsforvalg og læsesteder sikkerhedskopieres før versionsskiftet."
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14027,7 +14108,16 @@
     "Keine Versionshinweise verfügbar.": "Inga versionsanteckningar tillgängliga.",
     "Eigene Einstellungen": "Egna inställningar",
     "Gespeicherte Druckvorgabe": "Sparade utskriftsinställningar",
-    "Drucker: {0}\nDruckvorlage: {1}": "Skrivare: {0}\nFörval: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Skrivare: {0}\nFörval: {1}",
+    "Häufige Aufgaben": "Vanliga uppgifter",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Välj en uppgift. Om inget dokument är öppet väljer du först en PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Lägg till en annan PDF i det öppna dokumentet.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Spara valda sidor som en separat PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Gör skanningar sökbara med textigenkänning.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Öppna sidförhandsvisning och utskriftsinställningar.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen skrivare tillgänglig. Installera eller anslut en skrivare i Windows och öppna Skriv ut igen.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Utskriften misslyckades. Kontrollera skrivaren och kön innan du försöker igen; vissa sidor kan redan ha skrivits ut. Ditt val behålls.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Språk, verktygsfält, utskriftsförval och läspositioner säkerhetskopieras före versionsbytet."
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15430,7 +15520,16 @@
     "Keine Versionshinweise verfügbar.": "Ingen versjonsnotater tilgjengelige.",
     "Eigene Einstellungen": "Egne innstillinger",
     "Gespeicherte Druckvorgabe": "Lagrede utskriftsinnstillinger",
-    "Drucker: {0}\nDruckvorlage: {1}": "Skriver: {0}\nForvalg: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Skriver: {0}\nForvalg: {1}",
+    "Häufige Aufgaben": "Vanlige oppgaver",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Velg en oppgave. Hvis ingen dokumenter er åpne, velger du først en PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Legg til en annen PDF i det åpne dokumentet.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Lagre valgte sider som en egen PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Gjør skanninger søkbare med tekstgjenkjenning.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Åpne sideforhåndsvisning og utskriftsinnstillinger.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen skriver tilgjengelig. Installer eller koble til en skriver i Windows og åpne Skriv ut på nytt.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Utskriften mislyktes. Kontroller skriveren og køen før du prøver igjen; noen sider kan allerede være skrevet ut. Valget ditt beholdes.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Språk, verktøylinje, utskriftsforvalg og lesesteder sikkerhetskopieres før versjonsbyttet."
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -16833,7 +16932,16 @@
     "Keine Versionshinweise verfügbar.": "Julkaisutietoja ei ole saatavilla.",
     "Eigene Einstellungen": "Omat asetukset",
     "Gespeicherte Druckvorgabe": "Tallennetut tulostusasetukset",
-    "Drucker: {0}\nDruckvorlage: {1}": "Tulostin: {0}\nEsiasetus: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Tulostin: {0}\nEsiasetus: {1}",
+    "Häufige Aufgaben": "Yleiset tehtävät",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Valitse tehtävä. Jos asiakirjaa ei ole auki, valitse ensin PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Liitä toinen PDF avoimeen asiakirjaan.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Tallenna valitut sivut erillisenä PDF-tiedostona.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Tee skannauksista haettavia tekstintunnistuksella.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Avaa sivujen esikatselu ja tulostusasetukset.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Tulostinta ei ole käytettävissä. Asenna tai yhdistä tulostin Windowsissa ja avaa Tulosta uudelleen.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Tulostus epäonnistui. Tarkista tulostin ja jono ennen uutta yritystä; joitakin sivuja on ehkä jo tulostettu. Valintasi säilyy.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Kieli, työkalurivi, tulostuksen esiasetukset ja lukukohdat varmuuskopioidaan ennen version vaihtoa."
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18236,7 +18344,16 @@
     "Keine Versionshinweise verfügbar.": "Sürüm notları yok.",
     "Eigene Einstellungen": "Özel ayarlar",
     "Gespeicherte Druckvorgabe": "Kaydedilmiş yazdırma ayarları",
-    "Drucker: {0}\nDruckvorlage: {1}": "Yazıcı: {0}\nÖn ayar: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Yazıcı: {0}\nÖn ayar: {1}",
+    "Häufige Aufgaben": "Sık kullanılan görevler",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Bir görev seç. Açık belge yoksa önce bir PDF seç.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Açık belgeye başka bir PDF ekle.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Seçili sayfaları ayrı bir PDF olarak kaydet.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Metin tanıma ile taramaları aranabilir hale getir.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Sayfa önizlemesini ve yazdırma ayarlarını aç.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Kullanılabilir yazıcı yok. Windows’ta bir yazıcı kur veya bağla ve Yazdır’ı yeniden aç.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Yazdırma başarısız. Yeniden denemeden önce yazıcıyı ve kuyruğu kontrol et; bazı sayfalar zaten yazdırılmış olabilir. Seçimin korunur.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Sürüm değiştirilmeden önce dil, araç çubuğu, yazdırma ön ayarları ve okuma konumları yedeklenir."
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -19639,7 +19756,16 @@
     "Keine Versionshinweise verfügbar.": "Примітки до випуску недоступні.",
     "Eigene Einstellungen": "Власні налаштування",
     "Gespeicherte Druckvorgabe": "Збережені налаштування друку",
-    "Drucker: {0}\nDruckvorlage: {1}": "Принтер: {0}\nШаблон друку: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Принтер: {0}\nШаблон друку: {1}",
+    "Häufige Aufgaben": "Часті завдання",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Виберіть завдання. Якщо документ не відкрито, спочатку виберіть PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Додати інший PDF до відкритого документа.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Зберегти вибрані сторінки як окремий PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Зробити скани придатними для пошуку завдяки розпізнаванню тексту.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Відкрити попередній перегляд сторінок і параметри друку.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Немає доступного принтера. Установіть або підключіть принтер у Windows і знову відкрийте Друк.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Друк не вдався. Перед повторною спробою перевірте принтер і чергу; деякі сторінки вже могли бути надруковані. Ваш вибір зберігається.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Перед зміною версії створюється резервна копія мови, панелі інструментів, шаблонів друку та місць читання."
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21042,7 +21168,16 @@
     "Keine Versionshinweise verfügbar.": "Δεν υπάρχουν σημειώσεις έκδοσης.",
     "Eigene Einstellungen": "Προσαρμοσμένες ρυθμίσεις",
     "Gespeicherte Druckvorgabe": "Αποθηκευμένες ρυθμίσεις εκτύπωσης",
-    "Drucker: {0}\nDruckvorlage: {1}": "Εκτυπωτής: {0}\nΠρορύθμιση: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "Εκτυπωτής: {0}\nΠρορύθμιση: {1}",
+    "Häufige Aufgaben": "Συχνές εργασίες",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Επίλεξε μια εργασία. Αν δεν υπάρχει ανοιχτό έγγραφο, επίλεξε πρώτα ένα PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "Προσθήκη άλλου PDF στο ανοιχτό έγγραφο.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Αποθήκευση επιλεγμένων σελίδων ως ξεχωριστό PDF.",
+    "Scans durch Texterkennung durchsuchbar machen.": "Αναζήτηση σε σαρώσεις μέσω αναγνώρισης κειμένου.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "Άνοιγμα προεπισκόπησης σελίδων και ρυθμίσεων εκτύπωσης.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Δεν υπάρχει διαθέσιμος εκτυπωτής. Εγκατάστησε ή σύνδεσε έναν εκτυπωτή στα Windows και άνοιξε ξανά την Εκτύπωση.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "Η εκτύπωση απέτυχε. Έλεγξε τον εκτυπωτή και την ουρά πριν ξαναδοκιμάσεις· ορισμένες σελίδες ίσως έχουν ήδη εκτυπωθεί. Η επιλογή σου διατηρείται.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "Η γλώσσα, η γραμμή εργαλείων, οι προεπιλογές εκτύπωσης και οι θέσεις ανάγνωσης αποθηκεύονται σε αντίγραφο ασφαλείας πριν από την αλλαγή έκδοσης."
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22445,7 +22580,16 @@
     "Keine Versionshinweise verfügbar.": "リリースノートはありません。",
     "Eigene Einstellungen": "カスタム設定",
     "Gespeicherte Druckvorgabe": "保存済みの印刷設定",
-    "Drucker: {0}\nDruckvorlage: {1}": "プリンター：{0}\n印刷プリセット：{1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "プリンター：{0}\n印刷プリセット：{1}",
+    "Häufige Aufgaben": "よく使う操作",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "操作を選んでください。文書を開いていない場合は、先にPDFを選びます。",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "開いている文書に別のPDFを追加します。",
+    "Ausgewählte Seiten als eigene PDF speichern.": "選択したページを別のPDFとして保存します。",
+    "Scans durch Texterkennung durchsuchbar machen.": "文字認識でスキャンした文書を検索可能にします。",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "ページのプレビューと印刷設定を開きます。",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "利用できるプリンターがありません。Windowsでプリンターをインストールまたは接続し、印刷を開き直してください。",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "印刷に失敗しました。再試行する前にプリンターと印刷キューを確認してください。一部のページはすでに印刷されている可能性があります。選択内容は保持されます。",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "バージョンの切り替え前に、言語、ツールバー、印刷プリセット、読書位置をバックアップします。"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -23848,7 +23992,16 @@
     "Keine Versionshinweise verfügbar.": "릴리스 노트가 없습니다.",
     "Eigene Einstellungen": "사용자 설정",
     "Gespeicherte Druckvorgabe": "저장된 인쇄 설정",
-    "Drucker: {0}\nDruckvorlage: {1}": "프린터: {0}\n인쇄 프리셋: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "프린터: {0}\n인쇄 프리셋: {1}",
+    "Häufige Aufgaben": "자주 사용하는 작업",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "작업을 선택하세요. 열린 문서가 없으면 먼저 PDF를 선택합니다.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "열린 문서에 다른 PDF를 추가합니다.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "선택한 페이지를 별도의 PDF로 저장합니다.",
+    "Scans durch Texterkennung durchsuchbar machen.": "문자 인식으로 스캔 문서를 검색 가능하게 만듭니다.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "페이지 미리보기와 인쇄 설정을 엽니다.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "사용 가능한 프린터가 없습니다. Windows에서 프린터를 설치하거나 연결한 후 인쇄를 다시 여세요.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "인쇄에 실패했습니다. 다시 시도하기 전에 프린터와 대기열을 확인하세요. 일부 페이지는 이미 인쇄되었을 수 있습니다. 선택 내용은 유지됩니다.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "버전 전환 전에 언어, 도구 모음, 인쇄 사전 설정 및 읽기 위치를 백업합니다."
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25251,7 +25404,16 @@
     "Keine Versionshinweise verfügbar.": "لا توجد ملاحظات إصدار.",
     "Eigene Einstellungen": "إعدادات مخصصة",
     "Gespeicherte Druckvorgabe": "إعدادات الطباعة المحفوظة",
-    "Drucker: {0}\nDruckvorlage: {1}": "الطابعة: {0}\nإعداد الطباعة: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "الطابعة: {0}\nإعداد الطباعة: {1}",
+    "Häufige Aufgaben": "مهام شائعة",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "اختر مهمة. إذا لم يكن هناك مستند مفتوح، فاختر ملف PDF أولاً.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "إلحاق ملف PDF آخر بالمستند المفتوح.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "حفظ الصفحات المحددة كملف PDF مستقل.",
+    "Scans durch Texterkennung durchsuchbar machen.": "جعل المستندات الممسوحة قابلة للبحث باستخدام التعرف على النص.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "فتح معاينة الصفحات وإعدادات الطباعة.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "لا توجد طابعة متاحة. ثبّت طابعة أو صِلها في Windows ثم افتح الطباعة مجددًا.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "فشلت الطباعة. تحقّق من الطابعة وقائمة الانتظار قبل المحاولة مجددًا؛ ربما طُبعت بعض الصفحات بالفعل. سيُحتفظ باختيارك.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "تُحفظ نسخة احتياطية من اللغة وشريط الأدوات وقوالب الطباعة ومواضع القراءة قبل تبديل الإصدار."
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -26654,6 +26816,15 @@
     "Keine Versionshinweise verfügbar.": "אין הערות גרסה זמינות.",
     "Eigene Einstellungen": "הגדרות מותאמות",
     "Gespeicherte Druckvorgabe": "הגדרות הדפסה שמורות",
-    "Drucker: {0}\nDruckvorlage: {1}": "מדפסת: {0}\nתבנית הדפסה: {1}"
+    "Drucker: {0}\nDruckvorlage: {1}": "מדפסת: {0}\nתבנית הדפסה: {1}",
+    "Häufige Aufgaben": "משימות נפוצות",
+    "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "יש לבחור משימה. אם אין מסמך פתוח, יש לבחור תחילה PDF.",
+    "Eine weitere PDF an das geöffnete Dokument anhängen.": "הוספת PDF נוסף למסמך הפתוח.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "שמירת העמודים שנבחרו כקובץ PDF נפרד.",
+    "Scans durch Texterkennung durchsuchbar machen.": "הפיכת סריקות לניתנות לחיפוש באמצעות זיהוי טקסט.",
+    "Seitenvorschau und Druckeinstellungen öffnen.": "פתיחת תצוגה מקדימה של עמודים והגדרות הדפסה.",
+    "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "אין מדפסת זמינה. יש להתקין או לחבר מדפסת ב-Windows ולפתוח שוב את ההדפסה.",
+    "Drucken fehlgeschlagen. Prüfe Drucker und Warteschlange vor einem erneuten Versuch; möglicherweise wurden bereits Seiten gedruckt. Deine Auswahl bleibt erhalten.": "ההדפסה נכשלה. לפני ניסיון נוסף יש לבדוק את המדפסת ואת התור; ייתכן שחלק מהעמודים כבר הודפסו. הבחירה נשמרת.",
+    "Sprache, Werkzeugleiste, Druckvorlagen und Lesestellen werden vor dem Versionswechsel gesichert.": "השפה, סרגל הכלים, הגדרות ההדפסה ומיקומי הקריאה מגובים לפני החלפת הגרסה."
   }
 }
