@@ -1459,6 +1459,12 @@ class Window(QMainWindow):
         rows = QListWidget()
         rows.setObjectName("toolSearchResults")
         layout.addWidget(rows)
+        explanation = QLabel(self.ui("Wähle ein Werkzeug, um die Erklärung zu sehen."))
+        explanation.setObjectName("toolSearchExplanation")
+        explanation.setTextFormat(Qt.TextFormat.PlainText)
+        explanation.setWordWrap(True)
+        explanation.setAccessibleName(self.ui("Werkzeugerklärung"))
+        layout.addWidget(explanation)
         empty = QLabel(self.ui("Keine passenden Werkzeuge."))
         layout.addWidget(empty)
         buttons = QDialogButtonBox()
@@ -1467,6 +1473,31 @@ class Window(QMainWindow):
         layout.addWidget(buttons)
         commands = dict(self.favorite_commands)
         commands['update-center'] = ("Update", self.open_update_center)
+        descriptions = {
+            "Seiten extrahieren": "Ausgewählte Seiten als eigene PDF speichern.",
+            "PDF anhängen": "Eine weitere PDF an das aktuelle Dokument anhängen.",
+            "Scan-PDF verkleinern": "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.",
+            "OCR für das Dokument": "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.",
+            "Drucken": "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.",
+            "Kopie speichern": "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.",
+            "Update": "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.",
+        }
+        groups = {label: group for group, entries in self.groups for label, _ in entries}
+        def explain(current, previous=None):
+            run.setEnabled(current is not None)
+            if current is None:
+                explanation.setText(self.ui("Wähle ein Werkzeug, um die Erklärung zu sehen."))
+                return
+            key = current.data(Qt.ItemDataRole.UserRole)
+            label = commands[key][0]
+            if key.startswith('profile:'):
+                text = self.ui("Den ausgewählten gespeicherten Ablauf öffnen.")
+            elif label in descriptions:
+                text = self.ui(descriptions[label])
+            else:
+                group = groups.get(label)
+                text = self.ui_format("Bereich: {0}", self.ui(group)) if group else self.ui(label)
+            explanation.setText(text)
         # Localized everyday terms supplement labels; they never run a command.
         aliases = {
             "Seiten extrahieren": "Seiten rausnehmen herausnehmen herausholen abtrennen einzeln speichern",
@@ -1492,7 +1523,7 @@ class Window(QMainWindow):
             rows.setCurrentRow(-1)
             run.setEnabled(False)
             empty.setVisible(rows.count() == 0)
-        rows.currentItemChanged.connect(lambda current, previous: run.setEnabled(current is not None))
+        rows.currentItemChanged.connect(explain)
         rows.itemDoubleClicked.connect(lambda item: dialog.accept())
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)

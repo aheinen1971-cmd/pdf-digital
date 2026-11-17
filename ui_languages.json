@@ -1429,7 +1429,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "reduce file size compress smaller file",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "recognize text text recognition make scans searchable",
     "Papier ausdrucken Druckvorschau": "paper print out print preview",
-    "Speichern unter Datei kopieren neue Kopie": "save as copy file new copy"
+    "Speichern unter Datei kopieren neue Kopie": "save as copy file new copy",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Select a tool to see its explanation.",
+    "Werkzeugerklärung": "Tool explanation",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Append another PDF to the current document.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Reduce the size of a scanned PDF. Image quality may change.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Recognize text in scanned pages and make it searchable. Check the results afterwards.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Open the page preview and print settings before sending the print job.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Save the edited document as a PDF file. Check the destination name in the save dialog.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Check for a new program version and prepare the update.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Open the selected saved workflow.",
+    "Bereich: {0}": "Section: {0}"
   },
   "fr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 paysage, plié au milieu. Lors de l'impression recto verso, tournez sur le bord court.",
@@ -2836,7 +2846,7 @@
     "Häufige Aufgaben": "Tâches courantes",
     "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Choisissez une tâche. Si aucun document n’est ouvert, choisissez d’abord un PDF.",
     "Eine weitere PDF an das geöffnete Dokument anhängen.": "Ajouter un autre PDF au document ouvert.",
-    "Ausgewählte Seiten als eigene PDF speichern.": "Enregistrer les pages sélectionnées dans un PDF séparé.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Enregistrer les pages sélectionnées dans un PDF distinct.",
     "Scans durch Texterkennung durchsuchbar machen.": "Rendre les scans consultables par reconnaissance de texte.",
     "Seitenvorschau und Druckeinstellungen öffnen.": "Ouvrir l’aperçu des pages et les paramètres d’impression.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Aucune imprimante disponible. Installez ou connectez une imprimante dans Windows et rouvrez Imprimer.",
@@ -2861,7 +2871,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "réduire la taille du fichier compresser fichier plus petit",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "reconnaître le texte reconnaissance de texte rendre un scan consultable",
     "Papier ausdrucken Druckvorschau": "papier imprimer aperçu avant impression",
-    "Speichern unter Datei kopieren neue Kopie": "enregistrer sous copier le fichier nouvelle copie"
+    "Speichern unter Datei kopieren neue Kopie": "enregistrer sous copier le fichier nouvelle copie",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Sélectionnez un outil pour voir son explication.",
+    "Werkzeugerklärung": "Explication de l’outil",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Ajouter un autre PDF à la fin du document actuel.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Réduire la taille d’un PDF numérisé. La qualité des images peut changer.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Reconnaître le texte des pages numérisées et permettre sa recherche. Vérifier ensuite les résultats.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Ouvrir l’aperçu des pages et les réglages avant de lancer l’impression.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Enregistrer le document modifié dans un fichier PDF. Vérifier le nom de destination dans la boîte de dialogue.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Rechercher une nouvelle version du programme et préparer la mise à jour.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Ouvrir le processus enregistré sélectionné.",
+    "Bereich: {0}": "Rubrique : {0}"
   },
   "es-ES": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 horizontal, plegado por la mitad. Al imprimir por ambas caras, gire por el borde corto.",
@@ -4293,7 +4313,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "reducir tamaño del archivo comprimir archivo más pequeño",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "reconocer texto reconocimiento de texto buscar en documentos escaneados",
     "Papier ausdrucken Druckvorschau": "papel imprimir vista previa de impresión",
-    "Speichern unter Datei kopieren neue Kopie": "guardar como copiar archivo nueva copia"
+    "Speichern unter Datei kopieren neue Kopie": "guardar como copiar archivo nueva copia",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Selecciona una herramienta para ver su explicación.",
+    "Werkzeugerklärung": "Explicación de la herramienta",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Añadir otro PDF al final del documento actual.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Reducir el tamaño de un PDF escaneado. La calidad de imagen puede cambiar.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Reconocer texto en páginas escaneadas y permitir búsquedas. Revisar después los resultados.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Abrir la vista previa y los ajustes antes de enviar el trabajo de impresión.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Guardar el documento editado como archivo PDF. Revisar el nombre de destino en el diálogo de guardado.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Buscar una nueva versión del programa y preparar la actualización.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Abrir el flujo de trabajo guardado seleccionado.",
+    "Bereich: {0}": "Sección: {0}"
   },
   "nl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggend, vouw in het midden. Als u dubbelzijdig afdrukt, draai dan aan de korte kant.",
@@ -5725,7 +5755,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "bestandsgrootte verkleinen comprimeren kleiner bestand",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "tekst herkennen tekstherkenning scan doorzoekbaar maken",
     "Papier ausdrucken Druckvorschau": "papier afdrukken afdrukvoorbeeld",
-    "Speichern unter Datei kopieren neue Kopie": "opslaan als bestand kopiëren nieuwe kopie"
+    "Speichern unter Datei kopieren neue Kopie": "opslaan als bestand kopiëren nieuwe kopie",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Selecteer een hulpmiddel om de uitleg te zien.",
+    "Werkzeugerklärung": "Uitleg over hulpmiddel",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Een andere PDF aan het huidige document toevoegen.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Een gescande PDF kleiner maken. De beeldkwaliteit kan veranderen.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Tekst in gescande pagina’s herkennen en doorzoekbaar maken. Controleer daarna de resultaten.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Het paginavoorbeeld en de afdrukinstellingen openen voordat je de afdruktaak verstuurt.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Het bewerkte document als PDF-bestand opslaan. Controleer de doelnaam in het opslagvenster.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Naar een nieuwe programmaversie zoeken en de update voorbereiden.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "De geselecteerde opgeslagen workflow openen.",
+    "Bereich: {0}": "Onderdeel: {0}"
   },
   "it": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 orizzontale, piega al centro. Quando si stampa su entrambi i lati, girare dal lato corto.",
@@ -7157,7 +7197,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "ridurre dimensione file comprimere file più piccolo",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "riconoscere testo riconoscimento testo rendere ricercabile una scansione",
     "Papier ausdrucken Druckvorschau": "carta stampare anteprima di stampa",
-    "Speichern unter Datei kopieren neue Kopie": "salva con nome copiare file nuova copia"
+    "Speichern unter Datei kopieren neue Kopie": "salva con nome copiare file nuova copia",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Seleziona uno strumento per vederne la spiegazione.",
+    "Werkzeugerklärung": "Spiegazione dello strumento",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Aggiungere un altro PDF alla fine del documento corrente.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Ridurre le dimensioni di un PDF scansionato. La qualità delle immagini può cambiare.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Riconoscere il testo nelle pagine scansionate e renderlo ricercabile. Controllare poi i risultati.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Aprire l’anteprima delle pagine e le impostazioni prima di inviare la stampa.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Salvare il documento modificato come file PDF. Controllare il nome di destinazione nella finestra di salvataggio.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Cercare una nuova versione del programma e preparare l’aggiornamento.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Aprire il flusso di lavoro salvato selezionato.",
+    "Bereich: {0}": "Sezione: {0}"
   },
   "pt-PT": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Paisagem A4, dobra-se ao meio. Ao imprimir em ambos os lados, vire na margem curta.",
@@ -8589,7 +8639,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "reduzir tamanho do ficheiro comprimir ficheiro mais pequeno",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "reconhecer texto reconhecimento de texto tornar digitalização pesquisável",
     "Papier ausdrucken Druckvorschau": "papel imprimir pré-visualização de impressão",
-    "Speichern unter Datei kopieren neue Kopie": "guardar como copiar ficheiro nova cópia"
+    "Speichern unter Datei kopieren neue Kopie": "guardar como copiar ficheiro nova cópia",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Selecione uma ferramenta para ver a explicação.",
+    "Werkzeugerklärung": "Explicação da ferramenta",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Acrescentar outro PDF ao documento atual.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Reduzir o tamanho de um PDF digitalizado. A qualidade das imagens pode mudar.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Reconhecer texto em páginas digitalizadas e permitir pesquisas. Verifique os resultados depois.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Abrir a pré-visualização das páginas e as definições antes de enviar a impressão.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Guardar o documento editado como ficheiro PDF. Verifique o nome de destino na janela de gravação.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Procurar uma nova versão do programa e preparar a atualização.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Abrir o fluxo de trabalho guardado selecionado.",
+    "Bereich: {0}": "Secção: {0}"
   },
   "pl": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 poziomy, składany na środku. W przypadku drukowania po obu stronach obróć przy krótszej krawędzi.",
@@ -9996,7 +10056,7 @@
     "Häufige Aufgaben": "Częste zadania",
     "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Wybierz zadanie. Jeśli nie ma otwartego dokumentu, najpierw wybierz PDF.",
     "Eine weitere PDF an das geöffnete Dokument anhängen.": "Dołącz kolejny PDF do otwartego dokumentu.",
-    "Ausgewählte Seiten als eigene PDF speichern.": "Zapisz wybrane strony jako osobny PDF.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Zapisz wybrane strony jako osobny plik PDF.",
     "Scans durch Texterkennung durchsuchbar machen.": "Umożliw wyszukiwanie w skanach dzięki rozpoznawaniu tekstu.",
     "Seitenvorschau und Druckeinstellungen öffnen.": "Otwórz podgląd stron i ustawienia drukowania.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Brak dostępnej drukarki. Zainstaluj lub podłącz drukarkę w Windows i ponownie otwórz Drukuj.",
@@ -10021,7 +10081,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "zmniejszyć rozmiar pliku kompresować mniejszy plik",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "rozpoznać tekst rozpoznawanie tekstu przeszukiwalny skan",
     "Papier ausdrucken Druckvorschau": "papier wydrukować podgląd wydruku",
-    "Speichern unter Datei kopieren neue Kopie": "zapisz jako kopiować plik nowa kopia"
+    "Speichern unter Datei kopieren neue Kopie": "zapisz jako kopiować plik nowa kopia",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Wybierz narzędzie, aby zobaczyć objaśnienie.",
+    "Werkzeugerklärung": "Objaśnienie narzędzia",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Dołącz kolejny plik PDF na końcu bieżącego dokumentu.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Zmniejsz rozmiar zeskanowanego pliku PDF. Jakość obrazów może się zmienić.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Rozpoznaj tekst na zeskanowanych stronach i umożliw jego wyszukiwanie. Następnie sprawdź wyniki.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Otwórz podgląd stron i ustawienia przed wysłaniem zadania drukowania.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Zapisz edytowany dokument jako plik PDF. Sprawdź nazwę docelową w oknie zapisu.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Sprawdź dostępność nowej wersji programu i przygotuj aktualizację.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Otwórz wybrany zapisany proces.",
+    "Bereich: {0}": "Sekcja: {0}"
   },
   "cs": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 na šířku, přeložení uprostřed. Při tisku na obě strany otočte na kratší straně.",
@@ -11453,7 +11523,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "zmenšit velikost souboru komprimovat menší soubor",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "rozpoznat text rozpoznávání textu prohledávat sken",
     "Papier ausdrucken Druckvorschau": "papír vytisknout náhled tisku",
-    "Speichern unter Datei kopieren neue Kopie": "uložit jako kopírovat soubor nová kopie"
+    "Speichern unter Datei kopieren neue Kopie": "uložit jako kopírovat soubor nová kopie",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Vyberte nástroj a zobrazte jeho vysvětlení.",
+    "Werkzeugerklärung": "Vysvětlení nástroje",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Připojit další PDF na konec aktuálního dokumentu.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Zmenšit velikost naskenovaného PDF. Kvalita obrázků se může změnit.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Rozpoznat text naskenovaných stránek a umožnit jeho vyhledávání. Poté zkontrolujte výsledky.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Otevřít náhled stránek a nastavení před odesláním tiskové úlohy.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Uložit upravený dokument jako soubor PDF. Zkontrolujte cílový název v dialogu uložení.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Vyhledat novou verzi programu a připravit aktualizaci.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Otevřít vybraný uložený postup.",
+    "Bereich: {0}": "Sekce: {0}"
   },
   "da": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 landskab, fold på midten. Når du udskriver på begge sider, skal du dreje ved den korte kant.",
@@ -12860,7 +12940,7 @@
     "Häufige Aufgaben": "Hyppige opgaver",
     "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Vælg en opgave. Hvis intet dokument er åbent, skal du først vælge en PDF.",
     "Eine weitere PDF an das geöffnete Dokument anhängen.": "Føj en anden PDF til det åbne dokument.",
-    "Ausgewählte Seiten als eigene PDF speichern.": "Gem valgte sider som en separat PDF.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Gem de valgte sider som en separat PDF.",
     "Scans durch Texterkennung durchsuchbar machen.": "Gør scanninger søgbare med tekstgenkendelse.",
     "Seitenvorschau und Druckeinstellungen öffnen.": "Åbn sidevisning og udskriftsindstillinger.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Ingen printer tilgængelig. Installer eller tilslut en printer i Windows, og åbn Udskriv igen.",
@@ -12885,7 +12965,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "reducere filstørrelse komprimere mindre fil",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "genkende tekst tekstgenkendelse gøre scanning søgbar",
     "Papier ausdrucken Druckvorschau": "papir udskrive udskriftsvisning",
-    "Speichern unter Datei kopieren neue Kopie": "gem som kopiere fil ny kopi"
+    "Speichern unter Datei kopieren neue Kopie": "gem som kopiere fil ny kopi",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Vælg et værktøj for at se forklaringen.",
+    "Werkzeugerklärung": "Værktøjsforklaring",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Føj en anden PDF til slutningen af det aktuelle dokument.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Reducer størrelsen på en scannet PDF. Billedkvaliteten kan ændre sig.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Genkend tekst på scannede sider, og gør den søgbar. Kontrollér resultaterne bagefter.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Åbn sidevisning og udskriftsindstillinger, før udskriftsjobbet sendes.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Gem det redigerede dokument som en PDF-fil. Kontrollér målnavnet i dialogen.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Søg efter en ny programversion, og forbered opdateringen.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Åbn den valgte gemte arbejdsgang.",
+    "Bereich: {0}": "Område: {0}"
   },
   "sv-SE": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggande, vik på mitten. Vid utskrift på båda sidor, vänd på kortsidan.",
@@ -14317,7 +14407,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "minska filstorlek komprimera mindre fil",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "känna igen text textigenkänning göra skanning sökbar",
     "Papier ausdrucken Druckvorschau": "papper skriva ut förhandsgranska utskrift",
-    "Speichern unter Datei kopieren neue Kopie": "spara som kopiera fil ny kopia"
+    "Speichern unter Datei kopieren neue Kopie": "spara som kopiera fil ny kopia",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Välj ett verktyg för att se förklaringen.",
+    "Werkzeugerklärung": "Verktygsförklaring",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Lägg till en annan PDF i slutet av det aktuella dokumentet.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Minska storleken på en skannad PDF. Bildkvaliteten kan ändras.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Känn igen text på skannade sidor och gör den sökbar. Kontrollera resultaten efteråt.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Öppna sidförhandsvisning och utskriftsinställningar innan utskriften skickas.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Spara det redigerade dokumentet som en PDF-fil. Kontrollera målnamnet i dialogrutan.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Sök efter en ny programversion och förbered uppdateringen.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Öppna det valda sparade arbetsflödet.",
+    "Bereich: {0}": "Avsnitt: {0}"
   },
   "nb-NO": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 liggende, brett på midten. Når du skriver ut på begge sider, snu på kortsiden.",
@@ -15749,7 +15849,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "redusere filstørrelse komprimere mindre fil",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "gjenkjenne tekst tekstgjenkjenning gjøre skanning søkbar",
     "Papier ausdrucken Druckvorschau": "papir skrive ut forhåndsvisning av utskrift",
-    "Speichern unter Datei kopieren neue Kopie": "lagre som kopiere fil ny kopi"
+    "Speichern unter Datei kopieren neue Kopie": "lagre som kopiere fil ny kopi",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Velg et verktøy for å se forklaringen.",
+    "Werkzeugerklärung": "Verktøyforklaring",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Legg til en annen PDF på slutten av det gjeldende dokumentet.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Reduser størrelsen på en skannet PDF. Bildekvaliteten kan endres.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Gjenkjenn tekst på skannede sider og gjør den søkbar. Kontroller resultatene etterpå.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Åpne sideforhåndsvisning og utskriftsinnstillinger før utskriftsjobben sendes.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Lagre det redigerte dokumentet som en PDF-fil. Kontroller målnavnet i lagringsdialogen.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Se etter en ny programversjon og klargjør oppdateringen.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Åpne den valgte lagrede arbeidsflyten.",
+    "Bereich: {0}": "Område: {0}"
   },
   "fi": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 vaaka, taita keskellä. Kun tulostat molemmille puolille, käännä lyhyestä reunasta.",
@@ -17181,7 +17291,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "pienennä tiedostokokoa pakkaa pienempi tiedosto",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "tunnista teksti tekstintunnistus tee skannauksesta haettava",
     "Papier ausdrucken Druckvorschau": "paperi tulosta tulostuksen esikatselu",
-    "Speichern unter Datei kopieren neue Kopie": "tallenna nimellä kopioi tiedosto uusi kopio"
+    "Speichern unter Datei kopieren neue Kopie": "tallenna nimellä kopioi tiedosto uusi kopio",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Valitse työkalu nähdäksesi sen kuvauksen.",
+    "Werkzeugerklärung": "Työkalun kuvaus",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Liitä toinen PDF nykyisen asiakirjan loppuun.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Pienennä skannatun PDF:n tiedostokokoa. Kuvanlaatu voi muuttua.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Tunnista skannattujen sivujen teksti ja tee siitä haettavaa. Tarkista tulokset tämän jälkeen.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Avaa sivujen esikatselu ja tulostusasetukset ennen tulostustyön lähettämistä.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Tallenna muokattu asiakirja PDF-tiedostona. Tarkista kohdenimi tallennusikkunassa.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Etsi uusi ohjelmaversio ja valmistele päivitys.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Avaa valittu tallennettu työnkulku.",
+    "Bereich: {0}": "Osio: {0}"
   },
   "tr": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 yatay, ortadan katlayın. Her iki tarafa yazdırırken kısa kenardan çevirin.",
@@ -18588,7 +18708,7 @@
     "Häufige Aufgaben": "Sık kullanılan görevler",
     "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "Bir görev seç. Açık belge yoksa önce bir PDF seç.",
     "Eine weitere PDF an das geöffnete Dokument anhängen.": "Açık belgeye başka bir PDF ekle.",
-    "Ausgewählte Seiten als eigene PDF speichern.": "Seçili sayfaları ayrı bir PDF olarak kaydet.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "Seçili sayfaları ayrı bir PDF olarak kaydedin.",
     "Scans durch Texterkennung durchsuchbar machen.": "Metin tanıma ile taramaları aranabilir hale getir.",
     "Seitenvorschau und Druckeinstellungen öffnen.": "Sayfa önizlemesini ve yazdırma ayarlarını aç.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "Kullanılabilir yazıcı yok. Windows’ta bir yazıcı kur veya bağla ve Yazdır’ı yeniden aç.",
@@ -18613,7 +18733,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "dosya boyutunu küçült sıkıştır daha küçük dosya",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "metin tanı metin tanıma taramayı aranabilir yap",
     "Papier ausdrucken Druckvorschau": "kağıt yazdır baskı önizleme",
-    "Speichern unter Datei kopieren neue Kopie": "farklı kaydet dosyayı kopyala yeni kopya"
+    "Speichern unter Datei kopieren neue Kopie": "farklı kaydet dosyayı kopyala yeni kopya",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Açıklamasını görmek için bir araç seçin.",
+    "Werkzeugerklärung": "Araç açıklaması",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Geçerli belgenin sonuna başka bir PDF ekleyin.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Taranmış bir PDF dosyasının boyutunu küçültün. Görüntü kalitesi değişebilir.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Taranmış sayfalardaki metni tanıyıp aranabilir yapın. Ardından sonuçları kontrol edin.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Yazdırma işini göndermeden önce sayfa önizlemesini ve yazdırma ayarlarını açın.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Düzenlenen belgeyi PDF dosyası olarak kaydedin. Kaydetme penceresinde hedef adı kontrol edin.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Programın yeni sürümünü arayın ve güncellemeyi hazırlayın.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Seçili kayıtlı iş akışını açın.",
+    "Bereich: {0}": "Bölüm: {0}"
   },
   "uk": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "А4 альбомна, згин посередині. Друкуючи з обох сторін, повертайте коротким краєм.",
@@ -20045,7 +20175,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "зменшити розмір файлу стиснути менший файл",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "розпізнати текст розпізнавання тексту пошук у сканах",
     "Papier ausdrucken Druckvorschau": "папір роздрукувати попередній перегляд друку",
-    "Speichern unter Datei kopieren neue Kopie": "зберегти як копіювати файл нова копія"
+    "Speichern unter Datei kopieren neue Kopie": "зберегти як копіювати файл нова копія",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Виберіть інструмент, щоб побачити пояснення.",
+    "Werkzeugerklärung": "Пояснення інструмента",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Додати інший PDF до кінця поточного документа.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Зменшити розмір сканованого PDF. Якість зображення може змінитися.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Розпізнати текст на сканованих сторінках і зробити його доступним для пошуку. Потім перевірте результати.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Відкрити перегляд сторінок і налаштування перед надсиланням завдання друку.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Зберегти змінений документ як PDF. Перевірте назву цільового файлу у вікні збереження.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Знайти нову версію програми та підготувати оновлення.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Відкрити вибраний збережений процес.",
+    "Bereich: {0}": "Розділ: {0}"
   },
   "el": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "Τοπίο Α4, διπλώστε στη μέση. Όταν εκτυπώνετε και στις δύο όψεις, περιστρέψτε τη στη μικρή πλευρά.",
@@ -21477,7 +21617,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "μείωση μεγέθους αρχείου συμπίεση μικρότερο αρχείο",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "αναγνώριση κειμένου αναζήτηση σε σαρωμένο έγγραφο",
     "Papier ausdrucken Druckvorschau": "χαρτί εκτύπωση προεπισκόπηση εκτύπωσης",
-    "Speichern unter Datei kopieren neue Kopie": "αποθήκευση ως αντιγραφή αρχείου νέο αντίγραφο"
+    "Speichern unter Datei kopieren neue Kopie": "αποθήκευση ως αντιγραφή αρχείου νέο αντίγραφο",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "Επιλέξτε εργαλείο για να δείτε την εξήγηση.",
+    "Werkzeugerklärung": "Εξήγηση εργαλείου",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "Προσθήκη άλλου PDF στο τέλος του τρέχοντος εγγράφου.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "Μείωση μεγέθους σαρωμένου PDF. Η ποιότητα εικόνας μπορεί να αλλάξει.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "Αναγνώριση κειμένου στις σαρωμένες σελίδες ώστε να είναι αναζητήσιμο. Ελέγξτε κατόπιν τα αποτελέσματα.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "Άνοιγμα προεπισκόπησης σελίδων και ρυθμίσεων πριν αποσταλεί η εκτύπωση.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "Αποθήκευση του επεξεργασμένου εγγράφου ως PDF. Ελέγξτε το όνομα προορισμού στο παράθυρο αποθήκευσης.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "Αναζήτηση νέας έκδοσης και προετοιμασία ενημέρωσης.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "Άνοιγμα της επιλεγμένης αποθηκευμένης ροής εργασίας.",
+    "Bereich: {0}": "Ενότητα: {0}"
   },
   "ja": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4横、真ん中で折ります。両面に印刷する場合は短辺を回転させてください。",
@@ -22909,7 +23059,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "ファイルサイズを小さく 圧縮 容量を減らす",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "文字を認識 文字認識 スキャンを検索可能に",
     "Papier ausdrucken Druckvorschau": "紙に印刷 プリント 印刷プレビュー",
-    "Speichern unter Datei kopieren neue Kopie": "名前を付けて保存 ファイルをコピー 別のコピー"
+    "Speichern unter Datei kopieren neue Kopie": "名前を付けて保存 ファイルをコピー 別のコピー",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "ツールを選択すると説明が表示されます。",
+    "Werkzeugerklärung": "ツールの説明",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "現在の文書の末尾に別のPDFを追加します。",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "スキャンしたPDFのファイルサイズを小さくします。画質が変わる場合があります。",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "スキャンしたページの文字を認識して検索可能にします。認識結果を後で確認してください。",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "印刷を実行する前にページのプレビューと印刷設定を開きます。",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "編集した文書をPDFファイルとして保存します。保存画面で保存先の名前を確認してください。",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "プログラムの新しいバージョンを確認し、更新を準備します。",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "選択した保存済みの処理手順を開きます。",
+    "Bereich: {0}": "分類：{0}"
   },
   "ko": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 가로로 가운데를 접습니다. 양면에 인쇄하는 경우 짧은 가장자리를 뒤집으십시오.",
@@ -24341,7 +24501,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "파일 크기 줄이기 압축 작은 파일",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "문자 인식 텍스트 인식 스캔 검색 가능하게",
     "Papier ausdrucken Druckvorschau": "종이 출력 인쇄 미리보기",
-    "Speichern unter Datei kopieren neue Kopie": "다른 이름으로 저장 파일 복사 새 복사본"
+    "Speichern unter Datei kopieren neue Kopie": "다른 이름으로 저장 파일 복사 새 복사본",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "도구를 선택하면 설명이 표시됩니다.",
+    "Werkzeugerklärung": "도구 설명",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "현재 문서 끝에 다른 PDF를 추가합니다.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "스캔한 PDF의 파일 크기를 줄입니다. 이미지 품질이 달라질 수 있습니다.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "스캔한 페이지의 텍스트를 인식하여 검색할 수 있게 합니다. 이후 결과를 확인하세요.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "인쇄 작업을 보내기 전에 페이지 미리보기와 인쇄 설정을 엽니다.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "편집한 문서를 PDF 파일로 저장합니다. 저장 창에서 대상 이름을 확인하세요.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "프로그램의 새 버전을 확인하고 업데이트를 준비합니다.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "선택한 저장된 작업 흐름을 엽니다.",
+    "Bereich: {0}": "분류: {0}"
   },
   "ar": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "منظر طبيعي مقاس A4، مطوي من المنتصف. عند الطباعة على كلا الجانبين، قم بالتدوير عند الحافة القصيرة.",
@@ -25748,7 +25918,7 @@
     "Häufige Aufgaben": "مهام شائعة",
     "Wähle eine Aufgabe. Ohne geöffnetes Dokument wählst du zuerst eine PDF.": "اختر مهمة. إذا لم يكن هناك مستند مفتوح، فاختر ملف PDF أولاً.",
     "Eine weitere PDF an das geöffnete Dokument anhängen.": "إلحاق ملف PDF آخر بالمستند المفتوح.",
-    "Ausgewählte Seiten als eigene PDF speichern.": "حفظ الصفحات المحددة كملف PDF مستقل.",
+    "Ausgewählte Seiten als eigene PDF speichern.": "حفظ الصفحات المحددة في ملف PDF مستقل.",
     "Scans durch Texterkennung durchsuchbar machen.": "جعل المستندات الممسوحة قابلة للبحث باستخدام التعرف على النص.",
     "Seitenvorschau und Druckeinstellungen öffnen.": "فتح معاينة الصفحات وإعدادات الطباعة.",
     "Kein Drucker verfügbar. Installiere oder verbinde einen Drucker in Windows und öffne Drucken erneut.": "لا توجد طابعة متاحة. ثبّت طابعة أو صِلها في Windows ثم افتح الطباعة مجددًا.",
@@ -25773,7 +25943,17 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "تقليل حجم الملف ضغط ملف أصغر",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "التعرف على النص التعرف على الحروف جعل المسح قابلاً للبحث",
     "Papier ausdrucken Druckvorschau": "ورق طباعة معاينة الطباعة",
-    "Speichern unter Datei kopieren neue Kopie": "حفظ باسم نسخ الملف نسخة جديدة"
+    "Speichern unter Datei kopieren neue Kopie": "حفظ باسم نسخ الملف نسخة جديدة",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "اختر أداة لعرض شرحها.",
+    "Werkzeugerklärung": "شرح الأداة",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "إلحاق ملف PDF آخر بنهاية المستند الحالي.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "تقليل حجم ملف PDF ممسوح ضوئيًا. قد تتغير جودة الصور.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "التعرف على النص في الصفحات الممسوحة وجعله قابلًا للبحث. تحقق من النتائج بعد ذلك.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "فتح معاينة الصفحات وإعدادات الطباعة قبل إرسال مهمة الطباعة.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "حفظ المستند المعدّل كملف PDF. تحقق من اسم الوجهة في نافذة الحفظ.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "البحث عن إصدار جديد للبرنامج وتجهيز التحديث.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "فتح سير العمل المحفوظ المحدد.",
+    "Bereich: {0}": "القسم: {0}"
   },
   "he": {
     "A4 quer, mittig falten. Beim beidseitigen Druck an der kurzen Kante wenden.": "A4 לרוחב, קיפול באמצע. בעת הדפסה על שני הצדדים, הפוך בקצה הקצר.",
@@ -27205,6 +27385,16 @@
     "Dateigröße reduzieren komprimieren kleinere Datei": "הקטנת גודל הקובץ דחיסה קובץ קטן יותר",
     "Text erkennen Texterkennung Scan durchsuchbar machen": "זיהוי טקסט זיהוי תווים הפיכת סריקה לניתנת לחיפוש",
     "Papier ausdrucken Druckvorschau": "נייר הדפסה תצוגה מקדימה להדפסה",
-    "Speichern unter Datei kopieren neue Kopie": "שמירה בשם העתקת קובץ עותק חדש"
+    "Speichern unter Datei kopieren neue Kopie": "שמירה בשם העתקת קובץ עותק חדש",
+    "Wähle ein Werkzeug, um die Erklärung zu sehen.": "בחרו כלי כדי לראות את ההסבר.",
+    "Werkzeugerklärung": "הסבר על הכלי",
+    "Eine weitere PDF an das aktuelle Dokument anhängen.": "צירוף קובץ PDF נוסף לסוף המסמך הנוכחי.",
+    "Die Dateigröße einer gescannten PDF verringern. Die Bildqualität kann sich ändern.": "הקטנת גודל קובץ PDF סרוק. איכות התמונות עשויה להשתנות.",
+    "Text in gescannten Seiten erkennen und durchsuchbar machen. Ergebnisse anschließend prüfen.": "זיהוי טקסט בעמודים סרוקים כדי לאפשר חיפוש. יש לבדוק את התוצאות לאחר מכן.",
+    "Seitenvorschau und Druckeinstellungen öffnen, bevor du den Druckauftrag sendest.": "פתיחת תצוגה מקדימה והגדרות הדפסה לפני שליחת משימת ההדפסה.",
+    "Das bearbeitete Dokument als PDF-Datei speichern. Den Zielnamen im Speicherdialog prüfen.": "שמירת המסמך הערוך כקובץ PDF. בדקו את שם היעד בחלון השמירה.",
+    "Nach einer neuen Programmversion suchen und die Aktualisierung vorbereiten.": "בדיקת גרסה חדשה של התוכנית והכנת העדכון.",
+    "Den ausgewählten gespeicherten Ablauf öffnen.": "פתיחת תהליך העבודה השמור שנבחר.",
+    "Bereich: {0}": "קטגוריה: {0}"
   }
 }
